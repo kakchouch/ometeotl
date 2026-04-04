@@ -4,7 +4,7 @@ date: 2026-04-04
 draft: false
 ---
 
-# WORK IN PROGRESS - sie under construction
+# WORK IN PROGRESS - site under construction
 <p align="center">
   <img src="logo.png" width="300" height="300"/>
 </p>
