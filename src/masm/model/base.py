@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Tuple, object_type, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 SchemaVersion = str
 ObjectId = str
@@ -75,7 +75,7 @@ class ModelObject:
             "relations": {
                 key: sorted(str(value) for value in values)
                 for key, values in sorted(self.relations.items())
-            }
+            },
             "state": dict(sorted(self.state.items())),
             "context": dict(sorted(self.context.items())),
             "provenance": dict(sorted(self.provenance.items())),

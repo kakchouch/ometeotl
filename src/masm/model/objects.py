@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
 from .base import ModelObject
 
+
 @dataclass
 class GenericObject(ModelObject):
-        """Generic representable entity in the MASM model.
+    """Generic representable entity in the model.
 
-    This class is intentionally lightweight. It exists to provide a first
-    semantic layer above ModelObject before introducing more specialized
-    domain objects such as actors, resources, or spaces.
+    This class is intentionally lightweight. It provides a first semantic
+    layer above ModelObject before introducing more specialized domain
+    objects such as actors, resources, or spaces.
     """
+
     @property
     def label(self) -> Optional[str]:
         value = self.attributes.get("label")
@@ -32,5 +36,3 @@ class GenericObject(ModelObject):
         if not value:
             raise ValueError("Description cannot be empty")
         self.attributes["description"] = value
-    pass
-    
