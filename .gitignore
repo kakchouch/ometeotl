@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Hugo doc site
+# Fichiers générés par Hugo
+doc-site/public/
+doc-site/resources/_gen/
+doc-site/.hugo_build.lock
+
+# Optionnel : stats Hugo si généré
+doc-site/hugo_stats.json
+
+# Optionnel : fichier auto-généré par certains pipelines JS
+doc-site/assets/jsconfig.json

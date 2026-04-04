@@ -1,0 +1,29 @@
+baseURL = 'https://ometeotl.github-pages.com/'
+languageCode = 'en-us'
+title = 'Ometeotl, an abstract decision meta-model'
+theme = 'risotto'
+defaultContentLanguage = 'en'
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+[params]
+  [params.theme]
+  palette = "solarized-light"
+
+[languages]
+  [languages.en]
+    languageName = 'English'
+    weight = 2
+    contentDir = 'content/en'
+    [[languages.en.menus.main]]
+      name = 'Goals and specs'
+      pageRef = '/goals_and_specs/'
+      weight = 10
+    [[languages.en.menus.main]]
+      name = 'documentation'
+      pageRef = '/documentation/'
+      weight = 20
+ 
