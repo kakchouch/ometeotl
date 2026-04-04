@@ -1,4 +1,7 @@
-![logo](logo.png "ometeotl")
+<p align="center">
+  <img src="logo_small.png" />
+</p>
+
 
 # Ometeotl, a abstract decision meta-model
 Ometeotl is a project for an abstract meta-model for strategic thinking, decision-making, and game theory simulation. Built, by design, for AI (symbolic or generative) strategic decision making. It is implement in the form of a python library.
