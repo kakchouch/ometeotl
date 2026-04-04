@@ -13,6 +13,58 @@ Le cadre théorique de référence repose sur quelques postulats structurants : 
 - Dissociation réalité/perception : les décisions dépendent de la perception, pas nécessairement de la réalité ontologique [^8_1].
 - Interopérabilité textuelle : tout objet du système doit être exportable vers un format textuel exploitable par des IA [^8_1].
 
+## Cadre théorique
+
+### Axiomes
+
+Le modèle repose sur une ontologie minimale dans laquelle existent des objets, des acteurs, des ressources, des espaces d’existence et des effets mesurés par des métriques hétérogènes ; le temps y joue un rôle fondamental, car tous les attributs d’un acteur, de ses ressources et de ses actions sont indexés par le temps, et seule la partie passée du système est certaine au niveau du modèle. Les acteurs y sont finis, hiérarchiques ou émergents, insérés dans plusieurs espaces d’existence à la fois, porteurs de perceptions partielles, de contraintes, de ressources, de valeurs et d’intentions admissibles seulement si elles sont compatibles avec leurs capacités effectives.[^10_1]
+
+#### Liste synthétique
+
+- **Axiome 1 — Existence** : il existe des objets dans le modèle ; un objet est toute entité distinguable et représentable.[^10_1]
+- **Axiome 2 — Temporalité** : tout objet, acteur, ressource et attribut existe dans le temps ; le temps est ordonné, irréversible et commun au modèle.[^10_1]
+- **Axiome 3 — Espaces d’existence** : tout objet existe dans un ou plusieurs espaces d’existence, physiques ou abstraits, dont la validité dépend du temps.[^10_1]
+- **Axiome 4 — Acteur** : un acteur est un objet capable de perception, décision et action.[^10_1]
+- **Axiome 5 — Finitude** : tout acteur est fini dans le temps, l’espace, les ressources et les capacités cognitives.[^10_1]
+- **Axiome 6 — Ressources** : les ressources d’un acteur sont des objets dotés de leurs propres espaces d’existence, pouvant être constitués d’objets, d’acteurs ou des deux.[^10_1]
+- **Axiome 7 — Composition** : un acteur peut contenir des sous-acteurs dotés d’attributs, contraintes et intentions distincts.[^10_1]
+- **Axiome 8 — Réalité du modèle** : le passé du modèle est ontologiquement certain au niveau du système.[^10_1]
+- **Axiome 9 — Perception partielle** : chaque acteur possède une perception propre, partielle, biaisée et potentiellement erronée du passé, du présent et du futur.[^10_1]
+- **Axiome 10 — Dissociation réalité/perception** : les décisions des acteurs dépendent de leur perception, non de la réalité ontologique du modèle.[^10_1]
+- **Axiome 11 — Manipulabilité des perceptions** : les perceptions peuvent être modifiées par action, bruit, oubli ou transformation informationnelle.[^10_1]
+- **Axiome 12 — Objectifs** : un acteur peut avoir des objectifs portant sur son propre espace d’existence, celui d’autrui, ses ressources ou sa continuité.[^10_1]
+- **Axiome 13 — Objectifs finaux et intermédiaires** : les objectifs finaux peuvent être stables et lointains ; les objectifs intermédiaires émergent dynamiquement de l’état perçu du monde, des ressources et de la concurrence.[^10_1]
+- **Axiome 14 — Capacité de conception** : un acteur ne peut formuler ou poursuivre que des objectifs qu’il est capable de concevoir et de soutenir au regard de ses ressources, contraintes, valeurs et horizon.[^10_1]
+- **Axiome 15 — Coexistence** : deux acteurs ne peuvent interagir que s’ils coexistent dans le temps et partagent au moins un espace d’existence pertinent.[^10_1]
+- **Axiome 16 — Conflictualité émergente** : la conflictualité peut émerger de la simple coexistence, sans intention hostile préalable, si des espaces, ressources ou objectifs se recouvrent.[^10_1]
+- **Axiome 17 — Nuisance** : nuire à un acteur consiste à réduire une ou plusieurs dimensions de son espace d’existence vers des valeurs nulles ou critiques.[^10_1]
+- **Axiome 18 — Émergence d’acteurs** : des acteurs peuvent émerger à partir d’autres acteurs, de propriétés perçues ou de projections, même sans existence formelle autonome.[^10_1]
+- **Axiome 19 — Multiplicité des espaces** : les espaces d’existence peuvent être physiques, informationnels, symboliques, sociaux, cognitifs, juridiques, numériques ou conceptuels, et de nouveaux espaces peuvent émerger.[^10_1]
+- **Axiome 20 — Isomorphisme structurel** : des actions de nature radicalement différente peuvent être considérées comme équivalentes si elles produisent des effets structurellement analogues sur les métriques pertinentes.[^10_1]
+- **Axiome 21 — Métriques hétérogènes** : les effets sont décrits par des vecteurs de métriques quantitatives, qualitatives, subjectives, symboliques ou physiques, sans unité commune imposée.[^10_1]
+- **Axiome 22 — Grille de lecture** : tout optimum global n’existe qu’au regard d’une grille de lecture explicite définissant objectifs, pondérations, valeurs et contraintes.[^10_1]
+- **Axiome 23 — Neutralité téléologique** : le modèle ne présuppose aucun but concret ; il fournit une structure de représentation, de comparaison et d’évaluation.[^10_1]
+
+
+### Connexion à la théorie des jeux
+
+La connexion à la théorie des jeux est naturelle, parce que le modèle définit déjà des acteurs, des espaces partagés, des ressources limitées, des perceptions imparfaites, des stratégies admissibles et des utilités relatives à une grille de lecture ; la théorie des jeux n’est donc pas un ajout opportuniste, mais une projection possible du modèle sur un cadre académique existant d’optimisation stratégique sous interaction. Plus précisément, le texte source fait converger le modèle vers des jeux dynamiques, multi-acteurs, multi-espaces et multi-métriques, avec information imparfaite, utilités contextualisées et stratégies séquentielles plutôt qu’avec un jeu statique simple.[^10_1]
+
+#### Traduction axiomatique
+
+- **Acteurs → joueurs** : chaque acteur du modèle peut être projeté comme joueur d’un jeu.[^10_1]
+- **Actions admissibles → stratégies disponibles** : l’ensemble des objets/actions compatibles avec ressources, contraintes, temps et espace forme l’ensemble des stratégies admissibles.[^10_1]
+- **État du monde → état du jeu** : la configuration multi-espaces des acteurs, ressources et perceptions définit l’état courant du jeu.[^10_1]
+- **Perception partielle → information imparfaite** : les jeux dérivés du modèle sont naturellement des jeux à information incomplète ou imparfaite.[^10_1]
+- **Objectifs intermédiaires → sous-jeux / étapes** : les objectifs intermédiaires structurent les trajectoires stratégiques comme des sous-jeux successifs.[^10_1]
+- **Métriques hétérogènes → fonctions d’utilité multi-critères** : les utilités ne sont pas données a priori ; elles sont dérivées des métriques via une grille de lecture.[^10_1]
+- **Conflit par coexistence → concurrence stratégique** : la simple coexistence dans un espace partagé suffit à générer un jeu concurrentiel potentiel.[^10_1]
+- **Ressources limitées → contraintes et rivalités** : la rivalité stratégique peut naître du recouvrement des espaces d’existence des ressources, même sans hostilité initiale.[^10_1]
+- **Réduction de l’espace d’existence adverse → gain/perte stratégique** : nuire à l’adversaire revient à réduire son espace d’existence utile, ce qui se traduit naturellement dans les utilités du jeu.[^10_1]
+- **Temps irréversible → jeux dynamiques dépendants du chemin** : l’irréversibilité du temps impose une lecture séquentielle, historique et path-dependent des interactions.[^10_1]
+- **Futur incertain → optimisation sous projection** : un acteur n’optimise pas un futur certain, mais une transition entre passé connu et futur anticipé.[^10_1]
+- **Hiérarchie interne → jeux imbriqués / coordination interne** : un acteur composite peut lui-même contenir des sous-jeux d’alignement, de leadership ou de coordination.[^10_1]
+
 
 ## Périmètre
 
