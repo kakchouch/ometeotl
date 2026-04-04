@@ -1,0 +1,208 @@
+## Objet
+
+Le projet vise à concevoir une bibliothèque Python abstraite permettant de représenter, générer, valider, sérialiser et exploiter des systèmes multi-acteurs, multi-espaces et multi-métriques, dans des contextes tels que simulation, IA symbolique, IA générative, jeux stratégiques, mondes synthétiques et outils d’analyse structurelle [^8_1]. Le socle doit rester agnostique, extensible et peu biaisé téléologiquement : il ne contient pas d’objectifs substantiels imposés, mais fournit les primitives nécessaires pour représenter des acteurs finis, hiérarchiques, émergents, percevant imparfaitement un monde dynamique et agissant sur des espaces d’existence partagés [^8_1].
+
+## Principes
+
+Le cadre théorique de référence repose sur quelques postulats structurants : le temps est une dimension fondamentale ; tout acteur existe dans un espace d’existence multi-dimensionnel ; les actions sont des objets d’effet abstraits ; les métriques sont hétérogènes ; les intentions admissibles dépendent des capacités ; la conflictualité peut émerger de la simple coexistence ; et l’optimisation ne peut être définie qu’au regard d’une grille de lecture explicite [^8_1]. La bibliothèque devra donc respecter les principes suivants [^8_1]:
+
+- Neutralité téléologique : aucune finalité concrète ne doit être imposée par le noyau [^8_1].
+- Extensibilité : ajout de nouveaux espaces, métriques, acteurs, règles et formats sans rupture de structure [^8_1].
+- Multi-espaces : un acteur ou une ressource peut exister dans plusieurs espaces simultanément [^8_1].
+- Hiérarchie et émergence : un acteur peut contenir d’autres acteurs ou émerger de propriétés perçues, réelles ou projetées [^8_1].
+- Dissociation réalité/perception : les décisions dépendent de la perception, pas nécessairement de la réalité ontologique [^8_1].
+- Interopérabilité textuelle : tout objet du système doit être exportable vers un format textuel exploitable par des IA [^8_1].
+
+
+## Périmètre
+
+Le produit attendu est une bibliothèque Python modulaire, documentée et testée, organisée autour d’un noyau abstrait et de modules complémentaires. Le document de base légitime ce périmètre en décrivant un cadre générateur d’outils, de représentations, de cartographies et de comparaisons structurelles, plutôt qu’un outil unique monolithique [^8_1].
+
+Le périmètre fonctionnel minimal comprend :
+
+- Représentation d’acteurs, sous-acteurs et acteurs émergents [^8_1].
+- Représentation d’espaces d’existence multiples et de morphismes inter-espaces [^8_1].
+- Représentation d’objets/actions abstraits et de leurs effets [^8_1].
+- Représentation de ressources comme entités finies dotées de leurs propres espaces d’existence [^8_1].
+- Représentation de métriques quantitatives, qualitatives, subjectives ou symboliques [^8_1].
+- Représentation de perceptions, croyances, projections et erreurs [^8_1].
+- Représentation d’objectifs finaux, objectifs intermédiaires et grilles de lecture [^8_1].
+- Validation d’admissibilité structurelle, temporelle, spatiale et cognitive [^8_1].
+- Export/import en JSON et YAML, avec vue dédiée LLM/SLM [^8_1].
+- Interfaces de génération contextuelle et de raisonnement symbolique [^8_1].
+- Interface d’interfaçage avec la théorie des jeux [^8_1].
+
+
+## Exigences métier
+
+Le modèle métier devra permettre de formaliser un acteur comme une entité abstraite caractérisée par ses objets/actions disponibles, ses espaces d’existence, ses ressources, ses contraintes internes, sa temporalité, ses valeurs et éventuellement ses sous-acteurs ; cette structure est explicitement présente dans la base axiomatique discutée dans le document [^8_1]. Il devra aussi permettre de modéliser la variation temporelle de tous les attributs, la coexistence conditionnant l’interaction, la conflictualité comme réduction potentielle de l’espace d’existence d’un autre acteur, et l’émergence d’acteurs projetés ou perçus sans existence ontologique pleine [^8_1].
+
+Exigences métier essentielles :
+
+- Tout acteur doit posséder une identité stable, un type, un horizon temporel et un espace d’existence dynamique [^8_1].
+- Tout attribut significatif doit être indexable par le temps [^8_1].
+- Un acteur ne peut poursuivre que des intentions compatibles avec ses capacités, ressources, contraintes, valeurs et horizon [^8_1].
+- Les objectifs finaux doivent pouvoir être déclinés en objectifs intermédiaires évolutifs [^8_1].
+- Les ressources doivent être modélisées comme entités limitées, consommables, transformables ou destructibles [^8_1].
+- Les actions doivent pouvoir être comparées par leurs effets structurels et non par leur nature concrète [^8_1].
+- Les acteurs composites doivent pouvoir porter des intentions globales unifiées, divergentes ou minimales selon leur structure interne [^8_1].
+
+
+## Exigences théorie des jeux
+
+L’interfaçage avec la théorie des jeux est une finalité structurante du projet, non un ajout secondaire, puisque le cadre doit converger vers des jeux multi-acteurs, multi-espaces et multi-métriques, avec stratégies admissibles, fonctions d’utilité abstraites et comparaison de configurations sous contraintes [^8_1]. Le document précise également que l’optimum global n’est jamais absolu mais relatif à une grille de lecture explicite définissant objectifs, pondérations et contraintes éthiques ou structurelles ; cette idée doit être native dans l’API [^8_1].
+
+Exigences spécifiques :
+
+- Définir une abstraction `Strategy` comme séquence ou politique d’actions admissibles [^8_1].
+- Définir une abstraction `UtilityFunction` opérant sur états, effets et métriques [^8_1].
+- Supporter des jeux séquentiels, dynamiques, multi-objectifs et à information imparfaite [^8_1].
+- Supporter plusieurs régimes : coopératif, non coopératif, hybride, évolutif [^8_1].
+- Permettre le calcul ou l’approximation d’utilités relatives à une grille de lecture [^8_1].
+- Permettre la comparaison par domination partielle, robustesse ou fronts de compromis [^8_1].
+- Permettre le passage d’un monde modélisé à une instance de jeu exploitable par un solveur externe [^8_1].
+
+
+## Exigences export
+
+La contrainte d’export est centrale, car la bibliothèque doit servir d’interface de représentation pour des IA symboliques ou génératives capables de construire des environnements, acteurs ou stratégies à partir d’un contexte ; le document justifie pleinement cette orientation en présentant le modèle comme un langage commun de représentation et de cartographie [^8_1]. Tous les objets du noyau devront donc posséder une projection textuelle canonique, versionnée, stable, reconstructible et exploitable par des traitements automatiques [^8_1].
+
+Exigences d’export :
+
+- Tous les objets métiers du noyau doivent implémenter un protocole de sérialisation canonique [^8_1].
+- Le format canonique de référence doit être JSON ; YAML doit être supporté comme vue secondaire [^8_1].
+- Chaque export doit contenir au minimum `id`, `type`, `schema_version`, `attributes`, `relations`, `state`, `context`, `provenance` [^8_1].
+- Les cycles et relations croisées doivent être exportés par références identifiantes, non par duplication infinie.
+- Une vue `LLM/SLM` dédiée doit distinguer explicitement réalité, perception, croyance, hypothèse et projection [^8_1].
+- Les exports doivent être déterministes, diffables et validables par schéma.
+- Toute rupture de schéma doit entraîner un changement de version.
+
+
+## Exigences validation
+
+La validation est indispensable, car la bibliothèque doit filtrer les objets générés par des IA et empêcher l’introduction d’objets incohérents avec les axiomes du modèle ; cette nécessité découle directement du principe d’admissibilité des intentions et de la séparation entre structure du modèle et outils dérivés [^8_1]. La validation doit être multiple : syntaxique, structurelle, temporelle, spatiale, relationnelle, cognitive et stratégique [^8_1].
+
+Exigences de validation :
+
+- Validation syntaxique des documents JSON/YAML.
+- Validation structurelle des types, champs, relations et hiérarchies.
+- Validation temporelle : impossibilité d’interaction hors coexistence temporelle [^8_1].
+- Validation spatiale/contextuelle : impossibilité d’interaction sans espace partagé pertinent [^8_1].
+- Validation d’admissibilité : impossibilité de générer des objectifs ou stratégies hors capacités [^8_1].
+- Validation de cohérence perception/réalité : possibilité d’erreur, mais explicitation du statut épistémique [^8_1].
+- Validation de complétude minimale pour tout objet instanciable.
+
+
+## Exigences génération
+
+La bibliothèque doit permettre à des IA symboliques ou génératives de construire, à partir d’un contexte, des mondes, acteurs, perceptions, ressources ou stratégies, puis de faire valider et instancier ces objets dans le modèle. Cette orientation est en continuité directe avec l’idée du document selon laquelle le cadre doit servir de méta-modèle générateur d’outils et de représentations, non de prescripteur d’actions [^8_1].
+
+Exigences de génération :
+
+- Fournir un protocole `from_context` pour les objets générables.
+- Fournir un pipeline `contexte -> génération textuelle -> parsing -> validation -> instanciation`.
+- Permettre la génération partielle, incrémentale ou corrective.
+- Permettre la génération de mondes incomplets avec zones d’incertitude explicites.
+- Permettre la génération symbolique par règles et la génération générative par prompt structuré.
+- Permettre à la bibliothèque de proposer des réparations ou diagnostics en cas d’échec de validation.
+
+
+## Architecture logicielle
+
+L’architecture recommandée est modulaire, avec un noyau abstrait, des couches de validation/export, des extensions de génération et un pont théorie des jeux. Cette structure est cohérente avec le document, qui distingue clairement socle formel, outils dérivés, analyse structurelle et interfaces d’usage [^8_1].
+
+Arborescence cible :
+
+```text
+src/
+  model/
+    actors.py
+    spaces.py
+    resources.py
+    actions.py
+    metrics.py
+    perception.py
+    goals.py
+    state.py
+    emergence.py
+  game/
+    strategies.py
+    utility.py
+    equilibrium.py
+    dominance.py
+  io/
+    serializable.py
+    json_codec.py
+    yaml_codec.py
+    llm_codec.py
+    schema.py
+  validation/
+    structural.py
+    temporal.py
+    spatial.py
+    epistemic.py
+    admissibility.py
+  generation/
+    context.py
+    builders.py
+    repair.py
+    prompts.py
+  examples/
+```
+
+
+## Interfaces minimales
+
+Les interfaces minimales doivent couvrir représentation, validation, export, génération et interfaçage stratégique, afin que le noyau soit immédiatement exploitable par des projets de simulation ou des chaînes IA. Cette exigence découle du besoin d’un langage commun manipulable à la fois par moteurs symboliques, modèles génératifs et composants analytiques [^8_1].
+
+Interfaces minimales recommandées :
+
+- `Serializable`
+- `Validatable`
+- `LLMExportable`
+- `ContextualBuildable`
+- `AbstractActor`
+- `AbstractSpace`
+- `AbstractResource`
+- `AbstractAction`
+- `AbstractMetric`
+- `AbstractWorldState`
+- `AbstractPerception`
+- `AbstractGoal`
+- `Strategy`
+- `UtilityFunction`
+
+
+## Critères d’acceptation
+
+Le produit sera considéré conforme si le noyau permet d’instancier un petit monde cohérent, de sérialiser tous ses objets, de les recharger, de valider leur cohérence, puis de générer au moins une stratégie admissible et une représentation de jeu à partir de ce monde. Ces critères reflètent bien les finalités explicites du cadre : représentation, comparaison, génération, validation et interfaçage analytique [^8_1].
+
+Critères minimaux :
+
+- Création d’un monde de démonstration avec plusieurs acteurs, espaces et ressources.
+- Export complet en JSON et YAML.
+- Réimport sans perte structurelle essentielle.
+- Validation réussie d’un monde cohérent et rejet motivé d’un monde incohérent.
+- Génération d’au moins un acteur et une stratégie depuis un contexte textuel.
+- Construction d’une instance de jeu simple avec utilités relatives.
+- Documentation claire des statuts ontologiques : réel, perçu, hypothétique, émergent [^8_1].
+
+
+## V1 prioritaire
+
+Pour la première version, il faut viser un socle réduit mais complet sur la chaîne représentation → validation → export → génération → jeu. Le document montre bien que la puissance du modèle vient d’abord de sa structure abstraite et de son extensibilité, donc la V1 doit prouver cette chaîne de bout en bout avant d’ajouter des raffinements mathématiques ou des solveurs sophistiqués [^8_1].
+
+Priorités V1 :
+
+1. Noyau abstrait des objets du modèle.
+2. JSON canonique + YAML.
+3. Système de validation complet de base.
+4. Génération contextuelle minimale.
+5. Interface théorie des jeux minimale.
+6. Deux exemples : un monde simple et un cas multi-acteurs hiérarchique.
+
+Si tu veux, je peux maintenant transformer cette ébauche en **vrai cahier des charges formel**, avec sections numérotées, exigences fonctionnelles/non fonctionnelles, livrables, roadmap et critères de recette.
+
+<div align="center">⁂</div>
+
+[^8_1]: chatgpt_brainstorm.md
