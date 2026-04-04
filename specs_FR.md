@@ -111,7 +111,7 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 
 Voici une première architecture : 
 ```
-project/
+ometeotl/
 ├── pyproject.toml
 ├── README.md
 ├── src/

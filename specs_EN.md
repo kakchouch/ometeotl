@@ -110,8 +110,8 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 Here is a first architecture:
 
-```text
-project/
+```
+ometeotl/
 ├── pyproject.toml
 ├── README.md
 ├── src/
