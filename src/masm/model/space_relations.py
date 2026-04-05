@@ -8,7 +8,7 @@ including :
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Iterable, Optional, Set
+from typing import Dict, List, Optional
 
 SpaceId = str
 JsonMap = Dict[str, Any]
@@ -90,7 +90,7 @@ class SpaceRelationGraph:
         
         # Enforce self-reflexivity rules based on the relation definition
         if not relation_def.is_reflexive and normalized_relation.source_space_id == normalized_relation.target_space_id:
-            raise ValueError(f"Relations of type '{normalized_relation.relation_type}' is not reflexive" and f"cannot link a space to itself : {normalized_relation.source_space_id}.")
+            raise ValueError(f"Relations of type '{normalized_relation.relation_type}' is not reflexive. Self-relations are not allowed.")
 
         # 
         if relation_def.is_antisymmetric :
@@ -116,12 +116,20 @@ class SpaceRelationGraph:
 
     def remove_relation(self, source_space_id: SpaceId, target_space_id: SpaceId, relation_type: str) -> None:
         """Remove a relation between two spaces."""
-        self.relations = [
-            r for r in self.relations
-            if not (r.source_space_id == source_space_id and
-                    r.target_space_id == target_space_id and
-                    r.relation_type == relation_type)
-        ]
+        normalized_relation = SpaceRelation(source_space_id=source_space_id,
+         target_space_id=target_space_id,
+         relation_type=relation_type
+         ).canonicalize()
+        
+        self.relations = [r for r in self.relations 
+        if not (
+            r.source_space_id == normalized_relation.source_space_id
+         and r.target_space_id == normalized_relation.target_space_id
+         and r.relation_type == normalized_relation.relation_type
+         )        
+         ]
+
+
     def relations_from(self, space_id: SpaceId, relation_type: Optional[str] = None) -> List[SpaceRelation]:
         """Get all relations originating from a given space."""
         return [r for r in self.relations
@@ -136,7 +144,7 @@ class SpaceRelationGraph:
          and (relation_type is None or r.relation_type == relation_type)
          ]
     
-    def children_of(self, space_id: SpaceId) -> List[SpaceRelation]:
+    def children_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the target. 
         Convention : "contains_space" relations indicate that the source space contains the target space,
          i.e. the target space is a child of the source space."""
@@ -145,7 +153,7 @@ class SpaceRelationGraph:
             for relation in self.relations_from(space_id, relation_type="contains_space")
         )
 
-    def parents_of(self, space_id: SpaceId) -> List[SpaceRelation]:
+    def parents_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the source. 
         Convention : "contains_space" relations indicate that the source space contains the target space,
          i.e. the source space is a parent of the target space."""
