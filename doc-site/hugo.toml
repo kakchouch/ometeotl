@@ -1,4 +1,4 @@
-baseURL = 'https://ometeotl.github-pages.com/'
+baseURL = 'https://kakchouch.github.io/ometeotl/'
 languageCode = 'en-us'
 title = 'Ometeotl, an abstract decision meta-model'
 theme = 'risotto'
