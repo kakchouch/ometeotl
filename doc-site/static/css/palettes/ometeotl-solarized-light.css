@@ -1,0 +1,33 @@
+:root {
+  /* =========================================================
+     Palette Base16 personnalisée pour Risotto
+     Base : Solarized Light
+     Objectif :
+     - MODIFICATION : texte global un peu plus sombre
+     - MODIFICATION : fond des blocs de code un peu plus clair
+     ========================================================= */
+
+  /* Fonds clairs */
+  --base00: #fdf6e3; /* fond principal */
+  --base01: #f5efdd; /* fond secondaire très léger */
+  --base02: #f0ead8; /* MODIFICATION : fond de code plus clair et plus lisible */
+
+  /* Tons intermédiaires */
+  --base03: #8f9d9d; /* commentaires / texte discret */
+  --base04: #748689; /* MODIFICATION : texte secondaire un peu plus sombre */
+
+  /* Texte principal */
+  --base05: #556971; /* MODIFICATION : texte principal plus sombre */
+  --base06: #44575e; /* MODIFICATION : texte fort / titres un peu plus denses */
+  --base07: #334349; /* contraste maximum */
+
+  /* Accents Solarized conservés */
+  --base08: #dc322f; /* rouge */
+  --base09: #cb4b16; /* orange */
+  --base0A: #b58900; /* jaune */
+  --base0B: #859900; /* vert */
+  --base0C: #2aa198; /* cyan */
+  --base0D: #268bd2; /* bleu */
+  --base0E: #6c71c4; /* violet */
+  --base0F: #8b5a2b; /* MODIFICATION légère : brun plus naturel */
+}
