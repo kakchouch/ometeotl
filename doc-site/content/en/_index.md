@@ -6,7 +6,7 @@ draft: false
 
 # WORK IN PROGRESS - Under construction
 <p align="center">
-  <img src="logo.png" width="300" height="300"/>
+  <img src="/ometeotl/images/logo.png" width="300" height="300" alt="Ometeotl logo"/>
 </p>
 
 [Github repo](https://github.com/kakchouch/ometeotl#)
