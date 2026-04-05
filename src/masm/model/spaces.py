@@ -1,7 +1,16 @@
+"""
+This module defines the Space class, which represents a container for objects and relations in the model. I
+It is abstract, and may represent physical locations, virtual environments, or any other context in which actors, resources,
+ perceptions, and objectives can exist and interact. 
+Spaces may have an internal hierarchy of subspaces, and can be connected to other spaces through various relations.
+ 
+ The module also defines the SpaceMembership class for explicit relations between objects and spaces,
+  and the SpaceGraph class for managing collections of spaces and their memberships.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Iteratable, Mapping
+from typing import Any, Dict, List, Optional, Iterable, Mapping
 
 from .objects import GenericObject
 
@@ -13,9 +22,10 @@ def _default_schema_version() -> str:
 
 @dataclass
 class Space(GenericObject):
-    """A space is a container for objects and relations. It can represent a physical location, a virtual environment, or any other context in which actors, resources, perceptions, and objectives can exist and interact.
-
-    The Space class extends GenericObject to include specific attributes and relations relevant to spaces. It can be used to model various types of spaces, such as rooms, buildings, outdoor areas, digital platforms, or conceptual spaces.
+    """A space is a container for objects and relations. It can represent a physical location, a virtual environment,
+     or any other context in which actors, resources, perceptions, and objectives can exist and interact.
+    The Space class extends GenericObject to include specific attributes and relations relevant to spaces. 
+    It can be used to model various types of spaces, such as rooms, buildings, outdoor areas, digital platforms, or conceptual spaces.
     """
 
     object_type: str = "space"
@@ -92,11 +102,11 @@ class Space(GenericObject):
 
     def add_member(self, object_id: ObjectId) -> None:
         """Add a member to the space."""
-        self.add_relation("contains", object_id)
+        raise NotImplementedError("Local memberships are disabled.Membership relations should be managed through SpaceGraph and SpaceMembership classes")
 
     def remove_member(self, object_id: ObjectId) -> None:
         """Remove a member from the space."""
-        self.remove_relation("contains", object_id)
+        raise NotImplementedError("Local memberships are disabled.Membership relations should be managed through SpaceGraph and SpaceMembership classes")
 
     def connect_to(self, other_space_id: ObjectId, relation: str = "adjacent_to") -> None:
         """Create a relation from this space to another space."""
@@ -119,8 +129,9 @@ class Space(GenericObject):
             provenance=dict(data.get("provenance", {})),
         )
 
+@dataclass
 class SpaceMembership:
-    """Explicit relation binding an object to a space."""
+    """Explicit canonical relation binding an object to a space."""
 
     object_id: ObjectId
     space_id: ObjectId
@@ -156,12 +167,12 @@ class SpaceGraph:
     """Minimal graph structure to represent spaces and their relations,
      including memberships."""
 
-    spcaces: Dict[ObjectId, Space] = field(default_factory=dict)
+    spaces: Dict[ObjectId, Space] = field(default_factory=dict)
     memberships: List[SpaceMembership] = field(default_factory=list)
 
     def add_space(self, space: Space) -> None:
         """Add a space to the graph, ensuring no duplicate IDs."""
-        if  space.id in self.spcaces:
+        if  space.id in self.spaces:
             raise ValueError(f"Space with id {space.id} already exists in the graph")
         self.spaces[space.id] = space
 
@@ -171,9 +182,11 @@ class SpaceGraph:
 
     def add_membership(self, membership: SpaceMembership) -> None:
         """Add a membership relation and update the corresponding space."""
-    
-        if membership.object_id not in self.spaces:
-            raise ValueError(f"Unknown space id {membership.object_id}")
+   
+        if membership.space_id not in self.spaces:
+            raise ValueError(f"Space with id {membership.space_id} does not exist in the graph")
+        
+
         duplicate = any(
             existing.object_id == membership.object_id 
             and existing.space_id == membership.space_id
@@ -183,7 +196,6 @@ class SpaceGraph:
         if not duplicate:
             self.memberships.append(membership)
             self.memberships.sort(key=lambda item: (item.space_id, item.object_id, item.role))
-            self.spaces[membership.space_id].add_member(membership.object_id)
 
     def remove_membership(self, membership: SpaceMembership) -> None:
         """Remove a membership relation and update the corresponding space."""
@@ -237,7 +249,7 @@ class SpaceGraph:
         return graph
 
 
-def build_space_graph(spaces: Iteratable[Space], memberships: Iteratable[SpaceMembership]) -> SpaceGraph:
+def build_space_graph(spaces: Iterable[Space], memberships: Iterable[SpaceMembership]) -> SpaceGraph:
     """Utility function to build a SpaceGraph in a single operation."""
     graph = SpaceGraph()
     for space in spaces:
