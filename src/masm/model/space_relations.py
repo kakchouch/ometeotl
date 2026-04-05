@@ -1,14 +1,19 @@
-""" This module defines the possible relations between each spaces,
-including :
+"""
+This module defines explicit relations between spaces.
+
+Supported relation families include:
 - adjacency (e.g. "adjacent_to")
-- containment (e.g. "contains")
-- intersection and overlap (e.g. "intersects_with")
-- internal hierarchy (e.g. "part_of")
+- containment / hierarchy (e.g. "contains_space")
+- intersection / overlap (e.g. "intersects_with")
+
+Warning:
+This module manages only space-to-space relations.
+Object-to-space memberships are managed separately in spaces.py.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 SpaceId = str
 JsonMap = Dict[str, Any]
@@ -18,11 +23,11 @@ JsonMap = Dict[str, Any]
 @dataclass(frozen=True)
 class SpaceRelationType:
     """Defines the types of relations that can exist between spaces."""
-    name: str  # e.g. "adjacent_to", "contains", "part_of", "intersects_with", etc.
-    is_symmetric: bool = False  # Whether the relation is symmetric (e.g. "adjacent_to" is symmetric, "contains" is not)
-    is_antisymmetric: bool = False  # Whether the relation is antisymmetric (e.g. "contains" is antisymmetric, "adjacent_to" is not)
-    is_transitive: bool = False  # Whether the relation is transitive (e.g. "part_of" is transitive, "adjacent_to" is not)
-    is_reflexive: bool = False  # Whether the relation is reflexive (e.g. "part_of" is reflexive, "adjacent_to" is not)
+    name: str  # e.g. "adjacent_to", "contains_space", "intersects_with", etc.
+    is_symmetric: bool = False  # Whether the relation is symmetric (e.g. "adjacent_to" is symmetric, "contains_space" is not)
+    is_antisymmetric: bool = False  # Whether the relation is antisymmetric (e.g. "contains_space" is antisymmetric, "adjacent_to" is not)
+    is_transitive: bool = False  # Whether the relation is transitive (e.g. "contains_space" is transitive, "adjacent_to" is not)
+    is_reflexive: bool = False  # Whether the relation is reflexive (e.g. "contains_space" is reflexive, "adjacent_to" is not)
 
 SPACE_RELATION_TYPES: Dict[str, SpaceRelationType] = {
     "adjacent_to": SpaceRelationType(name="adjacent_to", is_symmetric=True, is_antisymmetric=False, is_transitive=False, is_reflexive=False),
@@ -32,13 +37,17 @@ SPACE_RELATION_TYPES: Dict[str, SpaceRelationType] = {
 
 @dataclass(frozen=True)
 class SpaceRelation:
-    """Represents a relation between two spaces :
-    - adjacency (e.g. "adjacent_to")
-    - containment (e.g. "contains")
-    - internal hierarchy (e.g. "part_of")
-    Warning : this class only manages space to space relations.
-    This class does not manage memberships between spaces and objects,
-    which should be handled through the SpaceObjectMembership class and the SpaceGraph's memberships attribute.
+    """Represents a relation between two spaces.
+
+    Examples:
+    - adjacency ("adjacent_to")
+    - containment / hierarchy ("contains_space")
+    - intersection ("intersects_with")
+
+    Warning:
+    This class manages only space-to-space relations.
+    Object-to-space memberships are handled through SpaceObjectMembership
+    and SpaceObjectGraph in spaces.py.
     """
     source_space_id: SpaceId
     target_space_id: SpaceId
@@ -66,21 +75,27 @@ class SpaceRelation:
 
 @dataclass
 class SpaceRelationGraph:
-    """Represents a graph of spaces and their relations.
-    Warning : this class does not manage memberships between spaces and objects,
-    which should be handled through the SpaceGraph's memberships attribute.
-    This class only manages relations between spaces themselves.
-    This separations allows for more clarity and lighter code modules, as well as more flexibility in the types of relations
-    that can be defined between spaces."""
+    """Represents a graph of space-to-space relations.
+
+    Warning:
+    This class manages only relations between spaces.
+    Object-to-space memberships are handled separately through
+    SpaceObjectMembership and SpaceObjectGraph in spaces.py.
+
+    This separation keeps the model clearer and allows flexible
+    extension of relation types between spaces.
+    """
 
     relations: List[SpaceRelation] = field(default_factory=list)
 
     def add_relation(self, relation: SpaceRelation) -> None:
-        """Add a relation between two spaces.
-        No duplicate relations are allowed (same source, target, and relation type).
-        Symetric relations are automatically canonicalized to ensure a consistent representation.
-        Antisymetric relations are not automatically canonicalized, as the direction matters.
-        Self-reflexives relations are not allowed for non-reflexive relation types to avoid paradoxes and maintain a clear hierarchy of spaces."""
+    """Add a relation between two spaces.
+
+    No duplicate relations are allowed (same source, target, and relation type).
+    Symmetric relations are automatically canonicalized to ensure a consistent representation.
+    Antisymmetric relations are not automatically canonicalized, as direction matters.
+    Self-relations are not allowed for non-reflexive relation types.
+    """
 
         normalized_relation = relation.canonicalize()
         relation_def = SPACE_RELATION_TYPES.get(normalized_relation.relation_type)
@@ -90,7 +105,7 @@ class SpaceRelationGraph:
         
         # Enforce self-reflexivity rules based on the relation definition
         if not relation_def.is_reflexive and normalized_relation.source_space_id == normalized_relation.target_space_id:
-            raise ValueError(f"Relations of type '{normalized_relation.relation_type}' is not reflexive. Self-relations are not allowed.")
+            raise ValueError(f"Relation of type '{normalized_relation.relation_type}' is not reflexive. Self-relations are not allowed for this relation type.")
 
         # 
         if relation_def.is_antisymmetric :
@@ -146,8 +161,10 @@ class SpaceRelationGraph:
     
     def children_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the target. 
-        Convention : "contains_space" relations indicate that the source space contains the target space,
-         i.e. the target space is a child of the source space."""
+        Convention : "contains_space" relations indicate that the source space contains the target space.
+        If SRC contains TGT :
+         then SRC is the parent 
+         and TGT is the child."""
         return sorted(
             relation.target_space_id
             for relation in self.relations_from(space_id, relation_type="contains_space")
@@ -155,8 +172,10 @@ class SpaceRelationGraph:
 
     def parents_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the source. 
-        Convention : "contains_space" relations indicate that the source space contains the target space,
-         i.e. the source space is a parent of the target space."""
+        Convention : "contains_space" relations indicate that the source space contains the target space.
+        If SRC contains TGT :
+         then SRC is the parent 
+         and TGT is the child."""
         return sorted(
             relation.source_space_id
             for relation in self.relations_to(space_id, relation_type="contains_space")
