@@ -26,3 +26,13 @@ This project is **actively under development**—a true work-in-progress. Curren
 ## Join the Journey
 
 **All contributions are welcome!** Whether it's code refinements, axiom suggestions, documentation, testing, or cultural insights into the name's resonance, your input will shape Ometeotl. Check the [specs](goals_and_specs/_index.md), [README](https://github.com/kakchouch/ometeotl), or [CONTRIBUTING.md](https://github.com/kakchouch/ometeotl?tab=contributing-ov-file) to get started. Fork, PR, or open an issue—let's build this together.
+
+## Developer Ranks - The Path of the Serpent
+
+| Badge | Rank | Requirement | Cultural lore |
+|---|---|---:|---|
+| <img src="/ometeotl/images/badges/1.eagle_warrior.png" alt="Eagle Warrior badge" width="110"> | **Eagle Warrior** | First merged PR | In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor of proving oneself in action. |
+| <img src="/ometeotl/images/badges/2.achcauhtli.png" alt="Achcauhtli badge" width="110"> | **Achcauhtli** | 2–4 merged PRs | *Achcauhtli* evokes a proven war leader, a contributor who has moved beyond initiation and begun to earn standing through repeated service. |
+| <img src="/ometeotl/images/badges/3.otomi.png" alt="Otomi badge" width="110"> | **Otomi** | 5–19 merged PRs | The Otomi warrior figure represents resilience and battlefield reputation, honoring contributors who have become dependable forces within the project. |
+| <img src="/ometeotl/images/badges/4.shorn_one.png" alt="Shorn One badge" width="110"> | **Shorn One** | 20+ merged PRs | The Shorn Ones were elite warriors sworn not to retreat, making this rank a symbol of exceptional discipline, loyalty, and sustained achievement. |
+| <img src="/ometeotl/images/badges/5.emperor.png" alt="Emperor badge" width="110"> | **Emperor** | Founder and principal maintainer | The Emperor stands as the sovereign guardian of the Order, embodying stewardship, vision, and the sacred balance at the heart of Ometeotl. |
