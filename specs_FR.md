@@ -36,8 +36,9 @@
 **A-19. Multiplicité des espaces** : les espaces d’existence peuvent être physiques, informationnels, symboliques, sociaux, cognitifs, juridiques, numériques ou conceptuels, et de nouveaux espaces peuvent émerger.
 **A-20. Isomorphisme structurel** : des actions de nature radicalement différente peuvent être considérées comme équivalentes si elles produisent des effets structurellement analogues sur les métriques pertinentes.
 **A-21. Métriques hétérogènes** : les effets sont décrits par des vecteurs de métriques quantitatives, qualitatives, subjectives, symboliques ou physiques, sans unité commune imposée.
-**A-22. Grille de lecture** : tout optimum global n’existe qu’au regard d’une grille de lecture explicite définissant objectifs, pondérations, valeurs et contraintes.
+**A-22. Grille de lecture** : tout optimum global d'utilité d'un acteur n’existe qu’au regard d’une grille de lecture explicite définissant objectifs, pondérations, valeurs et contraintes.
 **A-23. Neutralité téléologique** : le modèle ne présuppose aucun but concret ; il fournit une structure de représentation, de comparaison et d’évaluation.
+**A-24. Irrationalité émergente** : des objectifs et stratégies sont admissibles pour un acteur dès lors qu'elle est valide au regard de ses perceptions, croyances, et projections propres, indépendamment de la réalité ontologique du monde.
 
 ## G — Théorie des jeux
 
@@ -68,7 +69,7 @@
 **F-10. Validation structurelle** : la bibliothèque doit valider les types, champs, relations et hiérarchies.
 **F-11. Validation temporelle** : la bibliothèque doit empêcher toute interaction hors coexistence temporelle.
 **F-12. Validation spatiale/contextuelle** : la bibliothèque doit empêcher toute interaction sans espace partagé pertinent.
-**F-13. Validation d’admissibilité** : la bibliothèque doit empêcher la génération d’objectifs intermédiaires ou de stratégies hors capacités.
+**F-13. Validation d’admissibilité** : la bibliothèque doit empêcher la génération d’objectifs intermédiaires ou de stratégies hors capacités perçues par l'acteur.
 **F-14. Validation épistémique** : la bibliothèque doit expliciter le statut des perceptions et permettre la coexistence d’erreurs, d’hypothèses et de certitudes.
 **F-15. Complétude minimale** : la bibliothèque doit refuser ou signaler tout objet instanciable incomplet au-delà d’un seuil défini.
 **F-16. Construction contextuelle** : la bibliothèque doit permettre de construire des mondes, acteurs, perceptions, ressources ou stratégies à partir d’un contexte.

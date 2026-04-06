@@ -38,6 +38,7 @@
 **A-21. Heterogeneous metrics**: effects are described by vectors of quantitative, qualitative, subjective, symbolic, or physical metrics, with no imposed common unit.
 **A-22. Interpretive framework**: any global optimum exists only relative to an explicit interpretive framework defining objectives, weights, values, and constraints.
 **A-23. Teleological neutrality**: the model presupposes no concrete goal; it provides a structure for representation, comparison, and evaluation.
+**A-24. Emerging irrationality** : goals and strategies are valid for an actor only according to their perceptions, projections and belief, independently of the world ontological reality.
 
 ## G — Game Theory
 
@@ -68,7 +69,7 @@
 **F-10. Structural validation**: the library must validate types, fields, relations, and hierarchies.
 **F-11. Temporal validation**: the library must prevent any interaction outside temporal coexistence.
 **F-12. Spatial/contextual validation**: the library must prevent any interaction without a relevant shared space.
-**F-13. Admissibility validation**: the library must prevent the generation of intermediate objectives or strategies outside capabilities.
+**F-13. Admissibility validation**: the library must prevent the generation of intermediate objectives or strategies outside of the actors own perceived capabilities.
 **F-14. Epistemic validation**: the library must make the status of perceptions explicit and allow the coexistence of errors, hypotheses, and certainties.
 **F-15. Minimum completeness**: the library must reject or flag any instantiable object that is incomplete beyond a defined threshold.
 **F-16. Contextual construction**: the library must allow the construction of worlds, actors, perceptions, resources, or strategies from a context.
