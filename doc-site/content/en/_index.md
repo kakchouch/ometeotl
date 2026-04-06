@@ -27,7 +27,7 @@ This project is **actively under development**—a true work-in-progress. Curren
 
 **All contributions are welcome!** Whether it's code refinements, axiom suggestions, documentation, testing, or cultural insights into the name's resonance, your input will shape Ometeotl. Check the [specs](goals_and_specs/_index.md), [README](https://github.com/kakchouch/ometeotl), or [CONTRIBUTING.md](https://github.com/kakchouch/ometeotl?tab=contributing-ov-file) to get started. Fork, PR, or open an issue—let's build this together.
 
-## Developer Ranks - The Path of the Serpent
+### Developer Ranks - The Path of the Serpent
 
 | Badge | Rank | Requirement | Cultural lore |
 |---|---|---:|---|
