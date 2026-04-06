@@ -1,14 +1,9 @@
+'''
 # tools/run_pytest.py
 # ============================================================
-# Lance pytest et enregistre automatiquement un log horodaté.
-#
-# MODIFICATION EXPLICITE :
-# - création automatique du dossier logs/pytest
-# - nom de fichier explicite avec date et heure
-# - enregistrement de toute la sortie pytest
-# - affichage du chemin du log à la fin
+# Launches pytest and creates a timestamped log in a dedicated folder.
 # ============================================================
-
+'''
 from __future__ import annotations
 
 import subprocess
@@ -19,46 +14,47 @@ from pathlib import Path
 
 def main() -> int:
     """
-    Lance pytest avec les arguments éventuellement passés en ligne
-    de commande, et journalise la sortie dans un fichier horodaté.
+    Run pytest with any command-line arguments passed, and log the
+    output to a timestamped file.
     """
 
-    # MODIFICATION EXPLICITE :
-    # on crée un dossier dédié aux logs pytest
+    # EXPLICIT MODIFICATION:
+    # Create a dedicated folder for pytest logs
     log_dir = Path("logs/pytest")
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # MODIFICATION EXPLICITE :
-    # nom explicite, horodaté, lisible et triable
+    # EXPLICIT MODIFICATION:
+    # Explicit, timestamped, readable and sortable name
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_file = log_dir / f"pytest_run_{timestamp}.log"
 
-    # Si l'utilisateur passe des arguments, on les propage à pytest.
-    # Exemple :
+    # If the user passes arguments, pass them to pytest.
+    # Example:
     # python tools/run_pytest.py -x -v
     pytest_args = sys.argv[1:]
 
-    # MODIFICATION EXPLICITE :
-    # on force l'appel via le même interpréteur Python
-    command = [sys.executable, "-m", "pytest", *pytest_args]
+    # EXPLICIT MODIFICATION:
+    # Force the call via the same Python interpreter
+    command = [sys.executable, "-m", "pytest", "-v", *pytest_args]
 
     with log_file.open("w", encoding="utf-8") as f:
-        # En-tête utile pour relire le log plus tard
+        # Useful header for reviewing the log later
         f.write("=== PYTEST RUN LOG ===\n")
         f.write(f"Timestamp : {timestamp}\n")
         f.write(f"Command   : {' '.join(command)}\n")
         f.write("=" * 60 + "\n\n")
 
-        # Lancement de pytest
+        # Launching pytest
         process = subprocess.run(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
+            check=False,
         )
 
-        # Écriture du log complet
+        # Write complete log
         f.write(process.stdout)
         f.write("\n")
         f.write("=" * 60 + "\n")

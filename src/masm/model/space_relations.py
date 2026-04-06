@@ -60,17 +60,13 @@ class SpaceRelation:
         if relation_def is None:
             return self  # If the relation type is unknown, return as is without canonicalization
         if relation_def.is_symmetric and self.source_space_id > self.target_space_id:
-            # For symmetric relations, order the space IDs to ensure a canonical form
             return SpaceRelation(
                 source_space_id=self.target_space_id,
                 target_space_id=self.source_space_id,
                 relation_type=self.relation_type,
                 metadata=dict(self.metadata)
             )
-
-        else:
-            # For non-symmetric relations, return as is
-            return self
+        return self
 
 
 @dataclass
@@ -210,3 +206,4 @@ class SpaceRelationGraph:
             for relation in self.relations_to(space_id, relation_type="intersects_with")
         }
         return sorted(outgoing_intersections.union(incoming_intersections))
+
