@@ -1,11 +1,11 @@
 # test/test_model.py
 # ============================================================
-# Tests de base du noyau modèle Ometeotl / MASM
+# Basic tests for Ometeotl / MASM core model
 #
-# Objectif :
-# - vérifier que les imports du package fonctionnent ;
-# - vérifier que les objets de base s'instancient correctement ;
-# - vérifier quelques comportements minimaux cohérents avec la V1.
+# Objectives:
+# - Verify that package imports work correctly;
+# - Verify that base objects instantiate properly;
+# - Verify basic behaviors consistent with V1.
 # ============================================================
 """
 Basic tests for ometeotl/MASM/model.
@@ -16,8 +16,8 @@ Objectives:
 """
 import pytest
 
-# Import des classes depuis la nouvelle architecture packagée.
-# MODIFICATION : on importe maintenant depuis "masm.model..."
+# Import classes from the new packaged architecture.
+# MODIFICATION: We now import from "masm.model..."
 from masm.model.base import ModelObject
 from masm.model.objects import GenericObject
 from masm.model.actors import Actor
@@ -28,7 +28,7 @@ from masm.model.space_relations import SpaceRelation, SpaceRelationGraph
 
 def test_model_object_instantiation():
     """
-    Vérifie que l'objet de base du modèle s'instancie correctement.
+    Verify that the base model object instantiates correctly.
     """
     obj = ModelObject(id="obj-1", object_type="generic")
 
@@ -43,12 +43,12 @@ def test_model_object_instantiation():
 
 def test_model_object_add_relation():
     """
-    Vérifie qu'une relation simple peut être ajoutée sans doublon.
+    Verify that a simple relation can be added without duplicates.
     """
     obj = ModelObject(id="obj-1", object_type="generic")
 
     obj.add_relation("linkedto", "obj-2")
-    obj.add_relation("linkedto", "obj-2")  # doublon volontaire
+    obj.add_relation("linkedto", "obj-2")  # Intentional duplicate
 
     assert "linkedto" in obj.relations
     assert obj.relations["linkedto"] == ["obj-2"]
@@ -56,7 +56,7 @@ def test_model_object_add_relation():
 
 def test_generic_object_label_and_description():
     """
-    Vérifie le comportement minimal de GenericObject.
+    Verify the minimal behavior of GenericObject.
     """
     obj = GenericObject(id="g-1", object_type="generic")
 
@@ -69,7 +69,7 @@ def test_generic_object_label_and_description():
 
 def test_actor_instantiation():
     """
-    Vérifie qu'un acteur s'instancie et reçoit ses attributs par défaut.
+    Verify that an actor instantiates and receives default attributes.
     """
     actor = Actor(id="actor-1")
 
@@ -80,7 +80,7 @@ def test_actor_instantiation():
 
 def test_actor_add_role_and_tag():
     """
-    Vérifie qu'on peut enrichir un acteur avec un rôle et un tag.
+    Verify that we can enrich an actor with a role and a tag.
     """
     actor = Actor(id="actor-1")
 
@@ -93,7 +93,7 @@ def test_actor_add_role_and_tag():
 
 def test_resource_instantiation():
     """
-    Vérifie qu'une ressource s'instancie avec ses attributs par défaut.
+    Verify that a resource instantiates with default attributes.
     """
     resource = Resource(id="res-1")
 
@@ -104,7 +104,7 @@ def test_resource_instantiation():
 
 def test_space_instantiation():
     """
-    Vérifie qu'un espace s'instancie correctement.
+    Verify that a space instantiates correctly.
     """
     space = Space(id="space-1")
 
@@ -117,8 +117,8 @@ def test_space_instantiation():
 
 def test_space_object_graph_membership():
     """
-    Vérifie qu'on peut ajouter un espace à un graphe
-    puis y déclarer une appartenance d'objet.
+    Verify that we can add a space to a graph
+    then declare an object membership in it.
     """
     graph = SpaceObjectGraph()
     space = Space(id="space-1")
@@ -140,8 +140,8 @@ def test_space_object_graph_membership():
 
 def test_space_relation_graph_adjacency():
     """
-    Vérifie qu'une relation spatiale symétrique de type adjacentto
-    peut être enregistrée proprement.
+    Verify that a symmetric space relation of type adjacent_to
+    can be properly recorded.
     """
     graph = SpaceRelationGraph()
 
@@ -162,7 +162,7 @@ def test_space_relation_graph_adjacency():
 
 def test_empty_relation_name_raises():
     """
-    Vérifie qu'une relation sans nom est refusée.
+    Verify that a relation without a name is rejected.
     """
     obj = ModelObject(id="obj-1", object_type="generic")
 
@@ -172,7 +172,7 @@ def test_empty_relation_name_raises():
 
 def test_empty_target_id_raises():
     """
-    Vérifie qu'une relation sans cible est refusée.
+    Verify that a relation without a target is rejected.
     """
     obj = ModelObject(id="obj-1", object_type="generic")
 
