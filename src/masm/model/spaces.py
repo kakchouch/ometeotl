@@ -1,8 +1,10 @@
 """
-This module defines the Space class, which represents a container-like context of existence in the model.
+This module defines the Space class, which represents a container-like context
+of existence in the model.
 
-A Space may represent a physical location, a virtual environment, or any other contextual domain
-in which actors, resources, perceptions, and objectives can exist and interact.
+A Space may represent a physical location, a virtual environment, or any other
+contextual domain in which actors, resources, perceptions, and objectives can
+exist and interact.
 
 This module also defines:
 - SpaceObjectMembership, for explicit object-to-space membership relations
@@ -29,10 +31,13 @@ def _default_schema_version() -> str:
 
 @dataclass
 class Space(GenericObject):
-    """A space is a container for objects and relations. It can represent a physical location, a virtual environment,
-     or any other context in which actors, resources, perceptions, and objectives can exist and interact.
-    The Space class extends GenericObject to include specific attributes and relations relevant to spaces.
-    It can be used to model various types of spaces, such as rooms, buildings, outdoor areas, digital platforms, or conceptual spaces.
+    """A space is a container for objects and relations. It can represent a
+    physical location, a virtual environment, or any other context in which
+    actors, resources, perceptions, and objectives can exist and interact.
+    The Space class extends GenericObject to include specific attributes and
+    relations relevant to spaces.
+    It can be used to model various types of spaces, such as rooms, buildings,
+    outdoor areas, digital platforms, or conceptual spaces.
     """
 
     object_type: str = "space"
@@ -47,7 +52,9 @@ class Space(GenericObject):
 
     @property
     def kind(self) -> str:
-        """Get the kind of the space. The kind can be used to specify the nature or category of the space, such as 'physical', 'virtual', 'conceptual', etc."""
+        """Get the kind of the space. The kind can be used to specify the nature
+        or category of the space, such as 'physical', 'virtual', 'conceptual',
+        etc."""
         value = self.attributes.get("kind", "abstract")
         return value
 
@@ -63,7 +70,8 @@ class Space(GenericObject):
     @property
     def tags(self) -> List[str]:
         """Get the list of tags associated with the space.
-        Tags are simple labels that can be used to categorize or describe the space in a flexible way.
+        Tags are simple labels that can be used to categorize or describe the
+        space in a flexible way.
         """
         value = self.attributes.get("tags", [])
         return sorted(list(value)) if value is not None else []
@@ -81,7 +89,8 @@ class Space(GenericObject):
     def dimensions(self) -> JsonMap:
         """Get the dimensions of the space. Dimensions can represent
         various measurable aspects of the space,
-        such as coordinates, symbolic axes, categories or other relevant structures describing the space.
+        such as coordinates, symbolic axes, categories or other relevant
+        structures describing the space.
         """
         value = self.attributes.get("dimensions", {})
         return dict(value) if isinstance(value, Mapping) else {}
@@ -114,13 +123,17 @@ class Space(GenericObject):
     def add_member(self, object_id: ObjectId) -> None:
         """DEPRECATED: Add a member to the space."""
         raise NotImplementedError(
-            "Local memberships are disabled. Membership relations should be managed through SpaceObjectGraph and SpaceObjectMembership classes"
+            "Local memberships are disabled. Membership relations should be"
+            " managed through SpaceObjectGraph and SpaceObjectMembership"
+            " classes"
         )
 
     def remove_member(self, object_id: ObjectId) -> None:
         """DEPRECATED: Remove a member from the space."""
         raise NotImplementedError(
-            "Local memberships are disabled. Membership relations should be managed through SpaceObjectGraph and SpaceObjectMembership classes"
+            "Local memberships are disabled. Membership relations should be"
+            " managed through SpaceObjectGraph and SpaceObjectMembership"
+            " classes"
         )
 
     def connect_to(
@@ -128,7 +141,8 @@ class Space(GenericObject):
     ) -> None:
         """DEPRECATED: Create a relation from this space to another space."""
         raise NotImplementedError(
-            "Local space relations are disabled. Space relations should be managed through the space_relations module"
+            "Local space relations are disabled. Space relations should be"
+            " managed through the space_relations module"
         )
 
     @classmethod

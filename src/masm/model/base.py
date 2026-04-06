@@ -18,10 +18,13 @@ def _default_schema_version() -> str:
 @dataclass
 class ModelObject:
     """A base class for all objects in the model.
+
     It contains the common fields and methods that all objects share.
-    It is volonteerily designed to be as simple as possible, and to be easily extendable by subclasses.
-    It should not contain any logic that is specific to a particular object_type of object, but rather should be a generic container for data that can be used by subclasses.
-    No specific hypothesis about the actors, resources, perceptions, objectifs should be included
+    It is voluntarily designed to be as simple as possible, and to be easily
+    extendable by subclasses. It should not contain any logic that is specific
+    to a particular object_type of object, but rather should be a generic
+    container for data that can be used by subclasses. No specific hypothesis
+    about the actors, resources, perceptions, objectifs should be included.
     """
 
     id: ObjectId
@@ -62,16 +65,19 @@ class ModelObject:
         self.attributes[key] = value
 
     def set_state(self, key: str, value: Any) -> None:
+        """Set a state value on the object."""
         if not key:
             raise ValueError("State key cannot be empty")
         self.state[key] = value
 
     def set_provenance(self, key: str, value: Any) -> None:
+        """Set a provenance value on the object."""
         if not key:
             raise ValueError("Provenance key cannot be empty")
         self.provenance[key] = value
 
     def to_dict(self) -> JsonMap:
+        """Convert the object to a dictionary representation."""
         return {
             "id": self.id,
             "object_type": self.object_type,

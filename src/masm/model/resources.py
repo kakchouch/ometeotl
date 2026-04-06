@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Any, List, Dict, Mapping
 
 from .objects import GenericObject
-from .spaces import SpaceObjectGraph
+from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
 # local aliases
 JsonMap = Dict[str, Any]
@@ -55,21 +55,38 @@ class Resource(GenericObject):
             self.object_type = "resource"
 
         self.attributes.setdefault("kind", "generic")
-        # generic attributes inherited from the Resource class, which can be used to classify resources into different types or categories (e.g., "material", "energy", "human", "symbolic", etc.)
+        # generic attributes inherited from the Resource class, which can be
+        # used to classify resources into different types or categories
+        # (e.g., "material", "energy", "human", "symbolic", etc.)
         self.attributes.setdefault("tags", [])
-        # a list of tags that can be used to label and categorize the resource for easier searching and filtering (e.g., "renewable", "non-renewable", "scarce", "abundant", etc.)
+        # a list of tags that can be used to label and categorize the resource
+        # for easier searching and filtering (e.g., "renewable", "non-renewable",
+        # "scarce", "abundant", etc.)
         self.attributes.setdefault("resource_mode", "stock")
-        # is the resource a stock (accumulates over time) or a flow (instantaneous), a capacity, an access point, etc.?
+        # is the resource a stock (accumulates over time) or a flow
+        # (instantaneous), a capacity, an access point, etc.?
         self.attributes.setdefault("rivalry", "mixed")
-        # is the resource rivalrous (consumption by one actor reduces availability for others), non-rivalrous (consumption by one actor does not affect availability for others), or mixed (some aspects are rivalrous and others are non-rivalrous)?
+        # is the resource rivalrous (consumption by one actor reduces
+        # availability for others), non-rivalrous (consumption by one actor
+        # does not affect availability for others), or mixed (some aspects are
+        # rivalrous and others are non-rivalrous)?
         self.attributes.setdefault("transferability", "mixed")
-        # is the resource transferable (can be transferred between actors), non-transferable (cannot be transferred between actors), or mixed (some aspects are transferable and others are non-transferable)?
+        # is the resource transferable (can be transferred between actors),
+        # non-transferable (cannot be transferred between actors), or mixed
+        # (some aspects are transferable and others are non-transferable)?
         self.attributes.setdefault("divisibility", "mixed")
-        # is the resource divisible (can be divided into smaller units), indivisible (cannot be divided into smaller units), or mixed (some aspects are divisible and others are indivisible)?
+        # is the resource divisible (can be divided into smaller units),
+        # indivisible (cannot be divided into smaller units), or mixed (some
+        # aspects are divisible and others are indivisible)?
         self.attributes.setdefault("composite", False)
-        # is the resource composite (made up of multiple components or sub-resources) or simple (not made up of multiple components or sub-resources)?
+        # is the resource composite (made up of multiple components or
+        # sub-resources) or simple (not made up of multiple components or
+        # sub-resources)?
         self.attributes.setdefault("profile", {})
-        # a dictionary that can be used to store additional information about the resource, such as its properties, characteristics, or specifications (e.g., for a material resource, this could include its density, melting point, etc.)
+        # a dictionary that can be used to store additional information about
+        # the resource, such as its properties, characteristics, or
+        # specifications (e.g., for a material resource, this could include
+        # its density, melting point, etc.)
 
     @property
     def kind(self) -> str:
@@ -163,7 +180,8 @@ class Resource(GenericObject):
 
     @property
     def profile(self) -> JsonMap:
-        """Returns the free-form profile of the resource, which are structured data that can be used to capture specific characteristics, preferences,
+        """Returns the free-form profile of the resource, which are structured
+        data that can be used to capture specific characteristics, preferences,
         or attributes of the resource in a more detailed and organized way.
         This dictionnary is intentionally open-ended and can contain
         modeling details such as category-specific metadata,
@@ -183,10 +201,13 @@ class Resource(GenericObject):
     # Domain relations
     # ------------------------------------------------------------------
     # Important idea :
-    # In this architecture, ownership, usage, dependency and other relationships are not stored as
-    # complex objects directly in the resource, but rather as relations to other model objects.
-    # This allows for greater flexibility and extensibility, as well as a clearer separation of concerns.
-    # It ensures fidelity with  ModelObject.relations, which is the canonical place for storing links between model objects.
+    # In this architecture, ownership, usage, dependency and other
+    # relationships are not stored as complex objects directly in the
+    # resource, but rather as relations to other model objects.
+    # This allows for greater flexibility and extensibility, as well as a
+    # clearer separation of concerns.
+    # It ensures fidelity with  ModelObject.relations, which is the
+    # canonical place for storing links between model objects.
 
     def add_user(self, actor_id: ObjectId) -> None:
         """Adds an actor as a user of the resource."""
@@ -253,6 +274,7 @@ class Resource(GenericObject):
         graph: "SpaceObjectGraph",
         space_id: ObjectId,
         role: str = "occupies",
+        *,
         validity: Mapping[str, Any] | None = None,
         metadata: Mapping[str, Any] | None = None,
     ) -> None:
@@ -262,7 +284,6 @@ class Resource(GenericObject):
         This method is only a convenience wrapper around SpaceObjectMembership
         and SpaceObjectGraph. The canonical membership data is stored in the graph.
         """
-        from .spaces import SpaceObjectMembership
 
         graph.add_object_membership(
             SpaceObjectMembership(
@@ -283,8 +304,6 @@ class Resource(GenericObject):
         This method is only a convenience wrapper around SpaceObjectMembership
         and SpaceObjectGraph. The canonical membership data is stored in the graph.
         """
-        from .spaces import SpaceObjectMembership
-
         graph.remove_object_membership(
             SpaceObjectMembership(
                 object_id=self.id,

@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping
 
 from .objects import GenericObject
-from .spaces import SpaceObjectGraph
+from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
 # local aliases
 JsonMap = Dict[str, Any]
@@ -91,7 +91,11 @@ class Actor(GenericObject):
 
     @property
     def tags(self) -> List[str]:
-        """Returns the actor's tags, which are simple labels that can be used for categorization, filtering, or search."""
+        """Return the actor's tags.
+
+        Tags are simple labels that can be used for categorization,
+        filtering, or search.
+        """
         value = self.attributes.get("tags", [])
         return sorted(list(value)) if value is not None else []
 
@@ -105,7 +109,11 @@ class Actor(GenericObject):
 
     @property
     def roles(self) -> List[str]:
-        """Returns the actor's roles, which are specific functions or positions that the actor can assume within a particular context or interaction."""
+        """Return the actor's roles.
+
+        Roles are specific functions or positions that the actor can assume
+        within a particular context or interaction.
+        """
         roles = self.attributes.get("roles", [])
         return sorted(list(roles)) if roles is not None else []
 
@@ -120,10 +128,14 @@ class Actor(GenericObject):
 
     @property
     def profile(self) -> JsonMap:
-        """Returns the free-form profile of the actor, which are structured data that can be used to capture specific characteristics, preferences, or attributes of the actor in a more detailed and organized way.
-        This dictionnary is intentionally open-ended and can contain
-        modeling details such as category-specific metadata,
-        identifiers, demographic information etc."""
+        """Return the actor's free-form profile.
+
+        Structured data that can be used to capture specific characteristics,
+        preferences, or attributes of the actor in a more detailed and
+        organized way. This dictionary is intentionally open-ended and can
+        contain modeling details such as category-specific metadata,
+        identifiers, demographic information etc.
+        """
         value = self.attributes.get("profile", {})
         return dict(value) if isinstance(value, Mapping) else {}
 
@@ -137,7 +149,8 @@ class Actor(GenericObject):
 
     @property
     def emergent(self) -> bool:
-        """Returns whether the actor is emergent, meaning it is a loosely defined entity emerging from the perceptions of other actors."""
+        """Returns whether the actor is emergent, meaning it is a loosely
+        defined entity emerging from the perceptions of other actors."""
         value = self.attributes.get("emergent", False)
         return bool(value)
 
@@ -148,13 +161,21 @@ class Actor(GenericObject):
 
     @property
     def composition_mode(self) -> str:
-        """Returns the actor's composition mode, which indicates how the actor is composed of other actors if it is a composite entity.
+        """Returns the actor's composition mode, which indicates how the actor
+        is composed of other actors if it is a composite entity.
         Typical values include:
         - "standalone": the actor is not composed of other actors;
-        - "composite": the actor is composed of other actors, which are explicitly linked to it through relations;
-        - "collective": the actor is a loosely defined collection of other actors, which are not explicitly linked to it but are perceived as a coherent whole.
-        - "perceived": the actor is an emergent entity perceived by other actors as a coherent whole, without a clear internal structure or composition.
-        - "projected": the actor is a projected entity that may not have a clear existence but is treated as an actor for modeling purposes or through other actors interactions.
+        - "composite": the actor is composed of other actors, which are
+          explicitly linked to it through relations;
+        - "collective": the actor is a loosely defined collection of other
+          actors, which are not explicitly linked to it but are perceived as
+          a coherent whole.
+        - "perceived": the actor is an emergent entity perceived by other
+          actors as a coherent whole, without a clear internal structure or
+          composition.
+        - "projected": the actor is a projected entity that may not have a
+          clear existence but is treated as an actor for modeling purposes or
+          through other actors interactions.
         """
         value = self.attributes.get("composition_mode", "standalone")
         return str(value) if value is not None else "standalone"
@@ -169,11 +190,13 @@ class Actor(GenericObject):
     # ------------------------------------------------------------------
     # Domain relations
     # ------------------------------------------------------------------
-    # Important idea :
+    # Important idea:
     # In this architecture, actions, resources, goals etc. are not stored as
-    # complex objects directly in the actor, but rather as relations to other model objects.
-    # This allows for greater flexibility and extensibility, as well as a clearer separation of concerns.
-    # It ensures fidelity with  ModelObject.relations, which is the canonical place for storing links between model objects.
+    # complex objects directly in the actor, but rather as relations to other
+    # model objects. This allows for greater flexibility and extensibility,
+    # as well as a clearer separation of concerns. It ensures fidelity with
+    # ModelObject.relations, which is the canonical place for storing links
+    # between model objects.
 
     def add_action(self, action_id: ObjectId) -> None:
         """Adds an action to the actor by creating a relation to the action object."""
@@ -252,7 +275,8 @@ class Actor(GenericObject):
         self.relations["subject_to"] = sorted(list(constraints))
 
     def remove_constraint(self, constraint_id: ObjectId) -> None:
-        """Removes a constraint from the actor by removing the relation to the constraint object."""
+        """Removes a constraint from the actor by removing the relation to the
+        constraint object."""
         if not constraint_id:
             raise ValueError("Constraint ID cannot be empty")
         constraints = set(self.relations.get("subject_to", []))
@@ -261,7 +285,8 @@ class Actor(GenericObject):
             self.relations["subject_to"] = sorted(list(constraints))
 
     def add_component(self, actor_id: ObjectId) -> None:
-        """Adds a component actor to the actor by creating a relation to the component actor object."""
+        """Adds a component actor to the actor by creating a relation to the
+        component actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         components = set(self.relations.get("composed_of", []))
@@ -269,7 +294,8 @@ class Actor(GenericObject):
         self.relations["composed_of"] = sorted(list(components))
 
     def remove_component(self, actor_id: ObjectId) -> None:
-        """Removes a component actor from the actor by removing the relation to the component actor object."""
+        """Removes a component actor from the actor by removing the relation to
+        the component actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         components = set(self.relations.get("composed_of", []))
@@ -278,7 +304,8 @@ class Actor(GenericObject):
             self.relations["composed_of"] = sorted(list(components))
 
     def add_membership(self, actor_id: ObjectId) -> None:
-        """Adds a membership relation to another actor by creating a relation to the other actor object."""
+        """Adds a membership relation to another actor by creating a relation to
+        the other actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         memberships = set(self.relations.get("member_of", []))
@@ -286,7 +313,8 @@ class Actor(GenericObject):
         self.relations["member_of"] = sorted(list(memberships))
 
     def remove_membership(self, actor_id: ObjectId) -> None:
-        """Removes a membership relation to another actor by removing the relation to the other actor object."""
+        """Removes a membership relation to another actor by removing the
+        relation to the other actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         memberships = set(self.relations.get("member_of", []))
@@ -295,7 +323,8 @@ class Actor(GenericObject):
             self.relations["member_of"] = sorted(list(memberships))
 
     def add_dependency(self, actor_id: ObjectId) -> None:
-        """Adds a dependency relation to another actor by creating a relation to the other actor object."""
+        """Adds a dependency relation to another actor by creating a relation to
+        the other actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         dependencies = set(self.relations.get("depends_on", []))
@@ -303,7 +332,8 @@ class Actor(GenericObject):
         self.relations["depends_on"] = sorted(list(dependencies))
 
     def remove_dependency(self, actor_id: ObjectId) -> None:
-        """Removes a dependency relation to another actor by removing the relation to the other actor object."""
+        """Removes a dependency relation to another actor by removing the
+        relation to the other actor object."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty")
         dependencies = set(self.relations.get("depends_on", []))
@@ -332,6 +362,7 @@ class Actor(GenericObject):
         graph: "SpaceObjectGraph",
         space_id: ObjectId,
         role: str = "occupies",
+        *,
         validity: Mapping[str, Any] | None = None,
         metadata: Mapping[str, Any] | None = None,
     ) -> None:
@@ -341,7 +372,6 @@ class Actor(GenericObject):
         This is a convenience wrapper. Canonical object-to-space memberships
         are stored in SpaceObjectMembership objects managed by SpaceObjectGraph.
         """
-        from .spaces import SpaceObjectMembership
 
         graph.add_object_membership(
             SpaceObjectMembership(
@@ -362,7 +392,6 @@ class Actor(GenericObject):
         This method is only a convenience wrapper around SpaceObjectMembership
         and SpaceObjectGraph. The canonical membership data is stored in the graph.
         """
-        from .spaces import SpaceObjectMembership
 
         graph.remove_object_membership(
             SpaceObjectMembership(

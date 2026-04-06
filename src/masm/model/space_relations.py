@@ -26,16 +26,20 @@ class SpaceRelationType:
 
     name: str  # e.g. "adjacent_to", "contains_space", "intersects_with", etc.
     is_symmetric: bool = (
-        False  # Whether the relation is symmetric (e.g. "adjacent_to" is symmetric, "contains_space" is not)
+        False  # Whether the relation is symmetric (e.g. "adjacent_to" is
+        # symmetric, "contains_space" is not)
     )
     is_antisymmetric: bool = (
-        False  # Whether the relation is antisymmetric (e.g. "contains_space" is antisymmetric, "adjacent_to" is not)
+        False  # Whether the relation is antisymmetric (e.g. "contains_space"
+        # is antisymmetric, "adjacent_to" is not)
     )
     is_transitive: bool = (
-        False  # Whether the relation is transitive (e.g. "contains_space" is transitive, "adjacent_to" is not)
+        False  # Whether the relation is transitive (e.g. "contains_space" is
+        # transitive, "adjacent_to" is not)
     )
     is_reflexive: bool = (
-        False  # Whether the relation is reflexive (e.g. "contains_space" is reflexive, "adjacent_to" is not)
+        False  # Whether the relation is reflexive (e.g. "contains_space" is
+        # reflexive, "adjacent_to" is not)
     )
 
 
@@ -52,7 +56,8 @@ SPACE_RELATION_TYPES: Dict[str, SpaceRelationType] = {
         is_transitive=True,
         is_reflexive=False,
         is_antisymmetric=True,
-    ),  # Convention: Self-reflexivity is not allowed for "contains_space" to avoid paradoxes and maintain a clear hierarchy of spaces.
+    ),  # Convention: Self-reflexivity is not allowed for "contains_space"
+    # to avoid paradoxes and maintain a clear hierarchy of spaces.
     "intersects_with": SpaceRelationType(
         name="intersects_with",
         is_symmetric=True,
@@ -84,10 +89,12 @@ class SpaceRelation:
     metadata: JsonMap = field(default_factory=dict)
 
     def canonicalize(self) -> SpaceRelation:
-        """Return a canonicalized version of the relation, where symmetric relations are ordered by space IDs."""
+        """Return a canonicalized version of the relation, where symmetric
+        relations are ordered by space IDs."""
         relation_def = SPACE_RELATION_TYPES.get(self.relation_type)
         if relation_def is None:
-            return self  # If the relation type is unknown, return as is without canonicalization
+            return self  # If the relation type is unknown, return as is
+            # without canonicalization
         if relation_def.is_symmetric and self.source_space_id > self.target_space_id:
             return SpaceRelation(
                 source_space_id=self.target_space_id,
@@ -137,7 +144,9 @@ class SpaceRelationGraph:
             == normalized_relation.target_space_id
         ):
             raise ValueError(
-                f"Relation of type '{normalized_relation.relation_type}' is not reflexive. Self-relations are not allowed for this relation type."
+                f"Relation of type '{normalized_relation.relation_type}' is not"
+                " reflexive. Self-relations are not allowed for this relation"
+                " type."
             )
 
         #
@@ -152,9 +161,10 @@ class SpaceRelationGraph:
             )
             if inverse_relation_exists:
                 raise ValueError(
-                    f"Cannot add relation '{normalized_relation.relation_type}' from "
-                    f"'{normalized_relation.source_space_id}' to '{normalized_relation.target_space_id}' "
-                    "because it would violate antisymmetry with an existing inverse relation."
+                    f"Cannot add relation '{normalized_relation.relation_type}'"
+                    f" from '{normalized_relation.source_space_id}' to"
+                    f" '{normalized_relation.target_space_id}' because it would"
+                    " violate antisymmetry with an existing inverse relation."
                 )
 
         # Check for duplicates based on the canonicalized relation
@@ -212,7 +222,8 @@ class SpaceRelationGraph:
 
     def children_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the target.
-        Convention : "contains_space" relations indicate that the source space contains the target space.
+        Convention : "contains_space" relations indicate that the source space
+        contains the target space.
         If SRC contains TGT :
          then SRC is the parent
          and TGT is the child."""
@@ -225,7 +236,8 @@ class SpaceRelationGraph:
 
     def parents_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all "contains_space" relations where the given space is the source.
-        Convention : "contains_space" relations indicate that the source space contains the target space.
+        Convention : "contains_space" relations indicate that the source space
+        contains the target space.
         If SRC contains TGT :
          then SRC is the parent
          and TGT is the child."""
@@ -236,7 +248,8 @@ class SpaceRelationGraph:
 
     def neighbors_of(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all spaces that are adjacent to the given space.
-        Convention : "adjacent_to" relations indicate that the source space is adjacent to the target space.
+        Convention : "adjacent_to" relations indicate that the source space
+        is adjacent to the target space.
         """
         outgoing_neighbors = {
             relation.target_space_id
@@ -250,7 +263,8 @@ class SpaceRelationGraph:
 
     def intersects_with(self, space_id: SpaceId) -> List[SpaceId]:
         """Get all spaces that intersect with the given space.
-        Convention : "intersects_with" relations indicate that the source space intersects with the target space.
+        Convention : "intersects_with" relations indicate that the source space
+        intersects with the target space.
         """
         outgoing_intersections = {
             relation.target_space_id
