@@ -1,4 +1,5 @@
 """Base model object class for all objects in the Ometeotl/MASM framework."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -9,17 +10,20 @@ ObjectId = str
 RelationMap = Dict[str, List[ObjectId]]
 JsonMap = Dict[str, Any]
 
+
 def _default_schema_version() -> str:
     return "1.0"
 
+
 @dataclass
 class ModelObject:
-    """A base class for all objects in the model. 
+    """A base class for all objects in the model.
     It contains the common fields and methods that all objects share.
     It is volonteerily designed to be as simple as possible, and to be easily extendable by subclasses.
     It should not contain any logic that is specific to a particular object_type of object, but rather should be a generic container for data that can be used by subclasses.
-    No specific hypothesis about the actors, resources, perceptions, objectifs should be included 
+    No specific hypothesis about the actors, resources, perceptions, objectifs should be included
     """
+
     id: ObjectId
     object_type: str
     schema_version: SchemaVersion = field(default_factory=_default_schema_version)
@@ -39,13 +43,13 @@ class ModelObject:
         if target_id not in self.relations[name]:
             self.relations[name].append(target_id)
 
-
     def remove_relation(self, name: str, target_id: ObjectId) -> None:
         """Remove a relation to another object."""
         if name not in self.relations:
             return
         self.relations[name] = [
-            existing_id for existing_id in self.relations[name]
+            existing_id
+            for existing_id in self.relations[name]
             if existing_id != target_id
         ]
         if not self.relations[name]:
@@ -67,9 +71,6 @@ class ModelObject:
             raise ValueError("Provenance key cannot be empty")
         self.provenance[key] = value
 
-    
-
-
     def to_dict(self) -> JsonMap:
         return {
             "id": self.id,
@@ -83,9 +84,8 @@ class ModelObject:
             "state": dict(sorted(self.state.items())),
             "context": dict(sorted(self.context.items())),
             "provenance": dict(sorted(self.provenance.items())),
-
         }
-    
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ModelObject":
         return cls(

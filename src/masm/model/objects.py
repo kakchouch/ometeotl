@@ -1,4 +1,5 @@
 """Generic representable entity in the model."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -41,4 +42,3 @@ class GenericObject(ModelObject):
         if not value:
             raise ValueError("Description cannot be empty")
         self.attributes["description"] = value
-

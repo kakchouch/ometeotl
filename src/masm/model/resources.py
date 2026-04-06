@@ -19,14 +19,15 @@ intended business logic.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import  Any, List, Dict, Mapping
+from typing import Any, List, Dict, Mapping
 
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph
 
-#local aliases
+# local aliases
 JsonMap = Dict[str, Any]
 ObjectId = str
+
 
 def _default_schema_version() -> str:
     return "1.0"
@@ -52,22 +53,22 @@ class Resource(GenericObject):
     def __post_init__(self) -> None:
         if self.object_type != "resource":
             self.object_type = "resource"
-        
-        self.attributes.setdefault("kind", "generic") 
+
+        self.attributes.setdefault("kind", "generic")
         # generic attributes inherited from the Resource class, which can be used to classify resources into different types or categories (e.g., "material", "energy", "human", "symbolic", etc.)
-        self.attributes.setdefault("tags", []) 
+        self.attributes.setdefault("tags", [])
         # a list of tags that can be used to label and categorize the resource for easier searching and filtering (e.g., "renewable", "non-renewable", "scarce", "abundant", etc.)
-        self.attributes.setdefault("resource_mode", "stock") 
+        self.attributes.setdefault("resource_mode", "stock")
         # is the resource a stock (accumulates over time) or a flow (instantaneous), a capacity, an access point, etc.?
-        self.attributes.setdefault("rivalry", "mixed") 
+        self.attributes.setdefault("rivalry", "mixed")
         # is the resource rivalrous (consumption by one actor reduces availability for others), non-rivalrous (consumption by one actor does not affect availability for others), or mixed (some aspects are rivalrous and others are non-rivalrous)?
-        self.attributes.setdefault("transferability", "mixed") 
+        self.attributes.setdefault("transferability", "mixed")
         # is the resource transferable (can be transferred between actors), non-transferable (cannot be transferred between actors), or mixed (some aspects are transferable and others are non-transferable)?
-        self.attributes.setdefault("divisibility", "mixed") 
+        self.attributes.setdefault("divisibility", "mixed")
         # is the resource divisible (can be divided into smaller units), indivisible (cannot be divided into smaller units), or mixed (some aspects are divisible and others are indivisible)?
-        self.attributes.setdefault("composite", False) 
+        self.attributes.setdefault("composite", False)
         # is the resource composite (made up of multiple components or sub-resources) or simple (not made up of multiple components or sub-resources)?
-        self.attributes.setdefault("profile", {}) 
+        self.attributes.setdefault("profile", {})
         # a dictionary that can be used to store additional information about the resource, such as its properties, characteristics, or specifications (e.g., for a material resource, this could include its density, melting point, etc.)
 
     @property
@@ -75,7 +76,6 @@ class Resource(GenericObject):
         """The kind of resource."""
         value = self.attributes.get("kind", "generic")
         return str(value) if value is not None else "generic"
-    
 
     @kind.setter
     def kind(self, value: str) -> None:
@@ -83,7 +83,7 @@ class Resource(GenericObject):
         if not value:
             raise ValueError("Kind cannot be empty.")
         self.attributes["kind"] = str(value)
-    
+
     @property
     def tags(self) -> List[str]:
         """The tags of the resource."""
@@ -94,10 +94,10 @@ class Resource(GenericObject):
         """Add a tag to the resource."""
         if not tag:
             raise ValueError("Tag cannot be empty.")
-        tags = set(self.attributes.get("tags",[]))
+        tags = set(self.attributes.get("tags", []))
         tags.add(tag)
         self.attributes["tags"] = sorted(list(tags))
-    
+
     @property
     def resource_mode(self) -> str:
         """The resource mode of the resource."""
@@ -110,13 +110,13 @@ class Resource(GenericObject):
         if not value:
             raise ValueError("Resource mode cannot be empty.")
         self.attributes["resource_mode"] = str(value)
-    
+
     @property
     def rivalry(self) -> str:
         """The rivalry regime of the resource."""
         value = self.attributes.get("rivalry", "mixed")
         return str(value) if value is not None else "mixed"
-    
+
     @rivalry.setter
     def rivalry(self, value: str) -> None:
         """Set the rivalry of the resource."""
@@ -129,27 +129,27 @@ class Resource(GenericObject):
         """The transferability of the resource."""
         value = self.attributes.get("transferability", "mixed")
         return str(value) if value is not None else "mixed"
-    
+
     @transferability.setter
-    def transferability(self, value: str) -> None:     
+    def transferability(self, value: str) -> None:
         """Set the transferability of the resource."""
         if not value:
             raise ValueError("Transferability cannot be empty.")
-        self.attributes["transferability"] = str(value) 
+        self.attributes["transferability"] = str(value)
 
     @property
     def divisibility(self) -> str:
         """The divisibility of the resource."""
         value = self.attributes.get("divisibility", "mixed")
         return str(value) if value is not None else "mixed"
-    
+
     @divisibility.setter
-    def divisibility(self,value:str) -> None:
-        """Set the divisibility of the resource. """
+    def divisibility(self, value: str) -> None:
+        """Set the divisibility of the resource."""
         if not value:
             raise ValueError("Divisibility cannot be empty")
         self.attributes["divisibility"] = str(value)
-    
+
     @property
     def composite(self) -> bool:
         """Whether the resource is composite."""
@@ -163,15 +163,15 @@ class Resource(GenericObject):
 
     @property
     def profile(self) -> JsonMap:
-        """ Returns the free-form profile of the resource, which are structured data that can be used to capture specific characteristics, preferences,
+        """Returns the free-form profile of the resource, which are structured data that can be used to capture specific characteristics, preferences,
         or attributes of the resource in a more detailed and organized way.
         This dictionnary is intentionally open-ended and can contain
         modeling details such as category-specific metadata,
         identifiers etc."""
-        value = self.attributes.get("profile",{})
+        value = self.attributes.get("profile", {})
         return dict(value) if isinstance(value, Mapping) else {}
 
-    def set_profile_item(self, key:str, value: Any) -> None:
+    def set_profile_item(self, key: str, value: Any) -> None:
         """Sets a specific item in the resource's profile."""
         if not key:
             raise ValueError("Profile key cannot be empty")
@@ -179,15 +179,14 @@ class Resource(GenericObject):
         profile[key] = value
         self.attributes["profile"] = dict(sorted(profile.items()))
 
-    
-# ------------------------------------------------------------------
-# Domain relations
-# ------------------------------------------------------------------
-# Important idea : 
-# In this architecture, ownership, usage, dependency and other relationships are not stored as 
-# complex objects directly in the resource, but rather as relations to other model objects.
-# This allows for greater flexibility and extensibility, as well as a clearer separation of concerns.
-# It ensures fidelity with  ModelObject.relations, which is the canonical place for storing links between model objects.
+    # ------------------------------------------------------------------
+    # Domain relations
+    # ------------------------------------------------------------------
+    # Important idea :
+    # In this architecture, ownership, usage, dependency and other relationships are not stored as
+    # complex objects directly in the resource, but rather as relations to other model objects.
+    # This allows for greater flexibility and extensibility, as well as a clearer separation of concerns.
+    # It ensures fidelity with  ModelObject.relations, which is the canonical place for storing links between model objects.
 
     def add_user(self, actor_id: ObjectId) -> None:
         """Adds an actor as a user of the resource."""
@@ -230,7 +229,7 @@ class Resource(GenericObject):
         if not resource_id:
             raise ValueError("Resource ID cannot be empty.")
         self.add_relation("depends_on", resource_id)
-    
+
     def remove_dependency(self, resource_id: ObjectId) -> None:
         """Removes a resource as a dependency of the resource."""
         if not resource_id:
@@ -274,8 +273,10 @@ class Resource(GenericObject):
                 metadata=dict(metadata or {}),
             )
         )
-            
-    def remove_space_membership(self, graph: "SpaceObjectGraph", space_id: ObjectId, role: str = "occupies") -> None:
+
+    def remove_space_membership(
+        self, graph: "SpaceObjectGraph", space_id: ObjectId, role: str = "occupies"
+    ) -> None:
         """Remove the declaration that this resource exists in a given space.
 
         Important:
@@ -304,7 +305,7 @@ class Resource(GenericObject):
                 str(key): [str(item) for item in value]
                 for key, value in dict(data.get("relations", {})).items()
             },
-            state=dict(data.get("state",{})),
-            context=dict(data.get("context",{})),
-            provenance=dict(data.get("provenance",{})),
+            state=dict(data.get("state", {})),
+            context=dict(data.get("context", {})),
+            provenance=dict(data.get("provenance", {})),
         )
