@@ -28,12 +28,13 @@ relations, and modeling conventions to be introduced progressively.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 from .objects import GenericObject
+from .spaces import SpaceObjectGraph
 
 # local aliases
-JsonDict = Mapping[str, Any]
+JsonDict = Dict[str, Any]
 ObjectId = str
 
 def _default_schema_version() -> str:
@@ -65,100 +66,100 @@ class Actor(GenericObject):
         self.attributes.setdefault("emergent", False)
         self.attributes.setdefault("composition_mode", "standalone")
 
-        @property
-        def kind(self) -> str:
-            """Returns the actor's, kind.
-            Typical examples include :
-            -"individual": a single person or entity;
-            -"group": a collection of individuals or entities;
-            -organization: a structured group with specific roles and functions;
-            -emergent: a loosely defined entity emerging from the perceptions of other actors."""
-            
-            value = self.attributes.get("kind","generic")
-            return str(value) if value is not None else "generic"
-
-        @kind.setter
-        def kind(self, value: str) -> None:
-            """Sets the actor's kind."""
-            if not value:
-                raise ValueError("Kind cannot be empty")
-            self.attributes["kind"] = value
-
-        @property
-        def tags(self) -> List[str]:
-            """Returns the actor's tags, which are simple labels that can be used for categorization, filtering, or search."""
-            value = self.attributes.get("tags",[])
-            return sorted(list(value)) if value is not None else []
-
-        def add_tag(self, tag: str) -> None:
-            """Adds a tag to the actor."""
-            if not tag:
-                raise ValueError("Tag cannot be empty")
-            tags = set(self.attributes.get("tags",[]))
-            tags.add(tag)
-            self.attributes["tags"] = sorted(list(tags))
-
-        @property
-        def roles(self) -> List[str]:
-            """Returns the actor's roles, which are specific functions or positions that the actor can assume within a particular context or interaction."""
-            roles = self.attributes.get("roles",[])
-            return sorted(list(roles)) if roles is not None else []
-
-        def add_role(self, role: str) -> None:
-            """Adds a role to the actor."""
-            if not role:
-                raise ValueError("Role cannot be empty")
-            roles = set(self.attributes.get("roles",[]))
-            if role not in roles:
-                roles.append(role)
-            self.attributes["roles"] = sorted(list(roles))
+    @property
+    def kind(self) -> str:
+        """Returns the actor's, kind.
+        Typical examples include :
+        -"individual": a single person or entity;
+        -"group": a collection of individuals or entities;
+        -organization: a structured group with specific roles and functions;
+        -emergent: a loosely defined entity emerging from the perceptions of other actors."""
         
-        @property
-        def profile(self) -> JsonMap:
-            """ Returns the free-form profile of the actor, which are structured data that can be used to capture specific characteristics, preferences, or attributes of the actor in a more detailed and organized way.
-            This dictionnary is intentionally open-endend and can contain
-            modeling details such as category-specific metadata,
-            identifiers, demographic infor"""
-            value = self.attributes.get("profile",{})
-            return dict(value) if isinstance(value, Mapping) else {}
+        value = self.attributes.get("kind","generic")
+        return str(value) if value is not None else "generic"
 
-        def set_profile_item(self, key:str, value: Any) -> None:
-            """Sets a specific item in the actor's profile."""
-            if not key:
-                raise ValueError("Profile key cannot be empty")
-            profile = self.profile
-            profile[key] = value
-            self.attributes["profile"] = dict(sorted(profile.items()))
+    @kind.setter
+    def kind(self, value: str) -> None:
+        """Sets the actor's kind."""
+        if not value:
+            raise ValueError("Kind cannot be empty")
+        self.attributes["kind"] = value
 
-        @property
-        def emergent(self) -> bool:
-            """Returns whether the actor is emergent, meaning it is a loosely defined entity emerging from the perceptions of other actors."""
-            value = self.attributes.get("emergent", False)
-            return bool(value)
-        
-        @emergent.setter
-        def emergent(self, value: bool) -> None:
-            """Sets whether the actor is emergent."""
-            self.attributes["emergent"] = bool(value)
-        
-        @property
-        def composition_mode(self) -> str:
-            """Returns the actor's composition mode, which indicates how the actor is composed of other actors if it is a composite entity. 
-            Typical values include:
-            - "standalone": the actor is not composed of other actors;
-            - "composite": the actor is composed of other actors, which are explicitly linked to it through relations;
-            - "collective": the actor is a loosely defined collection of other actors, which are not explicitly linked to it but are perceived as a coherent whole.
-            - "perceived": the actor is an emergent entity perceived by other actors as a coherent whole, without a clear internal structure or composition.
-            - "projected": the actor is a projected entity that may not have a clear existence but is treated as an actor for modeling purposes or through other actors interactions."""
-            value = self.attributes.get("composition_mode", "standalone")
-            return str(value) if value is not None else "standalone"
+    @property
+    def tags(self) -> List[str]:
+        """Returns the actor's tags, which are simple labels that can be used for categorization, filtering, or search."""
+        value = self.attributes.get("tags",[])
+        return sorted(list(value)) if value is not None else []
 
-        @composition_mode.setter
-        def composition_mode(self, value: str) -> None:
-            """Sets the actor's composition mode."""
-            if not value:
-                raise ValueError("Composition mode cannot be empty")
-            self.attributes["composition_mode"] = value
+    def add_tag(self, tag: str) -> None:
+        """Adds a tag to the actor."""
+        if not tag:
+            raise ValueError("Tag cannot be empty")
+        tags = set(self.attributes.get("tags",[]))
+        tags.add(tag)
+        self.attributes["tags"] = sorted(list(tags))
+
+    @property
+    def roles(self) -> List[str]:
+        """Returns the actor's roles, which are specific functions or positions that the actor can assume within a particular context or interaction."""
+        roles = self.attributes.get("roles",[])
+        return sorted(list(roles)) if roles is not None else []
+
+    def add_role(self, role: str) -> None:
+        """Adds a role to the actor."""
+        if not role:
+            raise ValueError("Role cannot be empty")
+        roles = set(self.attributes.get("roles",[]))
+        if role not in roles:
+            roles.append(role)
+        self.attributes["roles"] = sorted(list(roles))
+    
+    @property
+    def profile(self) -> JsonMap:
+        """ Returns the free-form profile of the actor, which are structured data that can be used to capture specific characteristics, preferences, or attributes of the actor in a more detailed and organized way.
+        This dictionnary is intentionally open-ended and can contain
+        modeling details such as category-specific metadata,
+        identifiers, demographic information etc."""
+        value = self.attributes.get("profile",{})
+        return dict(value) if isinstance(value, Mapping) else {}
+
+    def set_profile_item(self, key:str, value: Any) -> None:
+        """Sets a specific item in the actor's profile."""
+        if not key:
+            raise ValueError("Profile key cannot be empty")
+        profile = self.profile
+        profile[key] = value
+        self.attributes["profile"] = dict(sorted(profile.items()))
+
+    @property
+    def emergent(self) -> bool:
+        """Returns whether the actor is emergent, meaning it is a loosely defined entity emerging from the perceptions of other actors."""
+        value = self.attributes.get("emergent", False)
+        return bool(value)
+    
+    @emergent.setter
+    def emergent(self, value: bool) -> None:
+        """Sets whether the actor is emergent."""
+        self.attributes["emergent"] = bool(value)
+    
+    @property
+    def composition_mode(self) -> str:
+        """Returns the actor's composition mode, which indicates how the actor is composed of other actors if it is a composite entity. 
+        Typical values include:
+        - "standalone": the actor is not composed of other actors;
+        - "composite": the actor is composed of other actors, which are explicitly linked to it through relations;
+        - "collective": the actor is a loosely defined collection of other actors, which are not explicitly linked to it but are perceived as a coherent whole.
+        - "perceived": the actor is an emergent entity perceived by other actors as a coherent whole, without a clear internal structure or composition.
+        - "projected": the actor is a projected entity that may not have a clear existence but is treated as an actor for modeling purposes or through other actors interactions."""
+        value = self.attributes.get("composition_mode", "standalone")
+        return str(value) if value is not None else "standalone"
+
+    @composition_mode.setter
+    def composition_mode(self, value: str) -> None:
+        """Sets the actor's composition mode."""
+        if not value:
+            raise ValueError("Composition mode cannot be empty")
+        self.attributes["composition_mode"] = value
 
         
 
@@ -324,6 +325,49 @@ class Actor(GenericObject):
         """Remove a conflict relation.""" 
         self.remove_relation("conflicts_with", actor_id)
 
+    def add_space_membership(
+    self,
+    graph: "SpaceObjectGraph",
+    space_id: ObjectId,
+    role: str = "occupies",
+    validity: Mapping[str, Any] | None = None,
+    metadata: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Declare that this actor exists in a given space.
+
+        Important:
+        This is a convenience wrapper. Canonical object-to-space memberships
+        are stored in SpaceObjectMembership objects managed by SpaceObjectGraph.
+        """
+        from .spaces import SpaceObjectMembership
+
+        graph.add_object_membership(
+            SpaceObjectMembership(
+                object_id=self.id,
+                space_id=space_id,
+                role=role,
+                validity=dict(validity or {}),
+                metadata=dict(metadata or {}),
+            )
+        )
+
+    def remove_space_membership(self, graph: "SpaceObjectGraph", space_id: ObjectId, role) -> None:
+        """Remove the declaration that this resource exists in a given space.
+
+        Important:
+        This method is only a convenience wrapper around SpaceObjectMembership
+        and SpaceObjectGraph. The canonical membership data is stored in the graph.
+        """
+        from .spaces import SpaceObjectMembership
+
+        graph.remove_object_membership(
+            SpaceObjectMembership(
+                object_id=self.id,
+                space_id=space_id,
+                role=role,
+            )
+        )    
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Actor":
         """Create an Actor instance from a dictionary representation."""
@@ -341,7 +385,7 @@ class Actor(GenericObject):
             provenance=dict(data.get("provenance", {})),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> JsonMap:
         """Convert the Actor instance to a dictionary representation."""
         return {
             "id": self.id,
