@@ -134,6 +134,7 @@ ometeotl/
 │       │   ├── actors.py
 │       │   ├── resources.py
 │       │   ├── spaces.py
+│       │   ├── space_relations.py
 │       │   ├── actions.py
 │       │   ├── metrics.py
 │       │   ├── perception.py
