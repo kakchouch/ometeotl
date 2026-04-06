@@ -111,7 +111,7 @@ class Actor(GenericObject):
             raise ValueError("Role cannot be empty")
         roles = set(self.attributes.get("roles",[]))
         if role not in roles:
-            roles.append(role)
+            roles.add(role)
         self.attributes["roles"] = sorted(list(roles))
     
     @property
@@ -309,7 +309,7 @@ class Actor(GenericObject):
             dependencies.remove(actor_id)
             self.relations["depends_on"] = sorted(list(dependencies))   
 
-     def add_cooperation(self, actor_id: ObjectId) -> None:
+    def add_cooperation(self, actor_id: ObjectId) -> None:
         """Declare a cooperative relation with another actor."""
         self.add_relation("cooperates_with", actor_id)
 

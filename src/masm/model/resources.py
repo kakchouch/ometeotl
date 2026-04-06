@@ -161,8 +161,7 @@ class Resource(GenericObject):
         """Set whether the resource is composite."""
         self.attributes["composite"] = bool(value)
 
-
-        @property
+    @property
     def profile(self) -> JsonMap:
         """ Returns the free-form profile of the resource, which are structured data that can be used to capture specific characteristics, preferences,
         or attributes of the resource in a more detailed and organized way.
@@ -194,10 +193,9 @@ class Resource(GenericObject):
         """Adds an actor as a user of the resource."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty.")
-        self.add_relation("used_by", actor_id
-    )
+        self.add_relation("used_by", actor_id)
 
-   def remove_user(self, actor_id: ObjectId) -> None:
+    def remove_user(self, actor_id: ObjectId) -> None:
         """Removes an actor as a user of the resource."""
         if not actor_id:
             raise ValueError("Actor ID cannot be empty.")
