@@ -7,7 +7,13 @@
 # - vérifier que les objets de base s'instancient correctement ;
 # - vérifier quelques comportements minimaux cohérents avec la V1.
 # ============================================================
-
+"""
+Basic tests for ometeotl/MASM/model.
+Objectives:
+- Verify that package imports work correctly
+- Verify that base objects instantiate properly
+- Verify basic behaviors consistent with V1
+"""
 import pytest
 
 # Import des classes depuis la nouvelle architecture packagée.
