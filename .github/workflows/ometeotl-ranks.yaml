@@ -1,0 +1,120 @@
+# .github/workflows/ometeotl-ranks.yml
+name: Ometeotl Ranks
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  assign-rank:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Assign Ometeotl rank
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const founder = "kakchouch";
+
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const username = pr.user.login;
+
+            // Count merged PRs by this user in this repo
+            const query = `repo:${owner}/${repo} is:pr is:merged author:${username}`;
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: query,
+              per_page: 1
+            });
+
+            const mergedCount = search.data.total_count;
+
+            function getRank(user, count) {
+              if (user.toLowerCase() === founder.toLowerCase()) {
+                return {
+                  key: "emperor",
+                  title: "Emperor",
+                  flavor: "Founder and principal maintainer of Ometeotl."
+                };
+              }
+              if (count >= 20) {
+                return {
+                  key: "shorn-one",
+                  title: "Shorn One",
+                  flavor: "Elite maintainer of the Order of Ometeotl."
+                };
+              }
+              if (count >= 5) {
+                return {
+                  key: "otomi",
+                  title: "Otomi",
+                  flavor: "Recognized warrior of the project."
+                };
+              }
+              if (count >= 2) {
+                return {
+                  key: "achcauhtili",
+                  title: "Achcauhtili",
+                  flavor: "Proven contributor on the path of the warrior."
+                };
+              }
+              return {
+                key: "eagle-warrior",
+                title: "Eagle Warrior",
+                flavor: "First blood in code. First victory in the Order."
+              };
+            }
+
+            const rank = getRank(username, mergedCount);
+
+            const body = [
+              `## 🜂 Ometeotl Rank Awarded`,
+              ``,
+              `@${username}, this merged pull request brings your total to **${mergedCount} merged PR${mergedCount > 1 ? "s" : ""}** in **${owner}/${repo}**.`,
+              ``,
+              `**New rank:** **${rank.title}**`,
+              ``,
+              `_${rank.flavor}_`,
+              ``,
+              `> All contributors walk the path of duality — creation and transmission.`,
+              ``,
+              `<!-- ometeotl-rank-bot -->`
+            ].join("\n");
+
+            // Find existing bot comment on this PR
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pr.number,
+              per_page: 100
+            });
+
+            const existing = comments.data.find(comment =>
+              comment.body && comment.body.includes("<!-- ometeotl-rank-bot -->")
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body
+              });
+            }
+
+            core.info(`Assigned rank ${rank.title} to ${username} (${mergedCount} merged PRs).`);
