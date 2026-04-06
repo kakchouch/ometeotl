@@ -61,8 +61,8 @@ class Space(GenericObject):
     def tags(self) -> List[str]:
         """Get the list of tags associated with the space. 
         Tags are simple labels that can be used to categorize or describe the space in a flexible way."""
-        raw_tags = self.attributes.get("tags", [])
-        return [str(item) for item in raw_tags]
+        value = self.attributes.get("tags", [])
+        return sorted(list(value)) if value is not None else []
 
     def add_tag(self, tag: str) -> None:
         """Add a tag to the space."""

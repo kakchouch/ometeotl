@@ -89,13 +89,13 @@ class SpaceRelationGraph:
     relations: List[SpaceRelation] = field(default_factory=list)
 
     def add_relation(self, relation: SpaceRelation) -> None:
-    """Add a relation between two spaces.
+        """Add a relation between two spaces.
 
-    No duplicate relations are allowed (same source, target, and relation type).
-    Symmetric relations are automatically canonicalized to ensure a consistent representation.
-    Antisymmetric relations are not automatically canonicalized, as direction matters.
-    Self-relations are not allowed for non-reflexive relation types.
-    """
+        No duplicate relations are allowed (same source, target, and relation type).
+        Symmetric relations are automatically canonicalized to ensure a consistent representation.
+        Antisymmetric relations are not automatically canonicalized, as direction matters.
+        Self-relations are not allowed for non-reflexive relation types.
+        """
 
         normalized_relation = relation.canonicalize()
         relation_def = SPACE_RELATION_TYPES.get(normalized_relation.relation_type)
@@ -117,8 +117,11 @@ class SpaceRelationGraph:
                 for existing in self.relations
             )
             if inverse_relation_exists:
-                raise ValueError(f"Cannot add relation '{normalized_relation.relation_type}' from '{normalized_relation.source_space_id}' 
-                to '{normalized_relation.target_space_id}' because it would violate antisymmetry with an existing inverse relation.")
+                raise ValueError(
+                    f"Cannot add relation '{normalized_relation.relation_type}' from "
+                    f"'{normalized_relation.source_space_id}' to '{normalized_relation.target_space_id}' "
+                    "because it would violate antisymmetry with an existing inverse relation."
+                )
 
         # Check for duplicates based on the canonicalized relation
         duplicate = any(existing == normalized_relation for existing in self.relations)

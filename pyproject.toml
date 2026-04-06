@@ -1,0 +1,104 @@
+[build-system]
+# Utilise setuptools moderne pour construire le package
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Nom publié du package
+name = "ometeotl"
+
+# Version simple pour démarrer ; plus tard tu pourras la rendre dynamique
+version = "0.1.0"
+
+# Description courte du projet
+description = "Abstract decision meta-model for multi-actor, multi-space strategic systems"
+
+# README affiché sur PyPI / outils de packaging
+readme = "README.md"
+
+# Version minimale de Python recommandée
+requires-python = ">=3.11"
+
+# Licence : adapte si besoin
+license = { text = "MIT" }
+
+# Auteur : adapte avec tes infos
+authors = [
+  { name = "kakchouch" }
+]
+
+# Mots-clés utiles pour le packaging
+keywords = [
+  "decision-model",
+  "multi-agent",
+  "game-theory",
+  "simulation",
+  "symbolic-ai",
+  "generative-ai"
+]
+
+# Classifiers PyPI : optionnels mais recommandés
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+# Dépendances runtime minimales
+# Commence petit. N'ajoute que ce qui est réellement nécessaire au code productif.
+dependencies = [
+  "PyYAML>=6.0"
+]
+
+[project.optional-dependencies]
+# Dépendances de développement
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.4.0",
+  "mypy>=1.9.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/kakchouch/ometeotl"
+Repository = "https://github.com/kakchouch/ometeotl"
+Issues = "https://github.com/kakchouch/ometeotl/issues"
+
+[tool.setuptools]
+# Indique que le code source est dans src/
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+# Demande à setuptools de chercher les packages dans src/
+where = ["src"]
+
+# Inclut masm et tous ses sous-packages
+include = ["masm", "masm.*"]
+
+[tool.pytest.ini_options]
+# Indique à pytest où chercher les tests
+testpaths = ["tests"]
+
+# Options pratiques pour un projet de lib
+addopts = "-ra -q"
+
+[tool.ruff]
+# Longueur de ligne raisonnable
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
