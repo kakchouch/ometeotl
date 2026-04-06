@@ -308,6 +308,3 @@ class Resource(GenericObject):
             context=dict(data.get("context",{})),
             provenance=dict(data.get("provenance",{})),
         )
-    
-    def to_dict(self) -> JsonMap:
-        return super().to_dict()

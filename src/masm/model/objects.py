@@ -1,3 +1,4 @@
+"""Generic representable entity in the model."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,22 +18,27 @@ class GenericObject(ModelObject):
 
     @property
     def label(self) -> Optional[str]:
+        """Get the object's label."""
         value = self.attributes.get("label")
         return str(value) if value is not None else None
 
     @label.setter
     def label(self, value: str) -> None:
+        """Set the object's label."""
         if not value:
             raise ValueError("Label cannot be empty")
         self.attributes["label"] = value
 
     @property
     def description(self) -> Optional[str]:
+        """Get the object's description."""
         value = self.attributes.get("description")
         return str(value) if value is not None else None
 
     @description.setter
     def description(self, value: str) -> None:
+        """Set the object's description."""
         if not value:
             raise ValueError("Description cannot be empty")
         self.attributes["description"] = value
+

@@ -1,7 +1,8 @@
+"""Base model object class for all objects in the Ometeotl/MASM framework."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Mapping
 
 SchemaVersion = str
 ObjectId = str
@@ -28,7 +29,8 @@ class ModelObject:
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
 
-    def add_relation(self, name: str, target_id: ObjectId)-> None:
+    def add_relation(self, name: str, target_id: ObjectId) -> None:
+        """Add a relation to another object."""
         if not name:
             raise ValueError("Relation name cannot be empty")
         if not target_id:
@@ -39,16 +41,18 @@ class ModelObject:
 
 
     def remove_relation(self, name: str, target_id: ObjectId) -> None:
+        """Remove a relation to another object."""
         if name not in self.relations:
             return
         self.relations[name] = [
-            existing_id for existing_id in self.relations[name] 
+            existing_id for existing_id in self.relations[name]
             if existing_id != target_id
-            ]
+        ]
         if not self.relations[name]:
             del self.relations[name]
 
     def set_attribute(self, key: str, value: Any) -> None:
+        """Set an attribute on the object."""
         if not key:
             raise ValueError("Attribute key cannot be empty")
         self.attributes[key] = value

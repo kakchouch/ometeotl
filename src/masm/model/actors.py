@@ -28,13 +28,13 @@ relations, and modeling conventions to be introduced progressively.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Set
+from typing import Any, Dict, List, Mapping
 
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph
 
 # local aliases
-JsonDict = Dict[str, Any]
+JsonMap = Dict[str, Any]
 ObjectId = str
 
 def _default_schema_version() -> str:
@@ -54,10 +54,11 @@ class Actor(GenericObject):
     - dynamic evolution remains possible through ``state`` and ``context``."""
 
     object_type: str = "actor"
+
     def __post_init__(self) -> None:
         """Normalize and initialize actors default values."""
         if self.object_type != "actor":
-           self.object_type = "actor"
+            self.object_type = "actor"
 
         self.attributes.setdefault("kind", "generic")
         self.attributes.setdefault("tags",[])
@@ -393,7 +394,8 @@ class Actor(GenericObject):
             "schema_version": self.schema_version,
             "attributes": dict(self.attributes),
             "relations": {
-                key: sorted(list(set(value))) for key, value in dict(self.relations).items()
+                key: sorted(list(set(value)))
+                for key, value in dict(self.relations).items()
             },
             "state": dict(self.state),
             "context": dict(self.context),

@@ -51,6 +51,7 @@ def main() -> int:
             stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
+            check=False,
         )
 
         # Write complete log
