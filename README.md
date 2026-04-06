@@ -25,8 +25,8 @@ This project is **actively under development**—a true work-in-progress. Curren
 
 | Badge | Rank | Requirement | Cultural lore |
 |---|---|---:|---|
-| <img src="assets/badges/1.eagle_warrior.png" alt="Eagle Warrior badge" width="72"> | **Eagle Warrior** | First merged PR | In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor of proving oneself in action. |
-| <img src="assets/badges/2.achcauhtli.png" alt="Achcauhtli badge" width="72"> | **Achcauhtli** | 2–4 merged PRs | *Achcauhtli* evokes a proven war leader, a contributor who has moved beyond initiation and begun to earn standing through repeated service. |
-| <img src="assets/badges/3.otomi.png" alt="Otomi badge" width="72"> | **Otomi** | 5–19 merged PRs | The Otomi warrior figure represents resilience and battlefield reputation, honoring contributors who have become dependable forces within the project. |
-| <img src="assets/badges/4.shorn_one.png" alt="Shorn One badge" width="72"> | **Shorn One** | 20+ merged PRs | The Shorn Ones were elite warriors sworn not to retreat, making this rank a symbol of exceptional discipline, loyalty, and sustained achievement. |
-| <img src="assets/badges/5.emperor.png" alt="Emperor badge" width="72"> | **Emperor** | Founder and principal maintainer | The Emperor stands as the sovereign guardian of the Order, embodying stewardship, vision, and the sacred balance at the heart of Ometeotl. |
+| <img src="assets/badges/1.eagle_warrior.png" alt="Eagle Warrior badge" width="130"> | **Eagle Warrior** | First merged PR | In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor of proving oneself in action. |
+| <img src="assets/badges/2.achcauhtli.png" alt="Achcauhtli badge" width="130"> | **Achcauhtli** | 2–4 merged PRs | *Achcauhtli* evokes a proven war leader, a contributor who has moved beyond initiation and begun to earn standing through repeated service. |
+| <img src="assets/badges/3.otomi.png" alt="Otomi badge" width="130"> | **Otomi** | 5–19 merged PRs | The Otomi warrior figure represents resilience and battlefield reputation, honoring contributors who have become dependable forces within the project. |
+| <img src="assets/badges/4.shorn_one.png" alt="Shorn One badge" width="130"> | **Shorn One** | 20+ merged PRs | The Shorn Ones were elite warriors sworn not to retreat, making this rank a symbol of exceptional discipline, loyalty, and sustained achievement. |
+| <img src="assets/badges/5.emperor.png" alt="Emperor badge" width="130"> | **Emperor** | Founder and principal maintainer | The Emperor stands as the sovereign guardian of the Order, embodying stewardship, vision, and the sacred balance at the heart of Ometeotl. |
