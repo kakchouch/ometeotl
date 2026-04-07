@@ -20,12 +20,13 @@ This project is **actively under development**—a true work-in-progress. Curren
 
 **All contributions are welcome!** Whether it's code refinements, axiom suggestions, documentation, testing, or cultural insights into the name's resonance, your input will shape Ometeotl. Check the [specs](specs_EN.md), [README](README.md), or [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Fork, PR, or open an issue—let's build this together.
 
+**Start your first PR and become an Eagle Warrior !**
+
 
 ### Developer Ranks - The Path of the Serpent
 The Path of the Serpent represents knowledge, depth, and commitment.  
 It is the path of those who learn, refine, and wage a quiet, relentless struggle against bad code—both in the system and within themselves.
 
----
 
 <table>
 <tr>
@@ -49,7 +50,6 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 </tr>
 </table>
 
----
 
 <table>
 <tr>
@@ -73,7 +73,6 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 </tr>
 </table>
 
----
 
 <table>
 <tr>
@@ -97,7 +96,6 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 </tr>
 </table>
 
----
 
 <table>
 <tr>
@@ -121,7 +119,6 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 </tr>
 </table>
 
----
 
 <table>
 <tr>
@@ -145,4 +142,76 @@ The Emperor stands as the sovereign guardian of the Order, embodying stewardship
 </tr>
 </table>
 
----
+### Community Benefactors - The Path of the Undying Sun
+The Path of the Undying Sun represents clarity, guidance, and transmission.  
+It is the path of those who illuminate the way for others and sustain the living flame of knowledge.
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/p1_tlamacazqui.png" width="140">
+</td>
+<td>
+
+#### Tlamacazqui - Initiate
+
+**Requirement**  
+Notable contribution to the community
+
+<br>
+
+<small><i>
+Those who begin to carry the light and make their presence felt.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/p2_tlenemacac.png" width="140">
+</td>
+<td>
+
+#### Tlenamacac - Officiant
+
+**Requirement**  
+Significant contribution to the community
+
+<br>
+
+<small><i>
+Those who sustain the flame and help it grow beyond themselves.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/p3_high_priest.png" width="140">
+</td>
+<td>
+
+#### Quetzalcoatl Priest
+
+**Requirement**  
+Decisive contribution to the project or its direction 
+
+<br>
+
+<small><i>
+Those whose actions shape the path of others and ensure the light endures.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+
