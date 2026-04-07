@@ -4,13 +4,21 @@
 </p>
 
 
-# Ometeotl: A Decision Meta-Model in Progress
+# Ometeotl: An experimental meta-model for complex decisionnal systems
 
 **Ometeotl** is an experimental Python library for modeling multi-actor, multi-space, multi-metric strategic decision-making systems. Inspired by game theory, axiomatic systems, and neutral teleological modeling, it aims to simulate complex interactions across hierarchical actors, asymmetric temporalities, and perceptual imperfections.
 
 ## Cultural Inspiration
 
 The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "dual" in Nahuatl, and *teōtl* translates to "divinity." Ometeotl embodies the primordial duality—male (Ometecuhtli) and female (Omecihuatl)—as the supreme creator residing in Omeyocan, the "Place of Duality." This concept of inherent duality and generative potential mirrors the library's core philosophy: modeling conflict, cooperation, and emergence from opposing forces in decision spaces.
+
+## Use Cases
+
+- Advanced multi-agent simulations  
+- Wargaming and strategic modeling  
+- Decision-making benchmarks for symbolic and generative AI  
+- Game development and interactive systems  
+
 
 ## Work in Progress
 
@@ -130,7 +138,7 @@ The Emperor stands as the sovereign guardian of the Order, embodying stewardship
 </tr>
 </table>
 
-### ☀️ Community Benefactors — The Path of the Undying Sun
+### Community Benefactors — The Path of the Undying Sun
 
 The Path of the Undying Sun represents clarity, guidance, and transmission.  
 It is the path of those who illuminate the way for others and sustain the living flame of knowledge.
