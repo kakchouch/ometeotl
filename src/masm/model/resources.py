@@ -21,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Dict, Mapping
 
+from .base import relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
@@ -33,6 +34,11 @@ def _default_schema_version() -> str:
     return "1.0"
 
 
+@relation_methods("user", "used_by")
+@relation_methods("controller", "controlled_by")
+@relation_methods("owner", "owned_by")
+@relation_methods("dependency", "depends_on")
+@relation_methods("component", "has_component")
 @dataclass
 class Resource(GenericObject):
     """A resource in the model.
@@ -208,66 +214,6 @@ class Resource(GenericObject):
     # clearer separation of concerns.
     # It ensures fidelity with  ModelObject.relations, which is the
     # canonical place for storing links between model objects.
-
-    def add_user(self, actor_id: ObjectId) -> None:
-        """Adds an actor as a user of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.add_relation("used_by", actor_id)
-
-    def remove_user(self, actor_id: ObjectId) -> None:
-        """Removes an actor as a user of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.remove_relation("used_by", actor_id)
-
-    def add_controller(self, actor_id: ObjectId) -> None:
-        """Adds an actor as a controller of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.add_relation("controlled_by", actor_id)
-
-    def remove_controller(self, actor_id: ObjectId) -> None:
-        """Removes an actor as a controller of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.remove_relation("controlled_by", actor_id)
-
-    def add_owner(self, actor_id: ObjectId) -> None:
-        """Adds an actor as an owner of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.add_relation("owned_by", actor_id)
-
-    def remove_owner(self, actor_id: ObjectId) -> None:
-        """Removes an actor as an owner of the resource."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty.")
-        self.remove_relation("owned_by", actor_id)
-
-    def add_dependency(self, resource_id: ObjectId) -> None:
-        """Adds a resource as a dependency of the resource."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty.")
-        self.add_relation("depends_on", resource_id)
-
-    def remove_dependency(self, resource_id: ObjectId) -> None:
-        """Removes a resource as a dependency of the resource."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty.")
-        self.remove_relation("depends_on", resource_id)
-
-    def add_component(self, resource_id: ObjectId) -> None:
-        """Adds a resource as a component of the resource."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty.")
-        self.add_relation("has_component", resource_id)
-
-    def remove_component(self, resource_id: ObjectId) -> None:
-        """Removes a resource as a component of the resource."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty.")
-        self.remove_relation("has_component", resource_id)
 
     def add_space_membership(
         self,

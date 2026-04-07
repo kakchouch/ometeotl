@@ -43,16 +43,16 @@ def _default_schema_version() -> str:
     return "1.0"
 
 
-@relation_methods("action", "actions")
-@relation_methods("resource", "resources")
-@relation_methods("value", "values")
-@relation_methods("goal", "pursues_goal")
-@relation_methods("constraint", "subject_to")
-@relation_methods("component", "composed_of")
-@relation_methods("membership", "member_of")
-@relation_methods("dependency", "depends_on")
-@relation_methods("cooperation", "cooperates_with")
-@relation_methods("conflict", "conflicts_with")
+@relation_methods("action", "action")
+@relation_methods("resource", "resource")
+@relation_methods("value", "value")
+@relation_methods("goal", "goal")
+@relation_methods("constraint", "constraint")
+@relation_methods("component", "component")
+@relation_methods("membership", "membership")
+@relation_methods("dependency", "dependency")
+@relation_methods("cooperation", "cooperation")
+@relation_methods("conflict", "conflict")
 @dataclass
 class Actor(GenericObject):
     """Represents an actor in the model.

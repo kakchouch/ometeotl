@@ -6,14 +6,14 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping
 
 # NEW: Decorator for auto-generating add/remove methods
-def relation_methods(method_name: str, rel_name: str):
+def relation_methods(method_name: str, rel_key: str):
     """Decorator to generate add/remove pairs."""
     def decorator(cls):
         def add_method(self, target_id: ObjectId) -> None:
-            self._manage_relation(rel_name, target_id, add=True)
+            self._manage_relation(rel_key, target_id, add=True)
         
         def remove_method(self, target_id: ObjectId) -> None:
-            self._manage_relation(rel_name, target_id, add=False)
+            self._manage_relation(rel_key, target_id, add=False)
         
         add_method.__name__ = f"add_{method_name}"
         remove_method.__name__ = f"remove_{method_name}"
