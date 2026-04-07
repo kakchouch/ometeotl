@@ -109,11 +109,11 @@ class Resource(GenericObject):
 
     def add_tag(self, tag: str) -> None:
         """Add a tag to the resource."""
-        if not tag:
-            raise ValueError("Tag cannot be empty.")
-        tags = set(self.attributes.get("tags", []))
-        tags.add(tag)
-        self.attributes["tags"] = sorted(list(tags))
+        self.add_to_attribute_list("tags", tag)
+
+    def remove_tag(self, tag: str) -> None:
+        """Remove a tag from the resource."""
+        self.remove_from_attribute_list("tags", tag)
 
     @property
     def resource_mode(self) -> str:
