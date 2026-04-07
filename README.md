@@ -4,7 +4,7 @@
 </p>
 
 
-# Ometeotl: An experimental meta-model for complex decisionnal systems
+# Ometeotl: An experimental meta-model for complex decisional systems
 
 **Ometeotl** is an experimental Python library for modeling multi-actor, multi-space, multi-metric strategic decision-making systems. Inspired by game theory, axiomatic systems, and neutral teleological modeling, it aims to simulate complex interactions across hierarchical actors, asymmetric temporalities, and perceptual imperfections.
 
