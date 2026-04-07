@@ -48,8 +48,6 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 
 </td>
 </tr>
-</table>
-<table>
 <tr>
 <td width="160">
 <img src="assets/badges/2.achcauhtli.png" width="140">
@@ -69,8 +67,6 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 
 </td>
 </tr>
-</table>
-<table>
 <tr>
 <td width="160">
 <img src="assets/badges/3.otomi.png" width="140">
@@ -90,8 +86,6 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 
 </td>
 </tr>
-</table>
-<table>
 <tr>
 <td width="160">
 <img src="assets/badges/4.shorn_one.png" width="140">
@@ -111,8 +105,6 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 
 </td>
 </tr>
-</table>
-<table>
 <tr>
 <td width="160">
 <img src="assets/badges/5.emperor.png" width="140">
