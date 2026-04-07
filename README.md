@@ -3,9 +3,9 @@
   <img src="logo.png" width="300" height="300"/>
 </p>
 
-<big><b>Ometeotl</b> : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_</big>
+# **Ometeotl** : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_
 
-# Ometeotl: An experimental meta-model for complex decisional systems
+## Ometeotl: An experimental meta-model for complex decisional systems
 
 **Ometeotl** is an experimental Python library for modeling multi-actor, multi-space, multi-metric strategic decision-making systems. Inspired by game theory, axiomatic systems, and neutral teleological modeling, it aims to simulate complex interactions across hierarchical actors, asymmetric temporalities, and perceptual imperfections.
 
