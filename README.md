@@ -35,9 +35,9 @@ It is the path of those who learn, refine, and wage a quiet, relentless struggle
 </td>
 <td>
 
-#### Eagle Warrior
+<h4>Eagle Warrior</h4>
 
-**Requirement**  
+<b>Requirement</b><br>
 First merged PR  
 
 <br>
@@ -48,15 +48,16 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 
 </td>
 </tr>
+
 <tr>
 <td width="160">
 <img src="assets/badges/2.achcauhtli.png" width="140">
 </td>
 <td>
 
-#### Achcauhtli
+<h4>Achcauhtli</h4>
 
-**Requirement**  
+<b>Requirement</b><br>
 2 to 4 merged PR  
 
 <br>
@@ -67,15 +68,16 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 
 </td>
 </tr>
+
 <tr>
 <td width="160">
 <img src="assets/badges/3.otomi.png" width="140">
 </td>
 <td>
 
-#### Otomi
+<h4>Otomi</h4>
 
-**Requirement**  
+<b>Requirement</b><br>
 5 to 19 merged PR  
 
 <br>
@@ -86,15 +88,16 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 
 </td>
 </tr>
+
 <tr>
 <td width="160">
 <img src="assets/badges/4.shorn_one.png" width="140">
 </td>
 <td>
 
-#### Shorn One
+<h4>Shorn One</h4>
 
-**Requirement**  
+<b>Requirement</b><br>
 20+ merged PR  
 
 <br>
@@ -105,15 +108,16 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 
 </td>
 </tr>
+
 <tr>
 <td width="160">
 <img src="assets/badges/5.emperor.png" width="140">
 </td>
 <td>
 
-#### Emperor
+<h4>Emperor</h4>
 
-**Requirement**  
+<b>Requirement</b><br>
 Founder and principal Maintainer.
 
 <br>
@@ -140,7 +144,7 @@ It is the path of those who illuminate the way for others and sustain the living
 </td>
 <td>
 
-#### Tlamacazqui — Initiate
+<h4>Tlamacazqui — Initiate</h4>
 
 **Requirement**  
 Notable contribution to the community
@@ -160,7 +164,7 @@ Those who begin to carry the light and make their presence felt.
 </td>
 <td>
 
-#### Tlenamacac — Officiant
+<h4>Tlenamacac — Officiant</h4>
 
 **Requirement**  
 Significant contribution to the community
@@ -180,7 +184,7 @@ Those who sustain the flame and help it grow beyond themselves.
 </td>
 <td>
 
-#### Quetzalcoatl Priest  
+<h4>Quetzalcoatl Priest</h4>
 <small><i>High Priest of the Undying Sun</i></small>
 
 **Requirement**  
