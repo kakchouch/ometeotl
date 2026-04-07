@@ -18,15 +18,131 @@ This project is **actively under development**—a true work-in-progress. Curren
 
 ## Join the Journey
 
-**All contributions are welcome!** Whether it's code refinements, axiom suggestions, documentation, testing, or cultural insights into the name's resonance, your input will shape Ometeotl. Check the [specs](goals_and_specs/_index.md), [README](README.md), or [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Fork, PR, or open an issue—let's build this together.
+**All contributions are welcome!** Whether it's code refinements, axiom suggestions, documentation, testing, or cultural insights into the name's resonance, your input will shape Ometeotl. Check the [specs](specs_EN.md), [README](README.md), or [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Fork, PR, or open an issue—let's build this together.
 
 
 ### Developer Ranks - The Path of the Serpent
+The Path of the Serpent represents knowledge, depth, and commitment.  
+It is the path of those who learn, refine, and wage a quiet, relentless struggle against bad code—both in the system and within themselves.
 
-| Badge | Rank | Requirement | Cultural lore |
-|---|---|---:|---|
-| <img src="assets/badges/1.eagle_warrior.png" alt="Eagle Warrior badge" width="180"> | **Eagle Warrior** | First merged PR | <small><small>In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor of proving oneself in action.</small></small> |
-| <img src="assets/badges/2.achcauhtli.png" alt="Achcauhtli badge" width="180"> | **Achcauhtli** | 2–4 merged PRs | <small><small>*Achcauhtli* evokes a proven war leader, a contributor who has moved beyond initiation and begun to earn standing through repeated service.</small></small> |
-| <img src="assets/badges/3.otomi.png" alt="Otomi badge" width="180"> | **Otomi** | 5–19 merged PRs | <small><small>The Otomi warrior figure represents resilience and battlefield reputation, honoring contributors who have become dependable forces within the project.</small></small> |
-| <img src="assets/badges/4.shorn_one.png" alt="Shorn One badge" width="180"> | **Shorn One** | 20+ merged PRs | <small><small>The Shorn Ones were elite warriors sworn not to retreat, making this rank a symbol of exceptional discipline, loyalty, and sustained achievement.</small></small> |
-| <img src="assets/badges/5.emperor.png" alt="Emperor badge" width="180"> | **Emperor** | Founder and current principal maintainer | <small><small>The Emperor stands as the sovereign guardian of the Order, embodying stewardship, vision, and the sacred balance at the heart of Ometeotl.</small></small> |
+---
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/1.eagle_warrior.png" width="140">
+</td>
+<td>
+
+#### Eagle Warrior
+
+**Requirement**  
+First merged PR  
+
+<br>
+
+<small><i>
+In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor of proving oneself in action.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/2.achcauhtli.png" width="140">
+</td>
+<td>
+
+#### Achcauhtli
+
+**Requirement**  
+2 to 4 merged PR  
+
+<br>
+
+<small><i>
+Achcauhtli evokes a proven war leader, a contributor who has moved beyond initiation and begun to earn standing through repeated service.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/3.otomi.png" width="140">
+</td>
+<td>
+
+#### Otomi
+
+**Requirement**  
+5 to 19 merged PR  
+
+<br>
+
+<small><i>
+The Otomi warrior figure represents resilience and battlefield reputation, honoring contributors who have become dependable forces within the project.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/4.shorn_one.png" width="140">
+</td>
+<td>
+
+#### Shorn One
+
+**Requirement**  
+20+ merged PR  
+
+<br>
+
+<small><i>
+The Shorn Ones were elite warriors sworn not to retreat, making this rank a symbol of exceptional discipline, loyalty, and sustained achievement.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+---
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/5.emperor.png" width="140">
+</td>
+<td>
+
+#### Emperor
+
+**Requirement**  
+Founder and principal Maintainer.
+
+<br>
+
+<small><i>
+The Emperor stands as the sovereign guardian of the Order, embodying stewardship, vision, and the sacred balance at the heart of Ometeotl.
+</i></small>
+
+</td>
+</tr>
+</table>
+
+---
