@@ -4,7 +4,7 @@
 </p>
 
 # **Ometeotl** : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_
-_Create simulated worlds with competitive or cooperative entities. Define goals and strategies through simple, standard formats. Train AI agents to act, adapt, and compete—within a world shaped by a native fog of war._
+_Create simulated worlds with competitive or cooperative entities using simple class instantiation. Define goals and strategies through clear, standard formats. Train AI agents to act, adapt, and compete in your world. Navigate through a natively built fog of war._
 
 ## Ometeotl: An experimental meta-model for complex decisional systems
 
@@ -220,7 +220,7 @@ Those who walk this this path will support :
 - compensation for those on the path of the serpent, depending on their rank and activity 
 - production of merch.
 
-<small><i><b>Historical note:</b> the Aztec did not mint metallic currency.</i></small>
+<small><i><b>Historical note:</b> the Aztecs did not use metallic currency—value was expressed through goods, service, and offerings, a principle that inspires this path.</i></small>
 
 
 <table>
