@@ -44,8 +44,8 @@ It is the path of those who learn, refine, and wage a quiet, relentless struggle
 
 <table>
 <tr>
-<td width="160">
-<img src="/ometeotl/images/badges/1.eagle_warrior.png" width="140">
+<td width="160" style="text-align:center; vertical-align:middle;">
+<img src="/ometeotl/images/badges/1.eagle_warrior.png" width="110">
 </td>
 <td>
 
@@ -63,8 +63,8 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 </td>
 </tr>
 <tr>
-<td width="160">
-<img src="/ometeotl/images/badges/2.achcauhtli.png" width="140">
+<td width="160" style="text-align:center; vertical-align:middle;">
+<img src="/ometeotl/images/badges/2.achcauhtli.png" width="125">
 </td>
 <td>
 
@@ -82,7 +82,7 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 </td>
 </tr>
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/3.otomi.png" width="140">
 </td>
 <td>
@@ -101,7 +101,7 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 </td>
 </tr>
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/4.shorn_one.png" width="140">
 </td>
 <td>
@@ -120,7 +120,7 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 </td>
 </tr>
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/5.emperor.png" width="140">
 </td>
 <td>
@@ -146,8 +146,8 @@ It is the path of those who illuminate the way for others and sustain the living
 
 <table>
 <tr>
-<td width="160">
-<img src="/ometeotl/images/badges/p1_tlamacazqui.png" width="140">
+<td width="160" style="text-align:center; vertical-align:middle;">
+<img src="/ometeotl/images/badges/p1_tlamacazqui.png" width="110">
 </td>
 <td>
 
@@ -165,8 +165,8 @@ Those who begin to carry the light and make their presence felt.
 </td>
 </tr>
 <tr>
-<td width="160">
-<img src="/ometeotl/images/badges/p2_tlenemacac.png" width="140">
+<td width="160" style="text-align:center; vertical-align:middle;">
+<img src="/ometeotl/images/badges/p2_tlenemacac.png" width="120">
 </td>
 <td>
 
@@ -184,7 +184,7 @@ Those who sustain the flame and help it grow beyond themselves.
 </td>
 </tr>
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/p3_high_priest.png" width="140">
 </td>
 <td>
@@ -219,7 +219,7 @@ Those who walk this this path will support :
 
 <table>
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/o1_tonalli_seed.png" width="140">
 </td>
 <td>
@@ -234,7 +234,7 @@ Those who spark the first motion, bringing initial energy into the system.
 </tr>
 
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/o2_tlaxtli_contributor.png" width="140">
 </td>
 <td>
@@ -250,7 +250,7 @@ Those who give and sustain, turning intent into tangible support.
 </tr>
 
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/o3_Tlatquitl_backer.png" width="140">
 </td>
 <td>
@@ -266,7 +266,7 @@ Those who provide the substance that allows ideas to take form and endure.
 </tr>
 
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/o4_Tonalli_flowkeeper.png" width="140">
 </td>
 <td>
@@ -281,7 +281,7 @@ Those who maintain the flow, ensuring balance, continuity, and lasting momentum.
 </tr>
 
 <tr>
-<td width="160">
+<td width="160" style="text-align:center; vertical-align:middle;">
 <img src="/ometeotl/images/badges/o5_Teyola_source.png" width="140">
 </td>
 <td>
