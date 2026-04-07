@@ -49,8 +49,6 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 </td>
 </tr>
 </table>
-
-
 <table>
 <tr>
 <td width="160">
@@ -72,8 +70,6 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 </td>
 </tr>
 </table>
-
-
 <table>
 <tr>
 <td width="160">
@@ -95,8 +91,6 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 </td>
 </tr>
 </table>
-
-
 <table>
 <tr>
 <td width="160">
@@ -118,8 +112,6 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 </td>
 </tr>
 </table>
-
-
 <table>
 <tr>
 <td width="160">
@@ -142,18 +134,21 @@ The Emperor stands as the sovereign guardian of the Order, embodying stewardship
 </tr>
 </table>
 
-### Community Benefactors - The Path of the Undying Sun
+### ☀️ Community Benefactors — The Path of the Undying Sun
+
 The Path of the Undying Sun represents clarity, guidance, and transmission.  
 It is the path of those who illuminate the way for others and sustain the living flame of knowledge.
 
+<br>
+
 <table>
 <tr>
-<td width="160">
+<td width="160" align="center">
 <img src="assets/badges/p1_tlamacazqui.png" width="140">
 </td>
 <td>
 
-#### Tlamacazqui - Initiate
+#### Tlamacazqui — Initiate
 
 **Requirement**  
 Notable contribution to the community
@@ -166,17 +161,14 @@ Those who begin to carry the light and make their presence felt.
 
 </td>
 </tr>
-</table>
 
-
-<table>
 <tr>
-<td width="160">
+<td width="160" align="center">
 <img src="assets/badges/p2_tlenemacac.png" width="140">
 </td>
 <td>
 
-#### Tlenamacac - Officiant
+#### Tlenamacac — Officiant
 
 **Requirement**  
 Significant contribution to the community
@@ -189,20 +181,18 @@ Those who sustain the flame and help it grow beyond themselves.
 
 </td>
 </tr>
-</table>
 
-
-<table>
 <tr>
-<td width="160">
+<td width="160" align="center">
 <img src="assets/badges/p3_high_priest.png" width="140">
 </td>
 <td>
 
-#### Quetzalcoatl Priest
+#### Quetzalcoatl Priest  
+<small><i>High Priest of the Undying Sun</i></small>
 
 **Requirement**  
-Decisive contribution to the project or its direction 
+Decisive contribution to the project or its direction
 
 <br>
 
