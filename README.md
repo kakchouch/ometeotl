@@ -3,6 +3,7 @@
   <img src="logo.png" width="300" height="300"/>
 </p>
 
+<big><b>Ometeotl</b> : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_</big>
 
 # Ometeotl: An experimental meta-model for complex decisional systems
 
@@ -209,3 +210,94 @@ Those whose actions shape the path of others and ensure the light endures.
 </table>
 
 
+### Donors — The Path of the Temple Offering *(available after the first release)*
+
+The Path of the Temple offering represents the material commitment to the project.
+It is the path of those who wish to sustain and amplify its development.
+Those who walk this this path will support :
+- the purchase and maintenance of specific infrastructure
+- compensation for those on the path of the serpent, depending on their rank and activity 
+- production of merch.
+
+<small><i><b>Historical note:</b> the Aztec did not mint metallic currency.</i></small>
+
+
+<table>
+<tr>
+<td width="160">
+<img src="assets/badges/o1_tonalli_seed.png" width="140">
+</td>
+<td>
+
+<h4>Tonalli Seed</h4>
+
+<small><i>
+Those who spark the first motion, bringing initial energy into the system.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="assets/badges/o2_tlaxtli_contributor.png" width="140">
+</td>
+<td>
+
+<h4>Tlaxtli Contributor</h4>
+
+
+<small><i>
+Those who give and sustain, turning intent into tangible support.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="assets/badges/o3_Tlatquitl_backer.png" width="140">
+</td>
+<td>
+
+<h4>Tlatquitl Backer</h4>
+
+
+<small><i>
+Those who provide the substance that allows ideas to take form and endure.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="assets/badges/o4_Tonalli_flowkeeper.png" width="140">
+</td>
+<td>
+
+<h4>Tonalli Flowkeeper</h4>
+
+<small><i>
+Those who maintain the flow, ensuring balance, continuity, and lasting momentum.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="assets/badges/o5_Teyola_source.png" width="140">
+</td>
+<td>
+
+<h4>Teyolia Source</h4>
+
+
+<small><i>
+Those who stand at the origin, empowering the whole system through their presence.
+</i></small>
+
+</td>
+</tr>
+</table>

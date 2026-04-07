@@ -9,6 +9,8 @@ draft: false
   <img src="/ometeotl/images/logo.png" width="300" height="300" alt="Ometeotl logo"/>
 </p>
 
+<big><b>Ometeotl</b> : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_</big>
+
 [Github repo](https://github.com/kakchouch/ometeotl#)
 
 # Ometeotl: An experimental meta-model for complex decisional systems
@@ -40,7 +42,6 @@ This project is **actively under development**—a true work-in-progress. Curren
 The Path of the Serpent represents knowledge, depth, and commitment.  
 It is the path of those who learn, refine, and wage a quiet, relentless struggle against bad code—both in the system and within themselves.
 
----
 <table>
 <tr>
 <td width="160">
@@ -61,11 +62,6 @@ In Nahua warrior tradition, the eagle symbolizes courage, ascent, and the honor 
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/2.achcauhtli.png" width="140">
@@ -85,11 +81,6 @@ Achcauhtli evokes a proven war leader, a contributor who has moved beyond initia
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/3.otomi.png" width="140">
@@ -109,11 +100,6 @@ The Otomi warrior figure represents resilience and battlefield reputation, honor
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/4.shorn_one.png" width="140">
@@ -133,11 +119,6 @@ The Shorn Ones were elite warriors sworn not to retreat, making this rank a symb
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/5.emperor.png" width="140">
@@ -159,14 +140,9 @@ The Emperor stands as the sovereign guardian of the Order, embodying stewardship
 </tr>
 </table>
 
----
-
-
 ### Community Benefactors - The Path of the Undying Sun
 The Path of the Undying Sun represents clarity, guidance, and transmission.  
 It is the path of those who illuminate the way for others and sustain the living flame of knowledge.
-
----
 
 <table>
 <tr>
@@ -188,11 +164,6 @@ Those who begin to carry the light and make their presence felt.
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/p2_tlenemacac.png" width="140">
@@ -212,11 +183,6 @@ Those who sustain the flame and help it grow beyond themselves.
 
 </td>
 </tr>
-</table>
-
----
-
-<table>
 <tr>
 <td width="160">
 <img src="/ometeotl/images/badges/p3_high_priest.png" width="140">
@@ -224,6 +190,7 @@ Those who sustain the flame and help it grow beyond themselves.
 <td>
 
 #### Quetzalcoatl Priest
+_High priest of the Undying Sun_
 
 **Requirement**  
 Decisive contribution to the project or its direction 
@@ -238,5 +205,94 @@ Those whose actions shape the path of others and ensure the light endures.
 </tr>
 </table>
 
----
+### Donors — The Path of the Temple Offering *(available after the first release)*
 
+The Path of the Temple offering represents the material commitment to the project.
+It is the path of those who wish to sustain and amplify its development.
+Those who walk this this path will support :
+- the purchase and maintenance of specific infrastructure
+- compensation for those on the path of the serpent, depending on their rank and activity 
+- production of merch.
+
+<small><i><b>Historical note:</b> the Aztec did not mint metallic currency.</i></small>
+
+
+<table>
+<tr>
+<td width="160">
+<img src="/ometeotl/images/badges/o1_tonalli_seed.png" width="140">
+</td>
+<td>
+
+<h4>Tonalli Seed</h4>
+
+<small><i>
+Those who spark the first motion, bringing initial energy into the system.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="/ometeotl/images/badges/o2_tlaxtli_contributor.png" width="140">
+</td>
+<td>
+
+<h4>Tlaxtli Contributor</h4>
+
+
+<small><i>
+Those who give and sustain, turning intent into tangible support.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="/ometeotl/images/badges/o3_Tlatquitl_backer.png" width="140">
+</td>
+<td>
+
+<h4>Tlatquitl Backer</h4>
+
+
+<small><i>
+Those who provide the substance that allows ideas to take form and endure.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="/ometeotl/images/badges/o4_Tonalli_flowkeeper.png" width="140">
+</td>
+<td>
+
+<h4>Tonalli Flowkeeper</h4>
+
+<small><i>
+Those who maintain the flow, ensuring balance, continuity, and lasting momentum.
+</i></small>
+
+</td>
+</tr>
+
+<tr>
+<td width="160">
+<img src="/ometeotl/images/badges/o5_Teyola_source.png" width="140">
+</td>
+<td>
+
+<h4>Teyolia Source</h4>
+
+
+<small><i>
+Those who stand at the origin, empowering the whole system through their presence.
+</i></small>
+
+</td>
+</tr>
+</table>
