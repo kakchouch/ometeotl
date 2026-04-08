@@ -17,7 +17,7 @@ permissions:
   contents: write
   actions: read
   pull-requests: read
-  issues: read
+  issues: write
 
 jobs:
   compute-leaderboard:
@@ -51,6 +51,7 @@ jobs:
       - name: Commit and push leaderboard
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
@@ -62,5 +63,34 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "docs(leaderboard): update activity shares [$(date -u +%Y-%m-%d)]"
-            git push origin HEAD:develop
-          fi
+
+            if git pull --no-rebase origin develop; then
+              git push origin HEAD:develop
+            else
+              echo "::warning::Merge conflict during leaderboard update. Aborting merge and opening an issue."
+              git merge --abort
+
+              # Reset to clean state (drop the leaderboard commit)
+              git reset --hard origin/develop
+
+              # Open a GitHub issue to alert maintainers
+              gh issue create \
+                --repo "${{ github.repository }}" \
+                --title "[leaderboard-bot] Merge conflict on develop" \
+                --label "bot,leaderboard" \
+                --body "The automated leaderboard update failed due to a merge conflict on \`develop\`.
+
+              **What happened:**
+              The leaderboard workflow committed updated scores, but \`develop\` had diverged with conflicting changes in one of these paths:
+              - \`leaderboard/LEADERBOARD.md\`
+              - \`leaderboard/leaderboard-data.json\`
+              - \`doc-site/content/en/leaderboard/live.md\`
+
+              **What to do:**
+              1. Manually run the leaderboard workflow after resolving the conflicting files.
+              2. Or wait — the next scheduled run (daily at 06:00 UTC) will retry automatically.
+
+              **Run:** [$(date -u +%Y-%m-%dT%H:%M:%SZ)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                            exit 0  # Don't fail the workflow — the issue is the alert
+                          fi
+                        fi
