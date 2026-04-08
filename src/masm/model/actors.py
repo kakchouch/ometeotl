@@ -70,6 +70,7 @@ class Actor(GenericObject):
 
     def __post_init__(self) -> None:
         """Normalize and initialize actors default values."""
+        super().__post_init__()
         if self.object_type != "actor":
             self.object_type = "actor"
 

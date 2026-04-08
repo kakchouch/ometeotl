@@ -43,6 +43,7 @@ class Space(GenericObject):
     object_type: str = "space"
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.object_type != "space":
             self.object_type = "space"
         self.attributes.setdefault("kind", "abstract")

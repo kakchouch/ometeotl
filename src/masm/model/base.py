@@ -58,26 +58,11 @@ class ModelObject:
 
     def add_relation(self, name: str, target_id: ObjectId) -> None:
         """Add a relation to another object."""
-        if not name:
-            raise ValueError("Relation name cannot be empty")
-        if not target_id:
-            raise ValueError("Target ID cannot be empty")
-        self.relations.setdefault(name, [])
-        if target_id not in self.relations[name]:
-            self.relations[name].append(target_id)
-            self.relations[name].sort()
+        self._manage_relation(name, target_id, add=True)
 
     def remove_relation(self, name: str, target_id: ObjectId) -> None:
         """Remove a relation to another object."""
-        if name not in self.relations:
-            return
-        self.relations[name] = [
-            existing_id
-            for existing_id in self.relations[name]
-            if existing_id != target_id
-        ]
-        if not self.relations[name]:
-            del self.relations[name]
+        self._manage_relation(name, target_id, add=False)
 
     def _manage_relation(self, rel_name: str, target_id: ObjectId, add: bool = True) -> None:
         """Generic add/remove for relations. Used by subclasses."""

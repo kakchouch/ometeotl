@@ -57,6 +57,7 @@ class Resource(GenericObject):
     object_type: str = "resource"
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.object_type != "resource":
             self.object_type = "resource"
 
