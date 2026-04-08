@@ -8,7 +8,8 @@ on:
 # MODIFIED: added 'contents: write' to allow pushing CONTRIBUTORS.md
 # feature tested on the 04/08/2026
 # 3 tests failed on the 04/08/2026
-# 13:49 - update settings_new test
+# 13:49 - update settings_new test - FAILED
+# 13:53 - updated settings
 
 permissions:
   contents: write
@@ -187,7 +188,7 @@ jobs:
                   # ADDED: commit and push the updated CONTRIBUTORS.md to the target branch
       - name: Commit and push CONTRIBUTORS.md
         env: 
-          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTOR }}
+          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
