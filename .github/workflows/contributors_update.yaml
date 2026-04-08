@@ -1,4 +1,9 @@
 name: Ometeotl Contributors
+# 04/08/2026 - (hopefully) last iteration
+# before stabilizing the contributors workflow
+# -> contributors is updated in develop
+# 15:32 - test after conflict 
+# in contributors
 
 on:
   workflow_run:
@@ -20,21 +25,8 @@ jobs:
         with:
           # MODIFIED: use PAT to allow push to the protected target branch
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-          # MODIFIED: always work on develop
-          ref: develop
-          # ADDED: fetch full history to avoid shallow clone issues
-          fetch-depth: 0
-
-      - name: Sync with latest remote develop
-        env:
-          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-        run: |
-          # ADDED: align local branch with latest remote state before editing CONTRIBUTORS.md
-          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          git fetch origin develop
-          git checkout develop
-          git reset --hard origin/develop
-          git clean -fd
+          # ADDED: checkout the branch targeted by the source workflow
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Download rank artifact from triggering workflow
         env:
