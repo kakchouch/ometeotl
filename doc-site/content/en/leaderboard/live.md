@@ -1,0 +1,49 @@
+---
+title: "Current Standings"
+date: 2026-04-08
+weight: 1
+toc: false
+---
+
+# 🜂 Current Activity Standings
+
+<p style="color: var(--base04); font-size: 0.9em;">
+Last computed: <strong>2026-04-08 16:19 UTC</strong> · 
+Active contributors: <strong>0</strong> · 
+Smoothing factor k: <strong>12</strong> · 
+Total shares: <strong>1000</strong>
+</p>
+
+<p style="color: var(--base09); font-style: italic;">
+Cold start mode: fewer than 3 active contributors. Shares allocated proportionally to raw scores.
+</p>
+
+*No active contributors yet. [Start your first PR and become an Eagle Warrior!](https://github.com/kakchouch/ometeotl)*
+
+---
+
+<p style="font-style: italic; color: var(--base04);">Out-of-competition — Founder</p>
+
+<table>
+<tr style="border-bottom: 2px solid var(--base02);"><th style="padding: 8px;">Contributor</th><th style="text-align:right; padding: 8px;">Raw Score</th></tr>
+<tr style="opacity: 0.7;"><td style="padding: 6px 8px;"><a href="https://github.com/kakchouch">@kakchouch</a></td><td style="text-align:right; padding: 6px 8px;">280.5</td></tr>
+</table>
+
+---
+
+<details>
+<summary>Scoring formula</summary>
+
+```
+Raw score    S(u) = Σ weight(event) × 2^(−age / 90)
+z-score      z(u) = (S(u) − μ) / σ
+Adjusted     f(z) = exp(sinh(clamp(z, -3.0, 4.0)) / k)
+Smoothing    k    = max(3, 12 − n_active)
+Shares       s(u) = f(z(u)) / Σf(z) × 1000
+```
+
+Active contributor window: 180 days (2× half-life). Founder included in normalization, excluded from share allocation.
+
+[Full specification →](https://github.com/kakchouch/ometeotl/blob/develop/leaderboard/LEADERBOARD_SPEC.md) · [Methodology →](../)
+
+</details>

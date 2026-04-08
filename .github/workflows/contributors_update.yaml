@@ -191,6 +191,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "docs(contributors): update @$(node -p \"require('./rank-data.json').username\")"
+            USERNAME="$(node -p "require('./rank-data.json').username")"
+            git commit -m "docs(contributors): update @${USERNAME}"   
             git push origin HEAD:develop
           fi
