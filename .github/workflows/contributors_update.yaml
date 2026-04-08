@@ -1,4 +1,9 @@
 name: Ometeotl Contributors
+# 04/08/2026 - (hopefully) last iteration
+# before stabilizing the contributors workflow
+# -> contributors is updated in develop
+# 15:32 - test after conflict 
+# in contributors
 
 on:
   workflow_run:
@@ -18,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # ADDED: use PAT to allow push to the protected target branch
+          # MODIFIED: use PAT to allow push to the protected target branch
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
           # ADDED: checkout the branch targeted by the source workflow
           ref: ${{ github.event.workflow_run.head_branch }}
@@ -176,14 +181,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
         run: |
+          # MODIFIED: configure bot identity and push only when CONTRIBUTORS.md changed
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
           git add CONTRIBUTORS.md
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "docs(contributors): update @$(node -p "require('./rank-data.json').username")"
-            git push origin HEAD:${{ github.event.workflow_run.head_branch }}
+            git commit -m "docs(contributors): update @$(node -p \"require('./rank-data.json').username\")"
+            git push origin HEAD:develop
           fi
