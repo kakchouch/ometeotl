@@ -6,6 +6,7 @@ on:
     types: [closed]
 
 # MODIFIED: added 'contents: write' to allow pushing CONTRIBUTORS.md
+# feature tested on the 04/08/2026
 
 permissions:
   contents: write
