@@ -1,3 +1,4 @@
+# Goals and specs
 ## 0 — Purpose
 
 - **0-1. Project objective** the library must make it possible to represent, generate, validate, serialize, and exploit multi-actor, multi-space, and multi-metric systems.
