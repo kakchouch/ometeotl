@@ -1,0 +1,18 @@
+# Leaderboard — only the founder can approve changes
+/leaderboard/                           @kakchouch
+/.github/workflows/leaderboard_update.yaml  @kakchouch
+
+# All workflows — founder approval required
+/.github/                    @kakchouch
+
+# Doc-site
+/doc-site/     @kakchouch
+
+# README and CONTRIBUTING, and generic governance
+/README.md              @kakchouch
+/CONTRIBUTING.md        @kakchouch
+/LICENCE                @kakchouch
+/specs_EN.md            @kakchouch
+/specs_FR.md            @kakchouch
+/chatgpt_brainstorm.md  @kakchouch
+
