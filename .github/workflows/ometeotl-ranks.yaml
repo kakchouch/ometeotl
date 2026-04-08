@@ -7,6 +7,8 @@ on:
 
 # MODIFIED: added 'contents: write' to allow pushing CONTRIBUTORS.md
 # feature tested on the 04/08/2026
+# 3 tests failed on the 04/08/2026
+# 13:49 - update settings_new test
 
 permissions:
   contents: write
