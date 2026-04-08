@@ -1,4 +1,7 @@
 name: Ometeotl Contributors
+# 04/08/2026 - (hopefully) last iteration
+# before stabilizing the contributors workflow
+# -> contributors is updated in develop
 
 on:
   workflow_run:
