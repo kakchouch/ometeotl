@@ -27,6 +27,7 @@ jobs:
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
           # ADDED: checkout the branch targeted by the source workflow
           ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0  # ADDED: full history to avoid 'fetch first' error
 
       - name: Download rank artifact from triggering workflow
         env:
