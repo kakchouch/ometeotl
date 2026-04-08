@@ -16,6 +16,6 @@
     "pr_comment": 1,
     "commit_in_merged_pr": 3,
     "lines_changed_per_unit": 0.01,
-    "lines_changed_cap_per_pr": 500
+    "lines_changed_cap_per_pr": 200
   }
 }

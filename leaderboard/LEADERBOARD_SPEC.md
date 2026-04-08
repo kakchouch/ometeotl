@@ -76,7 +76,7 @@ Where:
 | `issue_opened` | **2** | Opening a well-described issue surfaces bugs, proposes features, or asks clarifying questions. Valued above comments but below code contributions. |
 | `issue_comment` | **1** | Participating in discussions. Low individual weight, but frequent commenters accumulate meaningful scores. |
 | `pr_comment` | **1** | Inline feedback on pull requests. Same logic as issue comments. |
-| `lines_changed` | **0.01** per line | A minor bonus for volume, **capped at 500 lines per PR** (contributing max 5 points). This prevents score inflation from large auto-generated or refactoring PRs. Lines changed = additions + deletions. |
+| `lines_changed` | **0.01** per line | A minor bonus for volume, **capped at 200 lines per PR** (contributing max 2 points). This prevents score inflation from large auto-generated or refactoring PRs. Lines changed = additions + deletions. |
 
 ### Recency Decay Function
 
@@ -348,7 +348,7 @@ The threshold of 3 is the minimum for a z-score to have any statistical meaning 
 | Active window | 180 days | 2× half-life, natural cutoff at 25% residual weight | Directly tied to τ; change τ → change window |
 | Merged PR weight | 10 | Highest-value contribution type | Anchor weight; all others relative to this |
 | PR review weight | 4 | ~40% of a PR — high value, no new code | Could be 3-5 depending on review culture |
-| Lines changed cap | 500/PR | Prevents gaming via large refactors or auto-gen | 200-1000 range is reasonable |
+| Lines changed cap | 200/PR | Prevents gaming via large refactors or auto-gen | 200-1000 range is reasonable |
 | Min contributors for z | 3 | Minimum for non-degenerate std deviation | Mathematical minimum |
 
 ---
@@ -390,7 +390,7 @@ The threshold of 3 is the minimum for a z-score to have any statistical meaning 
 | Attack vector | Mitigation |
 |---------------|-----------|
 | Spam PRs with trivial changes | PRs must be **merged** (implies maintainer review). Trivial PRs will be rejected during review. |
-| Inflated line counts | Lines changed capped at 500 per PR (max 5 points per PR from this dimension). |
+| Inflated line counts | Lines changed capped at 200 per PR (max 2 points per PR from this dimension). |
 | Self-merging (non-founder) | Branch protection rules require at least 1 approving review. |
 | Bot accounts | Only human contributors with merged PRs are included. Bot accounts (`*[bot]`) are excluded. |
 | Score manipulation via issues | Issues and comments have low weight (1-2). Gaming them is unprofitable. |
@@ -444,9 +444,10 @@ All parameters live in `leaderboard/config.json`:
     "pr_comment": 1,
     "commit_in_merged_pr": 3,
     "lines_changed_per_unit": 0.01,
-    "lines_changed_cap_per_pr": 500
+    "lines_changed_cap_per_pr": 200
   }
 }
+
 ```
 
 To modify any parameter: edit `config.json`, commit, and the next leaderboard computation will use the new values. No code changes required.

@@ -36,7 +36,7 @@ S(u) = Σ  weight(event) × recency(age)
 | PR review | 4 | Code review is high-value mentorship |
 | Issue opened | 2 | Surfaces bugs and proposes features |
 | Comment (issue/PR) | 1 | Encourages community discussion |
-| Lines changed | 0.01/line | Minor volume bonus (capped at 500 lines/PR) |
+| Lines changed | 0.01/line | Minor volume bonus (capped at 200 lines/PR) |
 
 **Recency decay** uses an exponential half-life of **90 days**:
 
