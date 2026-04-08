@@ -16,6 +16,13 @@ class GenericObject(ModelObject):
     layer above ModelObject before introducing more specialized domain
     objects such as actors, resources, or spaces.
     """
+    def __post_init__(self) -> None:
+        """Register the object in the global model registry"""
+        if not self.id:
+            raise ValueError("Object id cannot be empty")
+        from .registry import ModelRegistry
+        ModelRegistry.register(self)
+
 
     @property
     def label(self) -> Optional[str]:
