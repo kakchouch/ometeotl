@@ -43,4 +43,8 @@ url = "https://akchouch.fr"
       name = 'documentation'
       pageRef = '/documentation/'
       weight = 20
+    [[languages.en.menus.main]]
+      name = 'leaderboard'
+      pageRef = '/leaderboard/'
+      weight = 30
  
