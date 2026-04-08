@@ -1,6 +1,4 @@
 name: Ometeotl Contributors
-# 04/08/26 -14:48 - first run of job after 
-# update into main
 
 on:
   workflow_run:
@@ -187,5 +185,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "docs(contributors): update @$(node -p "require('./rank-data.json').username")"
-            git push origin HEAD:${{ github.event.workflow_run.head_branch }}
+            git push origin HEAD:develop
           fi
