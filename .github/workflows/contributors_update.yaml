@@ -18,10 +18,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # ADDED: use PAT to allow push to the protected target branch
+          # MODIFIED: use PAT to allow push to the protected target branch
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-          # ADDED: checkout the branch targeted by the source workflow
-          ref: ${{ github.event.workflow_run.head_branch }}
+          # MODIFIED: always work on develop
+          ref: develop
+          # ADDED: fetch full history to avoid shallow clone issues
+          fetch-depth: 0
+
+      - name: Sync with latest remote develop
+        env:
+          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+        run: |
+          # ADDED: align local branch with latest remote state before editing CONTRIBUTORS.md
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git fetch origin develop
+          git checkout develop
+          git reset --hard origin/develop
+          git clean -fd
 
       - name: Download rank artifact from triggering workflow
         env:
@@ -176,14 +189,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
         run: |
+          # MODIFIED: configure bot identity and push only when CONTRIBUTORS.md changed
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
           git add CONTRIBUTORS.md
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "docs(contributors): update @$(node -p "require('./rank-data.json').username")"
+            git commit -m "docs(contributors): update @$(node -p \"require('./rank-data.json').username\")"
             git push origin HEAD:develop
           fi
