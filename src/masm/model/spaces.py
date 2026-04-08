@@ -43,6 +43,7 @@ class Space(GenericObject):
     object_type: str = "space"
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.object_type != "space":
             self.object_type = "space"
         self.attributes.setdefault("kind", "abstract")
@@ -78,12 +79,11 @@ class Space(GenericObject):
 
     def add_tag(self, tag: str) -> None:
         """Add a tag to the space."""
-        if not tag:
-            raise ValueError("Tag cannot be empty")
-        tags = self.tags
-        if tag not in tags:
-            tags.append(tag)
-        self.attributes["tags"] = sorted(tags)
+        self.add_to_attribute_list("tags", tag)
+
+    def remove_tag(self, tag: str) -> None:
+        """Remove a tag from the space."""
+        self.remove_from_attribute_list("tags", tag)
 
     @property
     def dimensions(self) -> JsonMap:
