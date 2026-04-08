@@ -5,8 +5,10 @@ on:
   pull_request_target:
     types: [closed]
 
+# MODIFIED: added 'contents: write' to allow pushing CONTRIBUTORS.md
+
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -16,7 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Assign Ometeotl rank
+      # ADDED: checkout the repo so we can read/write CONTRIBUTORS.md
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # ADDED: use the target branch (the one receiving the merge)
+          ref: ${{ github.event.pull_request.base.ref }}
+      - name: Assign Ometeotl rank and update CONTRIBUTORS.md
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -117,4 +125,68 @@ jobs:
               });
             }
 
+                        // --- ADDED: Update CONTRIBUTORS.md ---
+
+            // Build the list of PR titles with links for this contributor
+            const prLines = allPRs
+              .map(p => `  - [${p.title}](${p.html_url})`)
+              .join("\n");
+
+            // The block we want to insert/update for this contributor
+            const contributorBlock = [
+              `### @${username}`,
+              ``,
+              `- **Rank:** ${rank.title}`,
+              `- **Merged PRs:** ${mergedCount}`,
+              ``,
+              `#### Merged Pull Requests`,
+              ``,
+              prLines,
+              ``
+            ].join("\n");
+
+            // ADDED: read existing CONTRIBUTORS.md if it exists, else start fresh
+            const filePath = "CONTRIBUTORS.md";
+            let content = "";
+            if (fs.existsSync(filePath)) {
+              content = fs.readFileSync(filePath, "utf8");
+            } else {
+              // Create a default header if the file does not exist yet
+              content = [
+                `# Contributors`,
+                ``,
+                `> *All contributors walk the path of duality — creation and transmission.*`,
+                ``,
+                ``
+              ].join("\n");
+            }
+
+            // ADDED: replace existing block for this user, or append a new one
+            // We use a regex to find the section between ### @username and the next ### or end of file
+            const sectionRegex = new RegExp(
+              `### @${username}[\\s\\S]*?(?=\\n### |$)`,
+              "g"
+            );
+
+            if (sectionRegex.test(content)) {
+              // Update the existing block
+              content = content.replace(sectionRegex, contributorBlock);
+            } else {
+              // Append the new block at the end
+              content += contributorBlock;
+            }
+
+            // ADDED: write the updated file to disk
+            fs.writeFileSync(filePath, content, "utf8");
+
             core.info(`Assigned rank ${rank.title} to ${username} (${mergedCount} merged PRs).`);
+
+                  # ADDED: commit and push the updated CONTRIBUTORS.md to the target branch
+      - name: Commit and push CONTRIBUTORS.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CONTRIBUTORS.md
+          # Only commit if there are actual changes
+          git diff --cached --quiet || git commit -m "chore: update CONTRIBUTORS.md for @${{ github.event.pull_request.user.login }}"
+          git push
