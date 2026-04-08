@@ -28,7 +28,7 @@ jobs:
       - name: Assign Ometeotl rank and update CONTRIBUTORS.md
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const founder = "kakchouch";
 
@@ -184,6 +184,8 @@ jobs:
 
                   # ADDED: commit and push the updated CONTRIBUTORS.md to the target branch
       - name: Commit and push CONTRIBUTORS.md
+        env: 
+          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTOR }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
