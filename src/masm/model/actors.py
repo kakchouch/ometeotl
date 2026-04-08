@@ -30,6 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping
 
+from .base import relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
@@ -42,6 +43,16 @@ def _default_schema_version() -> str:
     return "1.0"
 
 
+@relation_methods("action", "action")
+@relation_methods("resource", "resource")
+@relation_methods("value", "value")
+@relation_methods("goal", "goal")
+@relation_methods("constraint", "constraint")
+@relation_methods("component", "component")
+@relation_methods("membership", "membership")
+@relation_methods("dependency", "dependency")
+@relation_methods("cooperation", "cooperation")
+@relation_methods("conflict", "conflict")
 @dataclass
 class Actor(GenericObject):
     """Represents an actor in the model.
@@ -59,6 +70,7 @@ class Actor(GenericObject):
 
     def __post_init__(self) -> None:
         """Normalize and initialize actors default values."""
+        super().__post_init__()
         if self.object_type != "actor":
             self.object_type = "actor"
 
@@ -101,11 +113,11 @@ class Actor(GenericObject):
 
     def add_tag(self, tag: str) -> None:
         """Adds a tag to the actor."""
-        if not tag:
-            raise ValueError("Tag cannot be empty")
-        tags = set(self.attributes.get("tags", []))
-        tags.add(tag)
-        self.attributes["tags"] = sorted(list(tags))
+        self.add_to_attribute_list("tags", tag)
+
+    def remove_tag(self, tag: str) -> None:
+        """Removes a tag from the actor."""
+        self.remove_from_attribute_list("tags", tag)
 
     @property
     def roles(self) -> List[str]:
@@ -119,12 +131,11 @@ class Actor(GenericObject):
 
     def add_role(self, role: str) -> None:
         """Adds a role to the actor."""
-        if not role:
-            raise ValueError("Role cannot be empty")
-        roles = set(self.attributes.get("roles", []))
-        if role not in roles:
-            roles.add(role)
-        self.attributes["roles"] = sorted(list(roles))
+        self.add_to_attribute_list("roles", role)
+
+    def remove_role(self, role: str) -> None:
+        """Removes a role from the actor."""
+        self.remove_from_attribute_list("roles", role)
 
     @property
     def profile(self) -> JsonMap:
@@ -197,165 +208,6 @@ class Actor(GenericObject):
     # as well as a clearer separation of concerns. It ensures fidelity with
     # ModelObject.relations, which is the canonical place for storing links
     # between model objects.
-
-    def add_action(self, action_id: ObjectId) -> None:
-        """Adds an action to the actor by creating a relation to the action object."""
-        if not action_id:
-            raise ValueError("Action ID cannot be empty")
-        actions = set(self.relations.get("actions", []))
-        actions.add(action_id)
-        self.relations["actions"] = sorted(list(actions))
-
-    def remove_action(self, action_id: ObjectId) -> None:
-        """Removes an action from the actor by removing the relation to the action object."""
-        if not action_id:
-            raise ValueError("Action ID cannot be empty")
-        actions = set(self.relations.get("actions", []))
-        if action_id in actions:
-            actions.remove(action_id)
-            self.relations["actions"] = sorted(list(actions))
-
-    def add_resource(self, resource_id: ObjectId) -> None:
-        """Adds a resource to the actor by creating a relation to the resource object."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty")
-        resources = set(self.relations.get("resources", []))
-        resources.add(resource_id)
-        self.relations["resources"] = sorted(list(resources))
-
-    def remove_resource(self, resource_id: ObjectId) -> None:
-        """Removes a resource from the actor by removing the relation to the resource object."""
-        if not resource_id:
-            raise ValueError("Resource ID cannot be empty")
-        resources = set(self.relations.get("resources", []))
-        if resource_id in resources:
-            resources.remove(resource_id)
-            self.relations["resources"] = sorted(list(resources))
-
-    def add_value(self, value_id: ObjectId) -> None:
-        """Adds a value to the actor by creating a relation to the value object."""
-        if not value_id:
-            raise ValueError("Value ID cannot be empty")
-        values = set(self.relations.get("values", []))
-        values.add(value_id)
-        self.relations["values"] = sorted(list(values))
-
-    def remove_value(self, value_id: ObjectId) -> None:
-        """Removes a value from the actor by removing the relation to the value object."""
-        if not value_id:
-            raise ValueError("Value ID cannot be empty")
-        values = set(self.relations.get("values", []))
-        if value_id in values:
-            values.remove(value_id)
-            self.relations["values"] = sorted(list(values))
-
-    def add_goal(self, goal_id: ObjectId) -> None:
-        """Adds a goal to the actor by creating a relation to the goal object."""
-        if not goal_id:
-            raise ValueError("Goal ID cannot be empty")
-        goals = set(self.relations.get("pursues_goal", []))
-        goals.add(goal_id)
-        self.relations["pursues_goal"] = sorted(list(goals))
-
-    def remove_goal(self, goal_id: ObjectId) -> None:
-        """Removes a goal from the actor by removing the relation to the goal object."""
-        if not goal_id:
-            raise ValueError("Goal ID cannot be empty")
-        goals = set(self.relations.get("pursues_goal", []))
-        if goal_id in goals:
-            goals.remove(goal_id)
-            self.relations["pursues_goal"] = sorted(list(goals))
-
-    def add_constraint(self, constraint_id: ObjectId) -> None:
-        """Adds a constraint to the actor by creating a relation to the constraint object."""
-        if not constraint_id:
-            raise ValueError("Constraint ID cannot be empty")
-        constraints = set(self.relations.get("subject_to", []))
-        constraints.add(constraint_id)
-        self.relations["subject_to"] = sorted(list(constraints))
-
-    def remove_constraint(self, constraint_id: ObjectId) -> None:
-        """Removes a constraint from the actor by removing the relation to the
-        constraint object."""
-        if not constraint_id:
-            raise ValueError("Constraint ID cannot be empty")
-        constraints = set(self.relations.get("subject_to", []))
-        if constraint_id in constraints:
-            constraints.remove(constraint_id)
-            self.relations["subject_to"] = sorted(list(constraints))
-
-    def add_component(self, actor_id: ObjectId) -> None:
-        """Adds a component actor to the actor by creating a relation to the
-        component actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        components = set(self.relations.get("composed_of", []))
-        components.add(actor_id)
-        self.relations["composed_of"] = sorted(list(components))
-
-    def remove_component(self, actor_id: ObjectId) -> None:
-        """Removes a component actor from the actor by removing the relation to
-        the component actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        components = set(self.relations.get("composed_of", []))
-        if actor_id in components:
-            components.remove(actor_id)
-            self.relations["composed_of"] = sorted(list(components))
-
-    def add_membership(self, actor_id: ObjectId) -> None:
-        """Adds a membership relation to another actor by creating a relation to
-        the other actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        memberships = set(self.relations.get("member_of", []))
-        memberships.add(actor_id)
-        self.relations["member_of"] = sorted(list(memberships))
-
-    def remove_membership(self, actor_id: ObjectId) -> None:
-        """Removes a membership relation to another actor by removing the
-        relation to the other actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        memberships = set(self.relations.get("member_of", []))
-        if actor_id in memberships:
-            memberships.remove(actor_id)
-            self.relations["member_of"] = sorted(list(memberships))
-
-    def add_dependency(self, actor_id: ObjectId) -> None:
-        """Adds a dependency relation to another actor by creating a relation to
-        the other actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        dependencies = set(self.relations.get("depends_on", []))
-        dependencies.add(actor_id)
-        self.relations["depends_on"] = sorted(list(dependencies))
-
-    def remove_dependency(self, actor_id: ObjectId) -> None:
-        """Removes a dependency relation to another actor by removing the
-        relation to the other actor object."""
-        if not actor_id:
-            raise ValueError("Actor ID cannot be empty")
-        dependencies = set(self.relations.get("depends_on", []))
-        if actor_id in dependencies:
-            dependencies.remove(actor_id)
-            self.relations["depends_on"] = sorted(list(dependencies))
-
-    def add_cooperation(self, actor_id: ObjectId) -> None:
-        """Declare a cooperative relation with another actor."""
-        self.add_relation("cooperates_with", actor_id)
-
-    def remove_cooperation(self, actor_id: ObjectId) -> None:
-        """Remove a cooperation relation."""
-        self.remove_relation("cooperates_with", actor_id)
-
-    def add_conflict(self, actor_id: ObjectId) -> None:
-        """Declare a conflict relation with another actor."""
-        self.add_relation("conflicts_with", actor_id)
-
-    def remove_conflict(self, actor_id: ObjectId) -> None:
-        """Remove a conflict relation."""
-        self.remove_relation("conflicts_with", actor_id)
 
     def add_space_membership(
         self,

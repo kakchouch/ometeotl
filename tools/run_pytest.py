@@ -36,7 +36,7 @@ def main() -> int:
 
     # EXPLICIT MODIFICATION:
     # Force the call via the same Python interpreter
-    command = [sys.executable, "-m", "pytest", "-v", *pytest_args]
+    command = [sys.executable, "-m", "pytest", "-vvv", *pytest_args]
 
     with log_file.open("w", encoding="utf-8") as f:
         # Useful header for reviewing the log later

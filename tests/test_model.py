@@ -179,3 +179,5 @@ def test_empty_target_id_raises():
 
     with pytest.raises(ValueError):
         obj.add_relation("linkedto", "")
+
+

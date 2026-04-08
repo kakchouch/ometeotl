@@ -4,7 +4,7 @@
 </p>
 
 # **Ometeotl** : _A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies_
-_Create simulated worlds with competitive or cooperative entities using simple class instantiation. Define goals and strategies through clear, standard formats. Train AI agents to act, adapt, and compete in your world. Navigate through a natively built fog of war._
+_Create simulated worlds with competitive or cooperative entities using simple class instantiations. Define goals and strategies through clear, standard formats. Train AI agents to act, adapt, and compete in your world. Navigate through a natively built fog of war._
 
 ## Ometeotl: An experimental meta-model for complex decisional systems
 
