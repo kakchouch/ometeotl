@@ -5,10 +5,11 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 15
+- **Merged PRs:** 16
 
 #### Merged Pull Requests
 
+- [#19 added leaderboard workflow job, doc-site entry, calculation script](https://github.com/kakchouch/ometeotl/pull/19)
 - [#18 doc-site update](https://github.com/kakchouch/ometeotl/pull/18)
 - [#17 fetching full history to prevent conflicts](https://github.com/kakchouch/ometeotl/pull/17)
 - [#16 test after conflict in contributors.md](https://github.com/kakchouch/ometeotl/pull/16)
