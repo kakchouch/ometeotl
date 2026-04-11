@@ -1,6 +1,6 @@
 ---
 title: "Current Standings"
-date: 2026-04-10
+date: 2026-04-11
 weight: 1
 toc: false
 ---
@@ -8,7 +8,7 @@ toc: false
 # 🜂 Current Activity Standings
 
 <p style="color: var(--base04); font-size: 0.9em;">
-Last computed: <strong>2026-04-10 07:14 UTC</strong> · 
+Last computed: <strong>2026-04-11 06:48 UTC</strong> · 
 Active contributors: <strong>0</strong> · 
 Smoothing factor k: <strong>12</strong> · 
 Total shares: <strong>1000</strong>
@@ -26,7 +26,7 @@ Cold start mode: fewer than 3 active contributors. Shares allocated proportional
 
 <table>
 <tr style="border-bottom: 2px solid var(--base02);"><th style="padding: 8px;">Contributor</th><th style="text-align:right; padding: 8px;">Raw Score</th></tr>
-<tr style="opacity: 0.7;"><td style="padding: 6px 8px;"><a href="https://github.com/kakchouch">@kakchouch</a></td><td style="text-align:right; padding: 6px 8px;">292.3</td></tr>
+<tr style="opacity: 0.7;"><td style="padding: 6px 8px;"><a href="https://github.com/kakchouch">@kakchouch</a></td><td style="text-align:right; padding: 6px 8px;">290.1</td></tr>
 </table>
 
 ---
