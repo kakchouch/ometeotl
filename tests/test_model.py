@@ -527,6 +527,110 @@ def test_authority_handler_rejects_global_registry_bypass():
         MinimalModelRegistry.clear()
 
 
+def test_world_model_registry_direct_mutation_blocked_in_authority_mode():
+    """Direct model_registry mutation is blocked when authority mode is enabled."""
+    from masm.model.actors import Actor
+
+    world = World(id="world-cmd-9")
+    handler = AuthorityCommandHandler(world)
+    try:
+        with pytest.raises(PermissionError):
+            world.model_registry.register(Actor(id="actor-direct-bypass"))
+    finally:
+        handler.close()
+
+
+def test_unregistered_actor_id_does_not_reset_sequence_history():
+    """Sequence history must survive unregister/register cycles for same actor ID."""
+    from masm.model.actors import Actor
+
+    world = World(id="world-cmd-10")
+    world.register_object(Actor(id="actor-reuse"))
+    handler = AuthorityCommandHandler(world)
+    try:
+        first = handler.submit(
+            CommandEnvelope(
+                command_id="c-14",
+                actor_id="actor-reuse",
+                command_type="add_space",
+                sequence=5,
+                payload={"space": Space(id="zone-14").to_dict()},
+            )
+        )
+        unregister = handler.submit(
+            CommandEnvelope(
+                command_id="c-15",
+                actor_id="system",
+                command_type="unregister_object",
+                sequence=1,
+                payload={"object_id": "actor-reuse"},
+            )
+        )
+        register_again = handler.submit(
+            CommandEnvelope(
+                command_id="c-16",
+                actor_id="system",
+                command_type="register_object",
+                sequence=2,
+                payload={"object": {"id": "actor-reuse", "object_type": "actor"}},
+            )
+        )
+        replay = handler.submit(
+            CommandEnvelope(
+                command_id="c-17",
+                actor_id="actor-reuse",
+                command_type="add_space",
+                sequence=2,
+                payload={"space": Space(id="zone-15").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert first.accepted is True
+    assert unregister.accepted is True
+    assert register_again.accepted is True
+    assert replay.accepted is False
+
+
+def test_authority_handler_supports_custom_command_handlers():
+    """Custom command handlers can be registered without subclassing."""
+    from masm.model.actors import Actor
+
+    def custom_ping_handler(command, world, authority_token):
+        return {
+            "echo": str(command.payload.get("value") or ""),
+            "world_id": world.id,
+            "token_used": bool(authority_token),
+        }
+
+    world = World(id="world-cmd-11")
+    world.register_object(Actor(id="actor-custom"))
+    handler = AuthorityCommandHandler(
+        world,
+        custom_command_handlers={"custom_ping": custom_ping_handler},
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="c-18",
+                actor_id="actor-custom",
+                command_type="custom_ping",
+                sequence=1,
+                payload={"value": "pong"},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is True
+    assert result.applied == {
+        "echo": "pong",
+        "world_id": "world-cmd-11",
+        "token_used": True,
+    }
+
+
 def test_command_envelope_from_dict_rejects_invalid_sequence_values():
     """Deserialization reports invalid sequence values explicitly."""
     with pytest.raises(ValueError):

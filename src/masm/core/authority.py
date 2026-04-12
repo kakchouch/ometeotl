@@ -11,13 +11,16 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import threading
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 from uuid import uuid4
 
 from masm.model.base import JsonMap, ModelObject, ObjectId
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
+
+
+CommandHandler = Callable[["CommandEnvelope", World, str], JsonMap]
 
 
 def _utc_now_iso() -> str:
@@ -111,9 +114,10 @@ class AuthorityCommandHandler:
         self,
         world: World,
         allowed_command_types: Optional[Sequence[str]] = None,
+        custom_command_handlers: Optional[Mapping[str, CommandHandler]] = None,
         audit_log_maxlen: int = 1000,
         processed_ids_maxlen: int = 10000,
-        sequence_tracker_max_actors: Optional[int] = None,
+        sequence_tracker_max_actors: Optional[int] = 1000,
     ) -> None:
         if audit_log_maxlen <= 0:
             raise ValueError("audit_log_maxlen must be greater than 0")
@@ -124,17 +128,31 @@ class AuthorityCommandHandler:
 
         self.world = world
         self._authority_token = uuid4().hex
+        self._command_handlers: dict[str, CommandHandler] = {
+            "add_space": self._handle_add_space,
+            "add_space_relation": self._handle_add_space_relation,
+            "place_object": self._handle_place_object,
+            "register_object": self._handle_register_object,
+            "unregister_object": self._handle_unregister_object,
+        }
+        if custom_command_handlers:
+            self._command_handlers.update(custom_command_handlers)
         self.allowed_command_types = tuple(
             allowed_command_types
             if allowed_command_types is not None
-            else (
-                "add_space",
-                "add_space_relation",
-                "place_object",
-                "register_object",
-                "unregister_object",
-            )
+            else tuple(self._command_handlers.keys())
         )
+        unsupported_allowed_types = [
+            command_type
+            for command_type in self.allowed_command_types
+            if command_type not in self._command_handlers
+        ]
+        if unsupported_allowed_types:
+            unsupported = ", ".join(sorted(unsupported_allowed_types))
+            raise ValueError(
+                "Allowed command type has no registered handler: "
+                f"{unsupported}"
+            )
         self._audit_log: deque[AuditEntry] = deque(maxlen=audit_log_maxlen)
         self._processed_ids_maxlen = processed_ids_maxlen
         self._sequence_tracker_max_actors = sequence_tracker_max_actors
@@ -251,60 +269,81 @@ class AuthorityCommandHandler:
         self._audit_log.append(entry)
 
     def _apply_command(self, command: CommandEnvelope) -> JsonMap:
-        if command.command_type == "add_space":
-            payload = self._require_payload_fields(command.payload, ("space",))
-            space = Space.from_dict(payload["space"])
-            self.world.add_space(space, authority_token=self._authority_token)
-            return {"space_id": space.id}
+        command_handler = self._command_handlers.get(command.command_type)
+        if command_handler is None:
+            raise ValueError(f"Unsupported command type: {command.command_type}")
+        return command_handler(command, self.world, self._authority_token)
 
-        if command.command_type == "add_space_relation":
-            payload = self._require_payload_fields(command.payload, ("relation",))
-            relation = SpaceRelation.from_dict(payload["relation"])
-            self.world.add_space_relation(
-                relation,
-                authority_token=self._authority_token,
-            )
-            return {
-                "source_space_id": relation.source_space_id,
-                "target_space_id": relation.target_space_id,
-                "relation_type": relation.relation_type,
-            }
+    def _handle_add_space(
+        self,
+        command: CommandEnvelope,
+        world: World,
+        authority_token: str,
+    ) -> JsonMap:
+        payload = self._require_payload_fields(command.payload, ("space",))
+        space = Space.from_dict(payload["space"])
+        world.add_space(space, authority_token=authority_token)
+        return {"space_id": space.id}
 
-        if command.command_type == "place_object":
-            payload = self._require_payload_fields(
-                command.payload,
-                ("object_id", "space_id"),
-            )
-            role = str(payload.get("role") or "occupies")
-            self.world.place_object(
-                object_id=str(payload["object_id"]),
-                space_id=str(payload["space_id"]),
-                role=role,
-                authority_token=self._authority_token,
-            )
-            return {
-                "object_id": str(payload["object_id"]),
-                "space_id": str(payload["space_id"]),
-                "role": role,
-            }
+    def _handle_add_space_relation(
+        self,
+        command: CommandEnvelope,
+        world: World,
+        authority_token: str,
+    ) -> JsonMap:
+        payload = self._require_payload_fields(command.payload, ("relation",))
+        relation = SpaceRelation.from_dict(payload["relation"])
+        world.add_space_relation(relation, authority_token=authority_token)
+        return {
+            "source_space_id": relation.source_space_id,
+            "target_space_id": relation.target_space_id,
+            "relation_type": relation.relation_type,
+        }
 
-        if command.command_type == "register_object":
-            payload = self._require_payload_fields(command.payload, ("object",))
-            obj = ModelObject.from_dict(payload["object"])
-            self.world.register_object(obj, authority_token=self._authority_token)
-            return {"object_id": obj.id}
+    def _handle_place_object(
+        self,
+        command: CommandEnvelope,
+        world: World,
+        authority_token: str,
+    ) -> JsonMap:
+        payload = self._require_payload_fields(
+            command.payload,
+            ("object_id", "space_id"),
+        )
+        role = str(payload.get("role") or "occupies")
+        world.place_object(
+            object_id=str(payload["object_id"]),
+            space_id=str(payload["space_id"]),
+            role=role,
+            authority_token=authority_token,
+        )
+        return {
+            "object_id": str(payload["object_id"]),
+            "space_id": str(payload["space_id"]),
+            "role": role,
+        }
 
-        if command.command_type == "unregister_object":
-            payload = self._require_payload_fields(command.payload, ("object_id",))
-            object_id = str(payload["object_id"])
-            self.world.unregister_object(
-                object_id,
-                authority_token=self._authority_token,
-            )
-            self._last_sequence_by_actor.pop(object_id, None)
-            return {"object_id": object_id}
+    def _handle_register_object(
+        self,
+        command: CommandEnvelope,
+        world: World,
+        authority_token: str,
+    ) -> JsonMap:
+        payload = self._require_payload_fields(command.payload, ("object",))
+        obj = ModelObject.from_dict(payload["object"])
+        world.register_object(obj, authority_token=authority_token)
+        return {"object_id": obj.id}
 
-        raise ValueError(f"Unsupported command type: {command.command_type}")
+    def _handle_unregister_object(
+        self,
+        command: CommandEnvelope,
+        world: World,
+        authority_token: str,
+    ) -> JsonMap:
+        payload = self._require_payload_fields(command.payload, ("object_id",))
+        object_id = str(payload["object_id"])
+        world.unregister_object(object_id, authority_token=authority_token)
+        return {"object_id": object_id}
 
     @staticmethod
     def _require_payload_fields(

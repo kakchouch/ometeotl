@@ -52,7 +52,7 @@ def build_runtime(
     allowed_command_types: Optional[Sequence[str]] = None,
     audit_log_maxlen: int = 1000,
     processed_ids_maxlen: int = 10000,
-    sequence_tracker_max_actors: Optional[int] = None,
+    sequence_tracker_max_actors: Optional[int] = 1000,
 ) -> RuntimeContext:
     """Build a runtime context without changing local defaults.
 

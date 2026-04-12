@@ -7,7 +7,7 @@ but only those considered minimal for the simulation.
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 from .base import ModelObject, ObjectId
 
 
@@ -20,16 +20,34 @@ class WorldModelRegistry:
 
     def __init__(self) -> None:
         self._instances: Dict[ObjectId, ModelObject] = {}
+        self._mutation_guard: Optional[Callable[[Optional[str]], None]] = None
 
-    def register(self, obj: ModelObject) -> None:
+    def set_mutation_guard(
+        self,
+        guard: Optional[Callable[[Optional[str]], None]],
+    ) -> None:
+        """Attach an optional mutation guard callback.
+
+        The callback is expected to raise when mutation is not allowed.
+        """
+        self._mutation_guard = guard
+
+    def _assert_mutation_allowed(self, authority_token: Optional[str]) -> None:
+        if self._mutation_guard is None:
+            return
+        self._mutation_guard(authority_token)
+
+    def register(self, obj: ModelObject, authority_token: Optional[str] = None) -> None:
         """Register a model object in this world-scoped registry."""
+        self._assert_mutation_allowed(authority_token)
         existing = self._instances.get(obj.id)
         if existing is not None and existing is not obj:
             raise ValueError(f"Duplicate model object id: {obj.id}")
         self._instances[obj.id] = obj
 
-    def unregister(self, obj_id: ObjectId) -> None:
+    def unregister(self, obj_id: ObjectId, authority_token: Optional[str] = None) -> None:
         """Remove an object if the given ID is registered."""
+        self._assert_mutation_allowed(authority_token)
         self._instances.pop(obj_id, None)
 
     def exists(self, obj_id: ObjectId) -> bool:

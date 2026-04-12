@@ -47,6 +47,7 @@ class World(Space):
         self.object_type = "world"
         self.attributes["kind"] = "world"
         self.attributes["is_root_world"] = self.is_root_world
+        self.model_registry.set_mutation_guard(self._assert_mutation_allowed)
 
     def enable_authority_mode(self, token: str) -> None:
         """Enable authoritative mutation mode.
@@ -121,14 +122,14 @@ class World(Space):
     ) -> None:
         """Register a minimal object in this world-scoped registry."""
         self._assert_mutation_allowed(authority_token)
-        self.model_registry.register(obj)
+        self.model_registry.register(obj, authority_token=authority_token)
 
     def unregister_object(
         self, obj_id: ObjectId, authority_token: Optional[str] = None
     ) -> None:
         """Remove an object from this world-scoped registry."""
         self._assert_mutation_allowed(authority_token)
-        self.model_registry.unregister(obj_id)
+        self.model_registry.unregister(obj_id, authority_token=authority_token)
 
     # --- Serialization ------------------------------------------------------
 
