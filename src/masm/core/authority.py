@@ -112,8 +112,8 @@ class AuthorityCommandHandler:
         self._authority_token = uuid4().hex
         self.world.enable_authority_mode(self._authority_token)
         self.allowed_command_types = tuple(
-            allowed_command_types
-            or (
+            allowed_command_types if allowed_command_types is not None
+            else (
                 "add_space",
                 "add_space_relation",
                 "place_object",
