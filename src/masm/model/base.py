@@ -5,25 +5,29 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping
 
+
 # NEW: Decorator for auto-generating add/remove methods
 def relation_methods(method_name: str, rel_key: str):
     """Decorator to generate add/remove pairs."""
+
     def decorator(cls):
         def add_method(self, target_id: ObjectId) -> None:
             self._manage_relation(rel_key, target_id, add=True)
-        
+
         def remove_method(self, target_id: ObjectId) -> None:
             self._manage_relation(rel_key, target_id, add=False)
-        
+
         add_method.__name__ = f"add_{method_name}"
         remove_method.__name__ = f"remove_{method_name}"
         add_method.__doc__ = f"Adds {method_name} relation."
         remove_method.__doc__ = f"Removes {method_name} relation."
-        
+
         setattr(cls, add_method.__name__, add_method)
         setattr(cls, remove_method.__name__, remove_method)
         return cls
+
     return decorator
+
 
 SchemaVersion = str
 ObjectId = str
@@ -64,16 +68,18 @@ class ModelObject:
         """Remove a relation to another object."""
         self._manage_relation(name, target_id, add=False)
 
-    def _manage_relation(self, rel_name: str, target_id: ObjectId, add: bool = True) -> None:
+    def _manage_relation(
+        self, rel_name: str, target_id: ObjectId, add: bool = True
+    ) -> None:
         """Generic add/remove for relations. Used by subclasses."""
         if not rel_name:
             raise ValueError("Relation name cannot be empty")
         if not target_id:
             raise ValueError("Target ID cannot be empty")
-        
+
         if rel_name not in self.relations:
             self.relations[rel_name] = []
-        
+
         rel_list: List[ObjectId] = self.relations[rel_name]
         if add:
             if target_id not in rel_list:

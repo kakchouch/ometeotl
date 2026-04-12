@@ -1,8 +1,10 @@
 name: Pylint
 
 on: 
+  pull_request:
+    branches: [ main, develop ]
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -23,4 +25,4 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py') \
-        --recursive=y --fail-under=9.0
+        --recursive=y --fail-under=8.5

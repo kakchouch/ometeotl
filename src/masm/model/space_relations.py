@@ -14,7 +14,7 @@ Object-to-space memberships are managed separately in spaces.py.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Mapping, Optional, Any
 
 SpaceId = str
 JsonMap = Dict[str, Any]
@@ -103,6 +103,25 @@ class SpaceRelation:
                 metadata=dict(self.metadata),
             )
         return self
+
+    def to_dict(self) -> JsonMap:
+        """Convert the SpaceRelation instance to a dictionary representation."""
+        return {
+            "source_space_id": self.source_space_id,
+            "target_space_id": self.target_space_id,
+            "relation_type": self.relation_type,
+            "metadata": dict(sorted(self.metadata.items())),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelation":
+        """Create a SpaceRelation instance from a dictionary representation."""
+        return cls(
+            source_space_id=str(data["source_space_id"]),
+            target_space_id=str(data["target_space_id"]),
+            relation_type=str(data["relation_type"]),
+            metadata=dict(data.get("metadata", {})),
+        )
 
 
 @dataclass
@@ -277,3 +296,17 @@ class SpaceRelationGraph:
             for relation in self.relations_to(space_id, relation_type="intersects_with")
         }
         return sorted(outgoing_intersections.union(incoming_intersections))
+
+    def to_dict(self) -> JsonMap:
+        """Convert the SpaceRelationGraph to a canonical dictionary representation."""
+        return {
+            "relations": [r.to_dict() for r in self.relations],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelationGraph":
+        """Reconstruct a SpaceRelationGraph from a canonical dictionary representation."""
+        graph = cls()
+        for relation_data in data.get("relations", []):
+            graph.add_relation(SpaceRelation.from_dict(relation_data))
+        return graph
