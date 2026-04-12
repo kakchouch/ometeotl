@@ -251,9 +251,7 @@ class AuthorityCommandHandler:
         fields: Sequence[str],
     ) -> JsonMap:
         missing = [
-            field_name
-            for field_name in fields
-            if payload.get(field_name) is None
+            field_name for field_name in fields if payload.get(field_name) is None
         ]
         if missing:
             missing_str = ", ".join(sorted(missing))
