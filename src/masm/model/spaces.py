@@ -16,6 +16,7 @@ Space-to-space relations are managed separately through the space_relations modu
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Iterable, Mapping
 
@@ -145,6 +146,24 @@ class Space(GenericObject):
             " managed through the space_relations module"
         )
 
+    def __deepcopy__(self, memo: dict) -> "Space":
+        """Optimised deep copy: immutable str fields are shared; only mutable
+        dicts/lists are copied, avoiding the overhead of full deepcopy traversal."""
+        new_obj: Space = self.__class__.__new__(self.__class__)
+        memo[id(self)] = new_obj
+        # str fields are immutable — safe to share directly
+        new_obj.id = self.id
+        new_obj.object_type = self.object_type
+        new_obj.schema_version = self.schema_version
+        # dict/list fields are mutable — deep-copy each one
+        new_obj.attributes = copy.deepcopy(self.attributes, memo)
+        # relations values are List[str]; a per-list copy is sufficient
+        new_obj.relations = {k: list(v) for k, v in self.relations.items()}
+        new_obj.state = copy.deepcopy(self.state, memo)
+        new_obj.context = copy.deepcopy(self.context, memo)
+        new_obj.provenance = copy.deepcopy(self.provenance, memo)
+        return new_obj
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Space":
         """Create a Space instance from a dictionary representation."""
@@ -184,6 +203,18 @@ class SpaceObjectMembership:
             "validity": dict(sorted(self.validity.items())),
             "metadata": dict(sorted(self.metadata.items())),
         }
+
+    def __deepcopy__(self, memo: dict) -> "SpaceObjectMembership":
+        """Optimised deep copy: immutable str fields are shared; mutable
+        dicts are shallow-copied (values are conventionally primitives)."""
+        new_obj: SpaceObjectMembership = SpaceObjectMembership.__new__(SpaceObjectMembership)
+        memo[id(self)] = new_obj
+        new_obj.object_id = self.object_id
+        new_obj.space_id = self.space_id
+        new_obj.role = self.role
+        new_obj.validity = copy.deepcopy(self.validity, memo)
+        new_obj.metadata = copy.deepcopy(self.metadata, memo)
+        return new_obj
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectMembership":

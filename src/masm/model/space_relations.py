@@ -13,6 +13,7 @@ Object-to-space memberships are managed separately in spaces.py.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Any
 
@@ -112,6 +113,17 @@ class SpaceRelation:
             "relation_type": self.relation_type,
             "metadata": dict(sorted(self.metadata.items())),
         }
+
+    def __deepcopy__(self, memo: dict) -> "SpaceRelation":
+        """Optimised deep copy: immutable str fields are shared; only
+        the mutable metadata dict is deep-copied."""
+        new_obj: SpaceRelation = SpaceRelation.__new__(SpaceRelation)
+        memo[id(self)] = new_obj
+        object.__setattr__(new_obj, "source_space_id", self.source_space_id)
+        object.__setattr__(new_obj, "target_space_id", self.target_space_id)
+        object.__setattr__(new_obj, "relation_type", self.relation_type)
+        object.__setattr__(new_obj, "metadata", copy.deepcopy(self.metadata, memo))
+        return new_obj
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelation":
