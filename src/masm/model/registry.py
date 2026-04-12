@@ -11,6 +11,44 @@ from typing import Dict, Optional
 from .base import ModelObject, ObjectId
 
 
+class WorldModelRegistry:
+    """World-scoped in-memory registry.
+
+    This registry is intended to support authoritative world operations without
+    relying on global mutable state.
+    """
+
+    def __init__(self) -> None:
+        self._instances: Dict[ObjectId, ModelObject] = {}
+
+    def register(self, obj: ModelObject) -> None:
+        """Register a model object in this world-scoped registry."""
+        existing = self._instances.get(obj.id)
+        if existing is not None and existing is not obj:
+            raise ValueError(f"Duplicate model object id: {obj.id}")
+        self._instances[obj.id] = obj
+
+    def unregister(self, obj_id: ObjectId) -> None:
+        """Remove an object if the given ID is registered."""
+        self._instances.pop(obj_id, None)
+
+    def exists(self, obj_id: ObjectId) -> bool:
+        """Return True if the given object ID is registered."""
+        return obj_id in self._instances
+
+    def get(self, obj_id: ObjectId) -> Optional[ModelObject]:
+        """Return the registered object for the given ID, if any."""
+        return self._instances.get(obj_id)
+
+    def clear(self) -> None:
+        """Clear the registry."""
+        self._instances.clear()
+
+    def all_ids(self) -> list[ObjectId]:
+        """Return all registered object IDs in sorted order."""
+        return sorted(self._instances.keys())
+
+
 class MinimalModelRegistry:
     """
     Global in-memory registry for minimal objects.

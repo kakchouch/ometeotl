@@ -326,9 +326,11 @@ def test_world_register_and_unregister_object():
     actor = Actor(id="actor-reg-1")
 
     world.register_object(actor)
+    assert world.model_registry.exists("actor-reg-1")
     assert MinimalModelRegistry.exists("actor-reg-1")
 
     world.unregister_object("actor-reg-1")
+    assert not world.model_registry.exists("actor-reg-1")
     assert not MinimalModelRegistry.exists("actor-reg-1")
 
     MinimalModelRegistry.clear()
@@ -373,6 +375,7 @@ def test_authority_handler_rejects_unknown_actor():
 
     MinimalModelRegistry.clear()
     world = World(id="world-cmd-2")
+    world.register_object(Actor(id="actor-known"))
     handler = AuthorityCommandHandler(world)
     try:
         result_unknown = handler.submit(
@@ -386,7 +389,6 @@ def test_authority_handler_rejects_unknown_actor():
         )
         assert result_unknown.accepted is False
 
-        MinimalModelRegistry.register(Actor(id="actor-known"))
         result_known = handler.submit(
             CommandEnvelope(
                 command_id="c-4",
@@ -399,6 +401,7 @@ def test_authority_handler_rejects_unknown_actor():
         assert result_known.accepted is True
     finally:
         handler.close()
+        world.unregister_object("actor-known")
         MinimalModelRegistry.clear()
 
 
@@ -475,6 +478,84 @@ def test_build_runtime_server_mode_locks_then_unlocks_on_close():
     runtime.close()
     world.add_space(Space(id="zone-open-runtime"))
     assert world.get_space("zone-open-runtime") is not None
+
+
+def test_authority_handler_rejects_global_registry_bypass():
+    """Global registry writes do not satisfy authoritative actor checks."""
+    from masm.model.registry import MinimalModelRegistry
+    from masm.model.actors import Actor
+
+    MinimalModelRegistry.clear()
+    MinimalModelRegistry.register(Actor(id="global-only-actor"))
+
+    world = World(id="world-cmd-5")
+    handler = AuthorityCommandHandler(world)
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="c-7",
+                actor_id="global-only-actor",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-7").to_dict()},
+            )
+        )
+        assert result.accepted is False
+    finally:
+        handler.close()
+        MinimalModelRegistry.clear()
+
+
+def test_authority_handler_uses_bounded_audit_log():
+    """Audit log keeps a bounded size to prevent unbounded growth."""
+    world = World(id="world-cmd-6")
+    handler = AuthorityCommandHandler(world, audit_log_maxlen=2)
+    try:
+        handler.submit(
+            CommandEnvelope(
+                command_id="c-8",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-8").to_dict()},
+            )
+        )
+        handler.submit(
+            CommandEnvelope(
+                command_id="c-9",
+                actor_id="system",
+                command_type="add_space",
+                sequence=2,
+                payload={"space": Space(id="zone-9").to_dict()},
+            )
+        )
+        handler.submit(
+            CommandEnvelope(
+                command_id="c-10",
+                actor_id="system",
+                command_type="add_space",
+                sequence=3,
+                payload={"space": Space(id="zone-10").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert len(handler.audit_log) == 2
+
+
+def test_authority_handler_rejects_invalid_limit_arguments():
+    """Constructor rejects invalid bounded-memory configuration values."""
+    world = World(id="world-cmd-7")
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(world, audit_log_maxlen=0)
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(world, processed_ids_maxlen=0)
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(world, sequence_tracker_max_actors=0)
 
 
 def test_world_to_dict_contains_required_fields():

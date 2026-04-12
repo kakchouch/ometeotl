@@ -37,6 +37,9 @@ def build_runtime(
     *,
     server_authoritative: bool = False,
     allowed_command_types: Optional[Sequence[str]] = None,
+    audit_log_maxlen: int = 1000,
+    processed_ids_maxlen: int = 10000,
+    sequence_tracker_max_actors: int = 1000,
 ) -> RuntimeContext:
     """Build a runtime context without changing local defaults.
 
@@ -50,5 +53,8 @@ def build_runtime(
         authority_handler=AuthorityCommandHandler(
             world,
             allowed_command_types=allowed_command_types,
+            audit_log_maxlen=audit_log_maxlen,
+            processed_ids_maxlen=processed_ids_maxlen,
+            sequence_tracker_max_actors=sequence_tracker_max_actors,
         ),
     )

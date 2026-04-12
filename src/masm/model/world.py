@@ -17,7 +17,7 @@ from typing import Any, Mapping, Optional
 from .base import ModelObject, ObjectId, JsonMap
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
-from .registry import MinimalModelRegistry
+from .registry import MinimalModelRegistry, WorldModelRegistry
 
 SpaceId = str
 
@@ -38,6 +38,7 @@ class World(Space):
     is_root_world: bool = True
     space_object_graph: SpaceObjectGraph = field(default_factory=SpaceObjectGraph)
     space_relation_graph: SpaceRelationGraph = field(default_factory=SpaceRelationGraph)
+    model_registry: WorldModelRegistry = field(default_factory=WorldModelRegistry)
     _authority_mode_enabled: bool = field(default=False, init=False, repr=False)
     _authority_token: Optional[str] = field(default=None, init=False, repr=False)
 
@@ -118,15 +119,21 @@ class World(Space):
     def register_object(
         self, obj: ModelObject, authority_token: Optional[str] = None
     ) -> None:
-        """Register a minimal object in the shared minimal registry."""
+        """Register a minimal object in this world-scoped registry.
+
+        For backward compatibility with existing local flows, objects are also
+        mirrored to ``MinimalModelRegistry``.
+        """
         self._assert_mutation_allowed(authority_token)
+        self.model_registry.register(obj)
         MinimalModelRegistry.register(obj)
 
     def unregister_object(
         self, obj_id: ObjectId, authority_token: Optional[str] = None
     ) -> None:
-        """Remove an object from the shared minimal registry."""
+        """Remove an object from world-scoped and legacy global registries."""
         self._assert_mutation_allowed(authority_token)
+        self.model_registry.unregister(obj_id)
         MinimalModelRegistry.unregister(obj_id)
 
     # --- Serialization ------------------------------------------------------
