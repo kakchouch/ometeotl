@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Type
 
 from masm.model.world import World
 
@@ -20,6 +20,19 @@ class RuntimeContext:
 
     world: World
     authority_handler: Optional[AuthorityCommandHandler] = None
+
+    def __enter__(self) -> "RuntimeContext":
+        """Enter runtime context."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object],
+    ) -> None:
+        """Always release resources on context exit."""
+        self.close()
 
     @property
     def authoritative(self) -> bool:

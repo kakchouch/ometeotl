@@ -476,6 +476,31 @@ def test_build_runtime_server_mode_locks_then_unlocks_on_close():
     assert world.get_space("zone-open-runtime") is not None
 
 
+def test_runtime_context_manager_releases_lock_on_normal_exit():
+    """Using RuntimeContext with 'with' releases authority lock on exit."""
+    world = World(id="world-runtime-cm-1")
+
+    with build_runtime(world, server_authoritative=True) as runtime:
+        assert runtime.authoritative is True
+        with pytest.raises(PermissionError):
+            world.add_space(Space(id="zone-cm-blocked"))
+
+    world.add_space(Space(id="zone-cm-open"))
+    assert world.get_space("zone-cm-open") is not None
+
+
+def test_runtime_context_manager_releases_lock_on_exception_exit():
+    """RuntimeContext must release lock even if an exception occurs in block."""
+    world = World(id="world-runtime-cm-2")
+
+    with pytest.raises(RuntimeError):
+        with build_runtime(world, server_authoritative=True):
+            raise RuntimeError("boom")
+
+    world.add_space(Space(id="zone-cm-open-after-exception"))
+    assert world.get_space("zone-cm-open-after-exception") is not None
+
+
 def test_authority_handler_rejects_global_registry_bypass():
     """Global registry writes do not satisfy authoritative actor checks."""
     from masm.model.registry import MinimalModelRegistry
