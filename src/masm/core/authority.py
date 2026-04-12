@@ -7,7 +7,7 @@ to mutate ``World`` directly when authority mode is enabled.
 
 from __future__ import annotations
 
-from collections import OrderedDict, deque
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import threading
@@ -140,7 +140,8 @@ class AuthorityCommandHandler:
         self._sequence_tracker_max_actors = sequence_tracker_max_actors
         self._processed_command_ids: set[str] = set()
         self._processed_command_order: deque[str] = deque()
-        self._last_sequence_by_actor: OrderedDict[ObjectId, int] = OrderedDict()
+        # First-come tracker: existing actors keep their sequence slot.
+        self._last_sequence_by_actor: dict[ObjectId, int] = {}
         self._lock = threading.Lock()
         # Lock activation is the final init step to avoid partial-init lock side effects.
         self.world.enable_authority_mode(self._authority_token)
@@ -242,12 +243,7 @@ class AuthorityCommandHandler:
 
     def _set_last_sequence(self, actor_id: ObjectId, sequence: int) -> None:
         if actor_id in self._last_sequence_by_actor:
-            self._last_sequence_by_actor.move_to_end(actor_id)
             self._last_sequence_by_actor[actor_id] = sequence
-            return
-
-        limit = self._sequence_tracker_max_actors
-        if limit is not None and len(self._last_sequence_by_actor) >= limit:
             return
         self._last_sequence_by_actor[actor_id] = sequence
 
