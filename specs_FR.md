@@ -108,88 +108,76 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 6. - **Deux exemples** : un monde simple et un cas multi-acteurs hiérarchique.
 
 
-## Implémentation
+## État actuel du dépôt (avril 2026)
 
-Voici une première architecture : 
+Le projet est dans une phase cœur fonctionnel, encore précoce.
+
+### Implémenté et testé aujourd'hui
+
+1. Modèle d'objets dans `src/masm/model/` :
+    - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+2. Structures spatiales :
+    - `SpaceObjectGraph` et `SpaceObjectMembership`.
+    - `SpaceRelation` et `SpaceRelationGraph` avec canonicalisation et contraintes de relation.
+3. Couche de perception :
+    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
+    - Validation des statuts épistémiques (`certain`, `believed`, `hypothesis`, `projected`, `error`).
+    - Ordre de sérialisation déterministe des memberships et relations perçus.
+4. Pipeline sensoriel :
+    - Abstractions `CoverageRule` et `NoiseRule`.
+    - Comportements par défaut `TotalCoverageRule` et `IdentityNoiseRule`.
+    - Support du timestamp de snapshot dans `Sensor.sense(...)`.
+    - Identifiant de perception déterministe quand le timestamp est fourni.
+    - Identifiant de perception unique quand le timestamp est omis.
+5. Contrôle qualité :
+    - Tests automatiques du modèle dans `tests/test_model.py` (45 tests passants).
+
+### Présent mais non implémenté pour l'instant
+
+Les packages ci-dessous sont actuellement des squelettes (fichiers bootstrap) et restent au roadmap :
+
+- `src/masm/core/`
+- `src/masm/io/`
+- `src/masm/generation/`
+- `src/masm/game/`
+- `src/masm/validation/`
+- `src/masm/examples/`
+
+### Arborescence source actuelle
+
 ```
 ometeotl/
-├── pyproject.toml
-├── README.md
 ├── src/
 │   └── masm/
-│       ├── __init__.py
-│       │
-│       ├── core/
-│       │   ├── __init__.py
-│       │   ├── ids.py
-│       │   ├── types.py
-│       │   ├── time.py
-│       │   ├── errors.py
-│       │   └── protocols.py
-│       │
-│       ├── model/
-│       │   ├── __init__.py
-│       │   ├── base.py
-│       │   ├── objects.py
-│       │   ├── actors.py
-│       │   ├── resources.py
-│       │   ├── spaces.py
-│       │   ├── space_relations.py
-│       │   ├── actions.py
-│       │   ├── metrics.py
-│       │   ├── perception.py
-│       │   ├── goals.py
-│       │   ├── emergence.py
-│       │   ├── world_state.py
-│       │   └── relations.py
-│       │
-│       ├── validation/
-│       │   ├── __init__.py
-│       │   ├── result.py
-│       │   ├── structural.py
-│       │   ├── temporal.py
-│       │   ├── spatial.py
-│       │   ├── epistemic.py
-│       │   ├── admissibility.py
-│       │   └── pipeline.py
-│       │
-│       ├── io/
-│       │   ├── __init__.py
-│       │   ├── schema.py
-│       │   ├── serializable.py
-│       │   ├── json_codec.py
-│       │   ├── yaml_codec.py
-│       │   ├── llm_codec.py
-│       │   └── registry.py
-│       │
-│       ├── generation/
-│       │   ├── __init__.py
-│       │   ├── context.py
-│       │   ├── builders.py
-│       │   ├── prompts.py
-│       │   ├── parser.py
-│       │   ├── repair.py
-│       │   └── pipeline.py
-│       │
-│       ├── game/
-│       │   ├── __init__.py
-│       │   ├── strategies.py
-│       │   ├── utility.py
-│       │   ├── game_state.py
-│       │   ├── transforms.py
-│       │   ├── dominance.py
-│       │   └── equilibrium.py
-│       │
-│       └── examples/
-│           ├── __init__.py
-│           ├── simple_world.py
-│           └── hierarchical_world.py
-│
+│       ├── core/               # squelette
+│       ├── io/                 # squelette
+│       ├── generation/         # squelette
+│       ├── game/               # squelette
+│       ├── validation/         # squelette
+│       ├── examples/           # squelette
+│       └── model/              # implémenté en mode V1 incrémental
+│           ├── base.py
+│           ├── objects.py
+│           ├── actors.py
+│           ├── resources.py
+│           ├── spaces.py
+│           ├── space_relations.py
+│           ├── perception.py
+│           ├── sensor.py
+│           ├── world.py
+│           └── registry.py
 └── tests/
-    ├── test_model.py
-    ├── test_validation.py
-    ├── test_io.py
-    ├── test_generation.py
-    └── test_game.py
-
+     └── test_model.py
 ```
+
+### Lecture pratique de la V1
+
+La V1 est aujourd'hui validée sur le cœur model/perception/sensor. L'implémentation complète de la génération, de la projection théorie des jeux, et des pipelines validation/io reste au roadmap.
+
+
+## Status
+Le document `specs_EN.md`est la source de verité pour l'architecture et le comportement du module.
+
+Si certaines parties ne sont pas à jour :
+- préferer l'implémentation actuelle pour ces parties ;
+- marquer explicitement les incohérences dans les PR.

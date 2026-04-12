@@ -106,3 +106,38 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 4. Minimal contextual generation.
 5. Minimal game-theory interface.
 6. Two examples: a simple world and a hierarchical multi-actor case.
+
+## Current repository state (April 2026)
+
+The repository currently validates the model/perception/sensor core and keeps other domains scaffolded for upcoming phases.
+
+### Implemented and tested now
+
+1. Core object model in `src/masm/model/`:
+	- `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+2. Spatial structures:
+	- `SpaceObjectGraph` and `SpaceObjectMembership`.
+	- `SpaceRelation` and `SpaceRelationGraph` with canonicalization and relation constraints.
+3. Perception layer:
+	- `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
+	- Epistemic status validation (`certain`, `believed`, `hypothesis`, `projected`, `error`).
+	- Deterministic serialization order for perceived memberships and relations.
+4. Sensor pipeline:
+	- `CoverageRule` and `NoiseRule` abstractions.
+	- `TotalCoverageRule` and `IdentityNoiseRule` defaults.
+	- Snapshot timestamp support in `Sensor.sense(...)`.
+	- Deterministic perception IDs when timestamp is provided.
+	- Unique perception IDs when timestamp is omitted.
+5. Quality gate:
+	- Automated model tests in `tests/test_model.py` (45 tests passing).
+
+### Scaffolded but not implemented yet
+
+The following packages currently contain bootstrap files only and are planned for later phases:
+
+- `src/masm/core/`
+- `src/masm/io/`
+- `src/masm/generation/`
+- `src/masm/game/`
+- `src/masm/validation/`
+- `src/masm/examples/`
