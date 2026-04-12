@@ -117,12 +117,13 @@ class SpaceRelation:
     def __deepcopy__(self, memo: dict) -> "SpaceRelation":
         """Optimised deep copy: immutable str fields are shared; only
         the mutable metadata dict is deep-copied."""
-        new_obj: SpaceRelation = SpaceRelation.__new__(SpaceRelation)
+        cls = self.__class__
+        new_obj: SpaceRelation = cls.__new__(cls)
         memo[id(self)] = new_obj
-        object.__setattr__(new_obj, "source_space_id", self.source_space_id)
-        object.__setattr__(new_obj, "target_space_id", self.target_space_id)
-        object.__setattr__(new_obj, "relation_type", self.relation_type)
-        object.__setattr__(new_obj, "metadata", copy.deepcopy(self.metadata, memo))
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
         return new_obj
 
     @classmethod
