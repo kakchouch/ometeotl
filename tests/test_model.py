@@ -778,14 +778,25 @@ def test_sensor_multi_space_actor_perception():
 
 
 def test_sensor_perception_id_is_deterministic():
-    """The same (actor_id, world.id) always produces the same perception ID."""
+    """Same (actor_id, world.id, timestamp) always produces the same perception ID."""
     world = _build_world("w-id-1")
+    sensor = Sensor()
+
+    p1 = sensor.sense(world, "actor-1", timestamp=42)
+    p2 = sensor.sense(world, "actor-1", timestamp=42)
+
+    assert p1.id == p2.id
+
+
+def test_sensor_perception_id_is_unique_without_timestamp():
+    """Without a timestamp, each call produces a unique perception ID."""
+    world = _build_world("w-id-2")
     sensor = Sensor()
 
     p1 = sensor.sense(world, "actor-1")
     p2 = sensor.sense(world, "actor-1")
 
-    assert p1.id == p2.id
+    assert p1.id != p2.id
 
 
 def test_sensor_identity_noise_rule_no_metadata():

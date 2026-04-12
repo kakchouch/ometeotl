@@ -22,9 +22,11 @@ Core specs addressed: A-9, A-10, A-11, F-5, F-14.
 
 from __future__ import annotations
 
+import copy
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .perception import (
     VALID_EPISTEMIC_STATUSES,
@@ -195,17 +197,35 @@ class Sensor:
 
     # --- Public API ---------------------------------------------------------
 
-    def sense(self, world: World, actor_id: ObjectId) -> Perception:
+    def sense(
+        self,
+        world: World,
+        actor_id: ObjectId,
+        timestamp: Optional[Any] = None,
+    ) -> Perception:
         """Build a Perception of the given world for the given actor.
 
         The returned Perception is fully insulated: subsequent changes to
         the world do not affect it, and noise applied during sensing does
         not mutate the original world objects.
+
+        Parameters
+        ----------
+        timestamp:
+            Optional simulation timestamp for this snapshot. When provided
+            it is embedded in the perception ID, making the ID deterministic
+            for the (actor_id, world.id, timestamp) triplet. When omitted a
+            random UUID suffix ensures uniqueness across calls.
         """
+        if timestamp is not None:
+            perception_id = f"perception-{actor_id}-{world.id}-{timestamp}"
+        else:
+            perception_id = f"perception-{actor_id}-{world.id}-{uuid.uuid4().hex}"
         perception = Perception(
-            id=f"perception-{actor_id}-{world.id}",
+            id=perception_id,
             actor_id=actor_id,
             source_id=world.id,
+            timestamp=timestamp,
         )
         self._sense_spaces(world, actor_id, perception)
         self._sense_memberships(world, actor_id, perception)
@@ -221,7 +241,7 @@ class Sensor:
             if not self._covers_space(space, actor_id, world):
                 continue
             # Deep copy before noise so the world is never mutated.
-            space_copy = Space.from_dict(space.to_dict())
+            space_copy = copy.deepcopy(space)
             space_copy, noise_meta = self._apply_noise_to_space(space_copy, actor_id)
             perception.perceived_spaces[space_id] = PerceivedSpace(
                 space=space_copy,
@@ -235,7 +255,7 @@ class Sensor:
         for membership in world.space_object_graph.object_memberships:
             if not self._covers_membership(membership, actor_id, world):
                 continue
-            membership_copy = SpaceObjectMembership.from_dict(membership.to_dict())
+            membership_copy = copy.deepcopy(membership)
             membership_copy, noise_meta = self._apply_noise_to_membership(
                 membership_copy, actor_id
             )
@@ -253,7 +273,7 @@ class Sensor:
         for relation in world.space_relation_graph.relations:
             if not self._covers_relation(relation, actor_id, world):
                 continue
-            relation_copy = SpaceRelation.from_dict(relation.to_dict())
+            relation_copy = copy.deepcopy(relation)
             relation_copy, noise_meta = self._apply_noise_to_relation(
                 relation_copy, actor_id
             )

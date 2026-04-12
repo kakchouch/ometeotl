@@ -216,9 +216,27 @@ class Perception:
                 for space_id, ps in sorted(self.perceived_spaces.items())
             },
             "perceived_memberships": [
-                pm.to_dict() for pm in self.perceived_memberships
+                pm.to_dict()
+                for pm in sorted(
+                    self.perceived_memberships,
+                    key=lambda x: (
+                        x.membership.space_id,
+                        x.membership.object_id,
+                        x.membership.role,
+                    ),
+                )
             ],
-            "perceived_relations": [pr.to_dict() for pr in self.perceived_relations],
+            "perceived_relations": [
+                pr.to_dict()
+                for pr in sorted(
+                    self.perceived_relations,
+                    key=lambda x: (
+                        x.relation.source_space_id,
+                        x.relation.target_space_id,
+                        x.relation.relation_type,
+                    ),
+                )
+            ],
             "context": dict(sorted(self.context.items())),
             "provenance": dict(sorted(self.provenance.items())),
         }

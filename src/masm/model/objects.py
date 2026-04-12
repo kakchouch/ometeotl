@@ -18,7 +18,8 @@ class GenericObject(ModelObject):
     """
 
     def __post_init__(self) -> None:
-        pass
+        if not self.id:
+            raise ValueError("Object id cannot be empty")
 
     @property
     def label(self) -> Optional[str]:
