@@ -209,13 +209,13 @@ class SpaceObjectMembership:
     def __deepcopy__(self, memo: dict) -> "SpaceObjectMembership":
         """Optimised deep copy: immutable str fields are shared; mutable
         dicts are deep-copied to ensure full insulation."""
-        new_obj: SpaceObjectMembership = SpaceObjectMembership.__new__(SpaceObjectMembership)
+        cls = self.__class__
+        new_obj: SpaceObjectMembership = cls.__new__(cls)
         memo[id(self)] = new_obj
-        new_obj.object_id = self.object_id
-        new_obj.space_id = self.space_id
-        new_obj.role = self.role
-        new_obj.validity = copy.deepcopy(self.validity, memo)
-        new_obj.metadata = copy.deepcopy(self.metadata, memo)
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
         return new_obj
 
     @classmethod
