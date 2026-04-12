@@ -16,6 +16,8 @@ Space-to-space relations are managed separately through the space_relations modu
 
 from __future__ import annotations
 
+import copy
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Iterable, Mapping
 
@@ -145,6 +147,25 @@ class Space(GenericObject):
             " managed through the space_relations module"
         )
 
+    def __deepcopy__(self, memo: dict) -> "Space":
+        """Deep copy that iterates over all dataclass fields dynamically.
+
+        Using ``dataclasses.fields()`` instead of an explicit field list keeps
+        this correct for subclasses that introduce new fields, without any
+        additional work required from those subclasses.
+        ``copy.deepcopy`` already returns immutable values (str, int, …)
+        unchanged, so no performance is lost compared to the previous
+        hand-written approach.
+        """
+        cls = self.__class__
+        new_obj = cls.__new__(cls)
+        memo[id(self)] = new_obj
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
+        return new_obj
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Space":
         """Create a Space instance from a dictionary representation."""
@@ -184,6 +205,18 @@ class SpaceObjectMembership:
             "validity": dict(sorted(self.validity.items())),
             "metadata": dict(sorted(self.metadata.items())),
         }
+
+    def __deepcopy__(self, memo: dict) -> "SpaceObjectMembership":
+        """Optimised deep copy: immutable str fields are shared; mutable
+        dicts are deep-copied to ensure full insulation."""
+        cls = self.__class__
+        new_obj: SpaceObjectMembership = cls.__new__(cls)
+        memo[id(self)] = new_obj
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
+        return new_obj
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectMembership":

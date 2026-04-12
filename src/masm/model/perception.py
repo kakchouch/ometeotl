@@ -19,7 +19,7 @@ Each perceived element carries:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
@@ -160,12 +160,20 @@ class Perception:
     actor_id: ObjectId
     source_id: ObjectId  # ID of the world or space this perception is derived from
     schema_version: str = "1.0"
-    timestamp: Optional[Any] = None
+    timestamp: Optional[Union[int, float, str]] = None
     perceived_spaces: Dict[SpaceId, PerceivedSpace] = field(default_factory=dict)
     perceived_memberships: List[PerceivedMembership] = field(default_factory=list)
     perceived_relations: List[PerceivedRelation] = field(default_factory=list)
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.timestamp is not None and not isinstance(
+            self.timestamp, (int, float, str)
+        ):
+            raise TypeError(
+                f"timestamp must be int, float, or str, got {type(self.timestamp).__name__}"
+            )
 
     # --- Query API ----------------------------------------------------------
 
@@ -216,9 +224,27 @@ class Perception:
                 for space_id, ps in sorted(self.perceived_spaces.items())
             },
             "perceived_memberships": [
-                pm.to_dict() for pm in self.perceived_memberships
+                pm.to_dict()
+                for pm in sorted(
+                    self.perceived_memberships,
+                    key=lambda x: (
+                        x.membership.space_id,
+                        x.membership.object_id,
+                        x.membership.role,
+                    ),
+                )
             ],
-            "perceived_relations": [pr.to_dict() for pr in self.perceived_relations],
+            "perceived_relations": [
+                pr.to_dict()
+                for pr in sorted(
+                    self.perceived_relations,
+                    key=lambda x: (
+                        x.relation.source_space_id,
+                        x.relation.target_space_id,
+                        x.relation.relation_type,
+                    ),
+                )
+            ],
             "context": dict(sorted(self.context.items())),
             "provenance": dict(sorted(self.provenance.items())),
         }
