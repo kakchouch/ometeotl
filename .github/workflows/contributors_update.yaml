@@ -6,13 +6,23 @@ name: Ometeotl Contributors
 # in contributors
 
 on:
+  # Recalculate daily at 06:00 UTC (recency factors change every day)
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Recalculate after every rank assignment (i.e. after every merged PR)
   workflow_run:
     workflows: ["Ometeotl Rank"]
     types: [completed]
 
+  # Manual trigger for testing or recalibration
+  workflow_dispatch:
+
 permissions:
   contents: write
   actions: read
+  pull-requests: read
+  issues: write
 
 jobs:
   update-contributors:
@@ -180,18 +190,43 @@ jobs:
       - name: Commit and push CONTRIBUTORS.md
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # MODIFIED: configure bot identity and push only when CONTRIBUTORS.md changed
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
 
           git add CONTRIBUTORS.md
-
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes to commit."
           else
-            USERNAME="$(node -p "require('./rank-data.json').username")"
-            git commit -m "docs(contributors): update @${USERNAME}"   
-            git push origin HEAD:develop
-          fi
+            git commit -m "docs(leaderboard): update activity shares [$(date -u +%Y-%m-%d)]"
+
+            if git pull --no-rebase origin develop; then
+              git push origin HEAD:develop
+            else
+              echo "::warning::Merge conflict during Contributors update. Aborting merge and opening an issue."
+              git merge --abort
+
+              # Reset to clean state (drop the contributors commit)
+              git reset --hard origin/develop
+
+              # Open a GitHub issue to alert maintainers
+              gh issue create \
+                --repo "${{ github.repository }}" \
+                --title "[contributors-bot] Merge conflict on develop" \
+                --label "bot,contributors" \
+                --body "The automated leaderboard update failed due to a merge conflict on \`develop\`.
+
+              **What happened:**
+              The contributors workflow committed updated scores, but \`develop\` had diverged with conflicting changes in one of these paths:
+              - \`CONTRIBUTORS.md`
+
+              **What to do:**
+              1. Manually run the contributors workflow after resolving the conflicting files.
+              2. Or wait — the next scheduled run (daily at 06:00 UTC) will retry automatically.
+
+              **Run:** [$(date -u +%Y-%m-%dT%H:%M:%SZ)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                            exit 0  # Don't fail the workflow — the issue is the alert
+                          fi
+                        fi

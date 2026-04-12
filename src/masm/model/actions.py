@@ -15,12 +15,9 @@ F-1 (canonical serialization).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
-from .base import ModelObject, RelationMap
-
-JsonMap = Dict[str, Any]
-ObjectId = str
+from .base import ModelObject, ObjectId, JsonMap, RelationMap
 
 
 @dataclass

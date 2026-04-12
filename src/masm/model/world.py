@@ -13,15 +13,13 @@ must be registered in the minimal registry.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Optional
-from .base import ModelObject
+from typing import Any, Mapping, Optional
+from .base import ModelObject, ObjectId, JsonMap
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
 from .registry import MinimalModelRegistry
 from .objects import GenericObject
 
-JsonMap = Dict[str, Any]
-ObjectId = str
 SpaceId = str
 
 
@@ -114,14 +112,7 @@ class World(Space):
         attributes = base_obj.attributes
         is_root_world = bool(attributes.get("is_root_world", True))
         return cls(
-            id=base_obj.id,
-            object_type=base_obj.object_type,
-            schema_version=base_obj.schema_version,
-            attributes=attributes,
-            relations=base_obj.relations,
-            state=base_obj.state,
-            context=base_obj.context,
-            provenance=base_obj.provenance,
+            **base_obj._base_kwargs(),
             is_root_world=is_root_world,
             space_object_graph=SpaceObjectGraph.from_dict(
                 data.get("space_object_graph") or {}

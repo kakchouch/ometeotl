@@ -19,19 +19,11 @@ intended business logic.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, List, Dict, Mapping
+from typing import Any, Mapping
 
-from .base import ModelObject, relation_methods
+from .base import ModelObject, ObjectId, JsonMap, relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
-
-# local aliases
-JsonMap = Dict[str, Any]
-ObjectId = str
-
-
-def _default_schema_version() -> str:
-    return "1.0"
 
 
 @relation_methods("user", "used_by")
@@ -109,20 +101,6 @@ class Resource(GenericObject):
         self.attributes["kind"] = str(value)
 
     @property
-    def tags(self) -> List[str]:
-        """The tags of the resource."""
-        value = self.attributes.get("tags", [])
-        return sorted(list(value)) if value is not None else []
-
-    def add_tag(self, tag: str) -> None:
-        """Add a tag to the resource."""
-        self.add_to_attribute_list("tags", tag)
-
-    def remove_tag(self, tag: str) -> None:
-        """Remove a tag from the resource."""
-        self.remove_from_attribute_list("tags", tag)
-
-    @property
     def resource_mode(self) -> str:
         """The resource mode of the resource."""
         value = self.attributes.get("resource_mode", "stock")
@@ -185,25 +163,6 @@ class Resource(GenericObject):
         """Set whether the resource is composite."""
         self.attributes["composite"] = bool(value)
 
-    @property
-    def profile(self) -> JsonMap:
-        """Returns the free-form profile of the resource, which are structured
-        data that can be used to capture specific characteristics, preferences,
-        or attributes of the resource in a more detailed and organized way.
-        This dictionnary is intentionally open-ended and can contain
-        modeling details such as category-specific metadata,
-        identifiers etc."""
-        value = self.attributes.get("profile", {})
-        return dict(value) if isinstance(value, Mapping) else {}
-
-    def set_profile_item(self, key: str, value: Any) -> None:
-        """Sets a specific item in the resource's profile."""
-        if not key:
-            raise ValueError("Profile key cannot be empty")
-        profile = self.profile
-        profile[key] = value
-        self.attributes["profile"] = dict(sorted(profile.items()))
-
     # ------------------------------------------------------------------
     # Domain relations
     # ------------------------------------------------------------------
@@ -265,13 +224,4 @@ class Resource(GenericObject):
         payload = dict(data)
         payload["object_type"] = payload.get("object_type") or "resource"
         base_obj = ModelObject.from_dict(payload)
-        return cls(
-            id=base_obj.id,
-            object_type=base_obj.object_type,
-            schema_version=base_obj.schema_version,
-            attributes=base_obj.attributes,
-            relations=base_obj.relations,
-            state=base_obj.state,
-            context=base_obj.context,
-            provenance=base_obj.provenance,
-        )
+        return cls(**base_obj._base_kwargs())

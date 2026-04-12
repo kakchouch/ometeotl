@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, List, Mapping, Optional
 
 from .base import ModelObject
 
@@ -47,3 +47,38 @@ class GenericObject(ModelObject):
         if not value:
             raise ValueError("Description cannot be empty")
         self.attributes["description"] = value
+
+    @property
+    def tags(self) -> List[str]:
+        """Get the object's tags.
+
+        Tags are simple labels used for categorization, filtering, or search.
+        """
+        value = self.attributes.get("tags", [])
+        return sorted(list(value)) if value is not None else []
+
+    def add_tag(self, tag: str) -> None:
+        """Add a tag to the object."""
+        self.add_to_attribute_list("tags", tag)
+
+    def remove_tag(self, tag: str) -> None:
+        """Remove a tag from the object."""
+        self.remove_from_attribute_list("tags", tag)
+
+    @property
+    def profile(self) -> Mapping[str, Any]:
+        """Get the object's free-form profile.
+
+        Structured data capturing specific characteristics or attributes of
+        the object in a detailed and organized way. Intentionally open-ended.
+        """
+        value = self.attributes.get("profile", {})
+        return dict(value) if isinstance(value, Mapping) else {}
+
+    def set_profile_item(self, key: str, value: Any) -> None:
+        """Set a specific item in the object's profile."""
+        if not key:
+            raise ValueError("Profile key cannot be empty")
+        profile = dict(self.profile)
+        profile[key] = value
+        self.attributes["profile"] = dict(sorted(profile.items()))

@@ -162,6 +162,23 @@ class ModelObject:
             "provenance": dict(sorted(self.provenance.items())),
         }
 
+    def _base_kwargs(self) -> "JsonMap":
+        """Return the base keyword arguments shared by all ModelObject subclasses.
+
+        Intended for use inside subclass ``from_dict`` implementations to avoid
+        repeating the eight common field assignments.
+        """
+        return {
+            "id": self.id,
+            "object_type": self.object_type,
+            "schema_version": self.schema_version,
+            "attributes": self.attributes,
+            "relations": self.relations,
+            "state": self.state,
+            "context": self.context,
+            "provenance": self.provenance,
+        }
+
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ModelObject":
         return cls(
