@@ -125,7 +125,8 @@ class AuthorityCommandHandler:
         self.world = world
         self._authority_token = uuid4().hex
         self.allowed_command_types = tuple(
-            allowed_command_types if allowed_command_types is not None
+            allowed_command_types
+            if allowed_command_types is not None
             else (
                 "add_space",
                 "add_space_relation",
@@ -145,11 +146,11 @@ class AuthorityCommandHandler:
         self.world.enable_authority_mode(self._authority_token)
 
     @property
-    @property
     def audit_log(self) -> list[AuditEntry]:
         """Read-only copy of audit entries."""
         with self._lock:
             return list(self._audit_log)
+
     def close(self) -> None:
         """Release authority lock on the world."""
         with self._lock:
