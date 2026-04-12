@@ -60,6 +60,9 @@ class ModelObject:
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        """Terminal hook for the cooperative __post_init__ chain."""
+
     def add_relation(self, name: str, target_id: ObjectId) -> None:
         """Add a relation to another object."""
         self._manage_relation(name, target_id, add=True)

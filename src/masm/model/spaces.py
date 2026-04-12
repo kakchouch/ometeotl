@@ -17,6 +17,7 @@ Space-to-space relations are managed separately through the space_relations modu
 from __future__ import annotations
 
 import copy
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Iterable, Mapping
 
@@ -147,21 +148,22 @@ class Space(GenericObject):
         )
 
     def __deepcopy__(self, memo: dict) -> "Space":
-        """Optimised deep copy: immutable str fields are shared; only mutable
-        dicts/lists are copied, avoiding the overhead of full deepcopy traversal."""
-        new_obj: Space = self.__class__.__new__(self.__class__)
+        """Deep copy that iterates over all dataclass fields dynamically.
+
+        Using ``dataclasses.fields()`` instead of an explicit field list keeps
+        this correct for subclasses that introduce new fields, without any
+        additional work required from those subclasses.
+        ``copy.deepcopy`` already returns immutable values (str, int, …)
+        unchanged, so no performance is lost compared to the previous
+        hand-written approach.
+        """
+        cls = self.__class__
+        new_obj = cls.__new__(cls)
         memo[id(self)] = new_obj
-        # str fields are immutable — safe to share directly
-        new_obj.id = self.id
-        new_obj.object_type = self.object_type
-        new_obj.schema_version = self.schema_version
-        # dict/list fields are mutable — deep-copy each one
-        new_obj.attributes = copy.deepcopy(self.attributes, memo)
-        # relations values are List[str]; a per-list copy is sufficient
-        new_obj.relations = {k: list(v) for k, v in self.relations.items()}
-        new_obj.state = copy.deepcopy(self.state, memo)
-        new_obj.context = copy.deepcopy(self.context, memo)
-        new_obj.provenance = copy.deepcopy(self.provenance, memo)
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
         return new_obj
 
     @classmethod
