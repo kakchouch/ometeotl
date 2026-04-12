@@ -315,8 +315,7 @@ def test_world_local_mode_mutations_do_not_require_authority_token():
 
 def test_world_register_and_unregister_object():
     """
-    Verify that objects can be registered into and removed from the
-    minimal registry through the world interface.
+    Verify that objects are tracked only in the world-scoped registry.
     """
     from masm.model.registry import MinimalModelRegistry
     from masm.model.actors import Actor
@@ -327,7 +326,7 @@ def test_world_register_and_unregister_object():
 
     world.register_object(actor)
     assert world.model_registry.exists("actor-reg-1")
-    assert MinimalModelRegistry.exists("actor-reg-1")
+    assert not MinimalModelRegistry.exists("actor-reg-1")
 
     world.unregister_object("actor-reg-1")
     assert not world.model_registry.exists("actor-reg-1")
@@ -370,10 +369,8 @@ def test_authority_handler_applies_allowlisted_commands():
 
 def test_authority_handler_rejects_unknown_actor():
     """Unknown actors are rejected before command application."""
-    from masm.model.registry import MinimalModelRegistry
     from masm.model.actors import Actor
 
-    MinimalModelRegistry.clear()
     world = World(id="world-cmd-2")
     world.register_object(Actor(id="actor-known"))
     handler = AuthorityCommandHandler(world)
@@ -402,7 +399,6 @@ def test_authority_handler_rejects_unknown_actor():
     finally:
         handler.close()
         world.unregister_object("actor-known")
-        MinimalModelRegistry.clear()
 
 
 def test_authority_handler_rejects_duplicate_and_out_of_order_sequence():
@@ -504,6 +500,63 @@ def test_authority_handler_rejects_global_registry_bypass():
     finally:
         handler.close()
         MinimalModelRegistry.clear()
+
+
+def test_command_envelope_from_dict_rejects_invalid_sequence_values():
+    """Deserialization reports invalid sequence values explicitly."""
+    with pytest.raises(ValueError):
+        CommandEnvelope.from_dict(
+            {
+                "command_id": "cx-1",
+                "actor_id": "a-1",
+                "command_type": "add_space",
+                "sequence": "not-an-int",
+            }
+        )
+
+
+def test_authority_handler_tracker_capacity_rejects_new_actor_without_reset():
+    """Tracker capacity rejects new actors instead of evicting old actor state."""
+    from masm.model.actors import Actor
+
+    world = World(id="world-cmd-8")
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Actor(id="actor-b"))
+    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    try:
+        accepted_a = handler.submit(
+            CommandEnvelope(
+                command_id="c-11",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-11").to_dict()},
+            )
+        )
+        rejected_b = handler.submit(
+            CommandEnvelope(
+                command_id="c-12",
+                actor_id="actor-b",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-12").to_dict()},
+            )
+        )
+        replay_a = handler.submit(
+            CommandEnvelope(
+                command_id="c-13",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-13").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert accepted_a.accepted is True
+    assert rejected_b.accepted is False
+    assert replay_a.accepted is False
 
 
 def test_authority_handler_uses_bounded_audit_log():

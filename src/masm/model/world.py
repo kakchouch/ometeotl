@@ -7,7 +7,7 @@ is grounded. A world may operate as a standalone space or support the
 existence of other derived or nested spaces.
 
 Objects directly supported by a world are treated as minimal objects and
-must be registered in the minimal registry.
+    must be registered in the world-scoped registry.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from typing import Any, Mapping, Optional
 from .base import ModelObject, ObjectId, JsonMap
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
-from .registry import MinimalModelRegistry, WorldModelRegistry
+from .registry import WorldModelRegistry
 
 SpaceId = str
 
@@ -31,7 +31,7 @@ class World(Space):
     existence of other derived or nested spaces.
 
     Objects directly supported by a world are treated as minimal objects and
-    must be registered in the minimal registry.
+    must be registered in the world-scoped registry.
     """
 
     object_type: str = "world"
@@ -119,22 +119,16 @@ class World(Space):
     def register_object(
         self, obj: ModelObject, authority_token: Optional[str] = None
     ) -> None:
-        """Register a minimal object in this world-scoped registry.
-
-        For backward compatibility with existing local flows, objects are also
-        mirrored to ``MinimalModelRegistry``.
-        """
+        """Register a minimal object in this world-scoped registry."""
         self._assert_mutation_allowed(authority_token)
         self.model_registry.register(obj)
-        MinimalModelRegistry.register(obj)
 
     def unregister_object(
         self, obj_id: ObjectId, authority_token: Optional[str] = None
     ) -> None:
-        """Remove an object from world-scoped and legacy global registries."""
+        """Remove an object from this world-scoped registry."""
         self._assert_mutation_allowed(authority_token)
         self.model_registry.unregister(obj_id)
-        MinimalModelRegistry.unregister(obj_id)
 
     # --- Serialization ------------------------------------------------------
 

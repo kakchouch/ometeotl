@@ -59,7 +59,10 @@ class CommandEnvelope:
         if not command_type:
             raise ValueError("Command type cannot be empty")
         sequence_raw = data.get("sequence", 0)
-        sequence = int(sequence_raw)
+        try:
+            sequence = int(sequence_raw) if sequence_raw is not None else 0
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Command sequence must be a valid integer") from exc
         if sequence < 0:
             raise ValueError("Command sequence cannot be negative")
         return cls(
@@ -110,18 +113,17 @@ class AuthorityCommandHandler:
         allowed_command_types: Optional[Sequence[str]] = None,
         audit_log_maxlen: int = 1000,
         processed_ids_maxlen: int = 10000,
-        sequence_tracker_max_actors: int = 1000,
+        sequence_tracker_max_actors: Optional[int] = None,
     ) -> None:
         if audit_log_maxlen <= 0:
             raise ValueError("audit_log_maxlen must be greater than 0")
         if processed_ids_maxlen <= 0:
             raise ValueError("processed_ids_maxlen must be greater than 0")
-        if sequence_tracker_max_actors <= 0:
+        if sequence_tracker_max_actors is not None and sequence_tracker_max_actors <= 0:
             raise ValueError("sequence_tracker_max_actors must be greater than 0")
 
         self.world = world
         self._authority_token = uuid4().hex
-        self.world.enable_authority_mode(self._authority_token)
         self.allowed_command_types = tuple(
             allowed_command_types if allowed_command_types is not None
             else (
@@ -139,6 +141,8 @@ class AuthorityCommandHandler:
         self._processed_command_order: deque[str] = deque()
         self._last_sequence_by_actor: OrderedDict[ObjectId, int] = OrderedDict()
         self._lock = threading.Lock()
+        # Lock activation is the final init step to avoid partial-init lock side effects.
+        self.world.enable_authority_mode(self._authority_token)
 
     @property
     def audit_log(self) -> list[AuditEntry]:
@@ -170,6 +174,12 @@ class AuthorityCommandHandler:
                 return self._reject(
                     command,
                     "Command sequence is not strictly increasing",
+                )
+
+            if not self._has_sequence_capacity(command.actor_id):
+                return self._reject(
+                    command,
+                    "Sequence tracker capacity reached for new actor",
                 )
 
             try:
@@ -213,6 +223,14 @@ class AuthorityCommandHandler:
         last_sequence = self._last_sequence_by_actor.get(actor_id, -1)
         return sequence > last_sequence
 
+    def _has_sequence_capacity(self, actor_id: ObjectId) -> bool:
+        if actor_id in self._last_sequence_by_actor:
+            return True
+        limit = self._sequence_tracker_max_actors
+        if limit is None:
+            return True
+        return len(self._last_sequence_by_actor) < limit
+
     def _mark_processed(self, command_id: str) -> None:
         self._processed_command_ids.add(command_id)
         self._processed_command_order.append(command_id)
@@ -223,9 +241,13 @@ class AuthorityCommandHandler:
     def _set_last_sequence(self, actor_id: ObjectId, sequence: int) -> None:
         if actor_id in self._last_sequence_by_actor:
             self._last_sequence_by_actor.move_to_end(actor_id)
+            self._last_sequence_by_actor[actor_id] = sequence
+            return
+
+        limit = self._sequence_tracker_max_actors
+        if limit is not None and len(self._last_sequence_by_actor) >= limit:
+            return
         self._last_sequence_by_actor[actor_id] = sequence
-        while len(self._last_sequence_by_actor) > self._sequence_tracker_max_actors:
-            self._last_sequence_by_actor.popitem(last=False)
 
     def _append_audit(self, entry: AuditEntry) -> None:
         self._audit_log.append(entry)
@@ -281,6 +303,7 @@ class AuthorityCommandHandler:
                 object_id,
                 authority_token=self._authority_token,
             )
+            self._last_sequence_by_actor.pop(object_id, None)
             return {"object_id": object_id}
 
         raise ValueError(f"Unsupported command type: {command.command_type}")
