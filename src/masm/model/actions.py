@@ -154,14 +154,14 @@ class Action(ModelObject):
                     re.to_dict()
                     for re in sorted(
                         self.resource_effects,
-                        key=lambda x: (x.resource_id, x.effect_type),
+                        key=lambda x: (x.resource_id, x.effect_type, x.quantity, str(x.source_id), str(x.target_id)),
                     )
                 ],
                 "prerequisites": [
                     p.to_dict()
                     for p in sorted(
                         self.prerequisites,
-                        key=lambda x: (x.prerequisite_type, x.field_name),
+                        key=lambda x: (x.prerequisite_type, x.field_name, str(x.required_value)),
                     )
                 ],
                 "outcome_description": self.outcome_description,
