@@ -43,17 +43,17 @@ CONFIG_PATH = SCRIPT_DIR / "config.json"
 with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
-FOUNDER          = CONFIG["founder"].lower()
-TOTAL_SHARES     = CONFIG["total_shares"]
-K_FLOOR          = CONFIG["k_floor"]
-K_OFFSET         = CONFIG["k_offset"]
-Z_MIN            = CONFIG["z_clamp_min"]
-Z_MAX            = CONFIG["z_clamp_max"]
-HALF_LIFE        = CONFIG["half_life_days"]
-ACTIVE_WINDOW    = CONFIG["active_contributor_window_days"]
+FOUNDER = CONFIG["founder"].lower()
+TOTAL_SHARES = CONFIG["total_shares"]
+K_FLOOR = CONFIG["k_floor"]
+K_OFFSET = CONFIG["k_offset"]
+Z_MIN = CONFIG["z_clamp_min"]
+Z_MAX = CONFIG["z_clamp_max"]
+HALF_LIFE = CONFIG["half_life_days"]
+ACTIVE_WINDOW = CONFIG["active_contributor_window_days"]
 MIN_CONTRIBUTORS = CONFIG["min_active_contributors_for_z_score"]
-WEIGHTS          = CONFIG["weights"]
-LINES_CAP        = WEIGHTS["lines_changed_cap_per_pr"]
+WEIGHTS = CONFIG["weights"]
+LINES_CAP = WEIGHTS["lines_changed_cap_per_pr"]
 
 NOW = datetime.now(timezone.utc)
 
@@ -84,6 +84,7 @@ def adjusted_score(z, k):
 # ---------------------------------------------------------------------------
 # Data collection from GitHub API
 # ---------------------------------------------------------------------------
+
 
 def collect_events(repo):
     """
@@ -198,6 +199,7 @@ def collect_events(repo):
 # Score computation
 # ---------------------------------------------------------------------------
 
+
 def compute_raw_scores(events):
     """Compute weighted, recency-adjusted raw scores."""
     scores = {}
@@ -251,8 +253,7 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
         return k, adjusted, {u: equal_share for u in contributors}
 
     shares = {
-        u: round((s / total_adj) * TOTAL_SHARES, 1)
-        for u, s in contributors.items()
+        u: round((s / total_adj) * TOTAL_SHARES, 1) for u, s in contributors.items()
     }
 
     # Fix rounding residual
@@ -275,10 +276,7 @@ def compute_leaderboard_fallback(raw_scores):
         equal = round(TOTAL_SHARES / len(contributors), 1)
         return {u: equal for u in contributors}
 
-    shares = {
-        u: round((s / total) * TOTAL_SHARES, 1)
-        for u, s in contributors.items()
-    }
+    shares = {u: round((s / total) * TOTAL_SHARES, 1) for u, s in contributors.items()}
     residual = round(TOTAL_SHARES - sum(shares.values()), 1)
     if residual != 0 and shares:
         top_user = max(shares, key=shares.get)
@@ -290,6 +288,7 @@ def compute_leaderboard_fallback(raw_scores):
 # ---------------------------------------------------------------------------
 # Output generation
 # ---------------------------------------------------------------------------
+
 
 def generate_markdown(data, repo_name):
     """Generate LEADERBOARD.md content."""
@@ -305,9 +304,11 @@ def generate_markdown(data, repo_name):
     ]
 
     if data.get("fallback"):
-        lines.append("*Cold start mode: fewer than "
-                      f"{MIN_CONTRIBUTORS} active contributors. "
-                      "Shares allocated proportionally to raw scores.*")
+        lines.append(
+            "*Cold start mode: fewer than "
+            f"{MIN_CONTRIBUTORS} active contributors. "
+            "Shares allocated proportionally to raw scores.*"
+        )
         lines.append("")
 
     # Main leaderboard
@@ -322,8 +323,12 @@ def generate_markdown(data, repo_name):
             raw = data["raw_scores"].get(user, 0)
             lines.append(f"| {rank} | @{user} | {raw:.1f} | {share:.1f} |")
     else:
-        lines.append("| Rank | Contributor | Raw Score | z-Score | Adj. Score | Shares |")
-        lines.append("|------|-------------|-----------|---------|------------|--------|")
+        lines.append(
+            "| Rank | Contributor | Raw Score | z-Score | Adj. Score | Shares |"
+        )
+        lines.append(
+            "|------|-------------|-----------|---------|------------|--------|"
+        )
         ranked = sorted(data["shares"].items(), key=lambda x: -x[1])
         for rank, (user, share) in enumerate(ranked, 1):
             raw = data["raw_scores"].get(user, 0)
@@ -335,13 +340,15 @@ def generate_markdown(data, repo_name):
 
     # Founder section
     if FOUNDER in data["raw_scores"]:
-        lines.extend([
-            "",
-            "---",
-            "",
-            "*Out-of-competition — Founder*",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "*Out-of-competition — Founder*",
+                "",
+            ]
+        )
         raw = data["raw_scores"][FOUNDER]
         z = data["z_scores"].get(FOUNDER, 0)
         adj = data["adjusted_scores"].get(FOUNDER, 0)
@@ -352,36 +359,36 @@ def generate_markdown(data, repo_name):
         else:
             lines.append("| Contributor | Raw Score | z-Score | Adj. Score |")
             lines.append("|-------------|-----------|---------|------------|")
-            lines.append(
-                f"| @{FOUNDER} | {raw:.1f} | {z:+.2f} | {adj:.4f} |"
-            )
+            lines.append(f"| @{FOUNDER} | {raw:.1f} | {z:+.2f} | {adj:.4f} |")
 
     # Methodology
-    lines.extend([
-        "",
-        "---",
-        "",
-        "<details>",
-        "<summary>Methodology</summary>",
-        "",
-        "The raw activity score aggregates contributions "
-        "(merged PRs, reviews, issues, comments) weighted by type "
-        f"and by an exponential recency factor (half-life = {HALF_LIFE} days).",
-        "",
-        "The z-score is computed over all contributors (founder included).",
-        "",
-        f"The adjusted score uses `f(z) = exp(sinh(z) / k)` with "
-        f"k = max({K_FLOOR}, {K_OFFSET} − n_active).",
-        "",
-        "Activity-shares are proportional to adjusted scores, "
-        "founder excluded. Total = 1000.",
-        "",
-        "Full specification: "
-        "[LEADERBOARD_SPEC.md](leaderboard/LEADERBOARD_SPEC.md)",
-        "",
-        "</details>",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "<details>",
+            "<summary>Methodology</summary>",
+            "",
+            "The raw activity score aggregates contributions "
+            "(merged PRs, reviews, issues, comments) weighted by type "
+            f"and by an exponential recency factor (half-life = {HALF_LIFE} days).",
+            "",
+            "The z-score is computed over all contributors (founder included).",
+            "",
+            f"The adjusted score uses `f(z) = exp(sinh(z) / k)` with "
+            f"k = max({K_FLOOR}, {K_OFFSET} − n_active).",
+            "",
+            "Activity-shares are proportional to adjusted scores, "
+            "founder excluded. Total = 1000.",
+            "",
+            "Full specification: "
+            "[LEADERBOARD_SPEC.md](leaderboard/LEADERBOARD_SPEC.md)",
+            "",
+            "</details>",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -411,27 +418,31 @@ def generate_hugo_page(data, repo_name):
     ]
 
     if data.get("fallback"):
-        lines.extend([
-            '<p style="color: var(--base09); font-style: italic;">',
-            f"Cold start mode: fewer than {MIN_CONTRIBUTORS} active contributors. "
-            "Shares allocated proportionally to raw scores.",
-            "</p>",
-            "",
-        ])
+        lines.extend(
+            [
+                '<p style="color: var(--base09); font-style: italic;">',
+                f"Cold start mode: fewer than {MIN_CONTRIBUTORS} active contributors. "
+                "Shares allocated proportionally to raw scores.",
+                "</p>",
+                "",
+            ]
+        )
 
     # --- Main leaderboard table ---
     ranked = sorted(data["shares"].items(), key=lambda x: -x[1])
 
     if not ranked:
-        lines.extend([
-            "*No active contributors yet. "
-            "[Start your first PR and become an Eagle Warrior!]"
-            "(https://github.com/kakchouch/ometeotl)*",
-            "",
-        ])
+        lines.extend(
+            [
+                "*No active contributors yet. "
+                "[Start your first PR and become an Eagle Warrior!]"
+                "(https://github.com/kakchouch/ometeotl)*",
+                "",
+            ]
+        )
     else:
         # Build HTML table for better styling in Hugo
-        lines.append('<table>')
+        lines.append("<table>")
         if data.get("fallback"):
             lines.append(
                 '<tr style="border-bottom: 2px solid var(--base02);">'
@@ -439,7 +450,7 @@ def generate_hugo_page(data, repo_name):
                 '<th style="padding: 8px;">Contributor</th>'
                 '<th style="text-align:right; padding: 8px;">Raw Score</th>'
                 '<th style="text-align:right; padding: 8px;">Shares</th>'
-                '</tr>'
+                "</tr>"
             )
             for rank, (user, share) in enumerate(ranked, 1):
                 raw = data["raw_scores"].get(user, 0)
@@ -447,17 +458,17 @@ def generate_hugo_page(data, repo_name):
                 # Visual bar
                 bar_width = max(2, int(share / 10))  # max 100px width
                 lines.append(
-                    f'<tr>'
+                    f"<tr>"
                     f'<td style="text-align:center; padding: 6px 8px; font-weight:bold;">{rank}</td>'
                     f'<td style="padding: 6px 8px;">'
                     f'<a href="https://github.com/{user}">@{user}</a></td>'
                     f'<td style="text-align:right; padding: 6px 8px;">{raw:.1f}</td>'
                     f'<td style="text-align:right; padding: 6px 8px;">'
-                    f'<strong>{share:.1f}</strong>'
+                    f"<strong>{share:.1f}</strong>"
                     f' <span style="color: var(--base04);">({pct:.1f}%)</span>'
                     f'<div style="background: var(--base0C); height: 4px; '
                     f'width: {bar_width}%; border-radius: 2px; margin-top: 2px;"></div>'
-                    f'</td></tr>'
+                    f"</td></tr>"
                 )
         else:
             lines.append(
@@ -468,7 +479,7 @@ def generate_hugo_page(data, repo_name):
                 '<th style="text-align:right; padding: 8px;">z-Score</th>'
                 '<th style="text-align:right; padding: 8px;">Adj. Score</th>'
                 '<th style="text-align:right; padding: 8px;">Shares</th>'
-                '</tr>'
+                "</tr>"
             )
             for rank, (user, share) in enumerate(ranked, 1):
                 raw = data["raw_scores"].get(user, 0)
@@ -479,7 +490,7 @@ def generate_hugo_page(data, repo_name):
                 # Color z-score
                 z_color = "var(--base0C)" if z >= 0 else "var(--base09)"
                 lines.append(
-                    f'<tr>'
+                    f"<tr>"
                     f'<td style="text-align:center; padding: 6px 8px; font-weight:bold;">{rank}</td>'
                     f'<td style="padding: 6px 8px;">'
                     f'<a href="https://github.com/{user}">@{user}</a></td>'
@@ -487,14 +498,14 @@ def generate_hugo_page(data, repo_name):
                     f'<td style="text-align:right; padding: 6px 8px; color: {z_color};">{z:+.2f}</td>'
                     f'<td style="text-align:right; padding: 6px 8px;">{adj:.4f}</td>'
                     f'<td style="text-align:right; padding: 6px 8px;">'
-                    f'<strong>{share:.1f}</strong>'
+                    f"<strong>{share:.1f}</strong>"
                     f' <span style="color: var(--base04);">({pct:.1f}%)</span>'
                     f'<div style="background: var(--base0C); height: 4px; '
                     f'width: {bar_width}%; border-radius: 2px; margin-top: 2px;"></div>'
-                    f'</td></tr>'
+                    f"</td></tr>"
                 )
-        lines.append('</table>')
-        lines.append('')
+        lines.append("</table>")
+        lines.append("")
 
     # --- Founder section ---
     if FOUNDER in data["raw_scores"]:
@@ -502,28 +513,30 @@ def generate_hugo_page(data, repo_name):
         z = data["z_scores"].get(FOUNDER, 0)
         adj = data["adjusted_scores"].get(FOUNDER, 0)
 
-        lines.extend([
-            "---",
-            "",
-            '<p style="font-style: italic; color: var(--base04);">'
-            'Out-of-competition — Founder</p>',
-            "",
-            '<table>',
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                '<p style="font-style: italic; color: var(--base04);">'
+                "Out-of-competition — Founder</p>",
+                "",
+                "<table>",
+            ]
+        )
 
         if data.get("fallback"):
             lines.append(
                 '<tr style="border-bottom: 2px solid var(--base02);">'
                 '<th style="padding: 8px;">Contributor</th>'
                 '<th style="text-align:right; padding: 8px;">Raw Score</th>'
-                '</tr>'
+                "</tr>"
             )
             lines.append(
                 f'<tr style="opacity: 0.7;">'
                 f'<td style="padding: 6px 8px;">'
                 f'<a href="https://github.com/{FOUNDER}">@{FOUNDER}</a></td>'
                 f'<td style="text-align:right; padding: 6px 8px;">{raw:.1f}</td>'
-                f'</tr>'
+                f"</tr>"
             )
         else:
             lines.append(
@@ -532,7 +545,7 @@ def generate_hugo_page(data, repo_name):
                 '<th style="text-align:right; padding: 8px;">Raw Score</th>'
                 '<th style="text-align:right; padding: 8px;">z-Score</th>'
                 '<th style="text-align:right; padding: 8px;">Adj. Score</th>'
-                '</tr>'
+                "</tr>"
             )
             z_color = "var(--base0C)" if z >= 0 else "var(--base09)"
             lines.append(
@@ -542,36 +555,38 @@ def generate_hugo_page(data, repo_name):
                 f'<td style="text-align:right; padding: 6px 8px;">{raw:.1f}</td>'
                 f'<td style="text-align:right; padding: 6px 8px; color: {z_color};">{z:+.2f}</td>'
                 f'<td style="text-align:right; padding: 6px 8px;">{adj:.4f}</td>'
-                f'</tr>'
+                f"</tr>"
             )
 
-        lines.extend(['</table>', ''])
+        lines.extend(["</table>", ""])
 
     # --- Formula summary ---
-    lines.extend([
-        "---",
-        "",
-        "<details>",
-        "<summary>Scoring formula</summary>",
-        "",
-        "```",
-        "Raw score    S(u) = Σ weight(event) × 2^(−age / 90)",
-        "z-score      z(u) = (S(u) − μ) / σ",
-        f"Adjusted     f(z) = exp(sinh(clamp(z, {Z_MIN}, {Z_MAX})) / k)",
-        f"Smoothing    k    = max({K_FLOOR}, {K_OFFSET} − n_active)",
-        f"Shares       s(u) = f(z(u)) / Σf(z) × {TOTAL_SHARES}",
-        "```",
-        "",
-        f"Active contributor window: {ACTIVE_WINDOW} days (2× half-life). "
-        "Founder included in normalization, excluded from share allocation.",
-        "",
-        "[Full specification →]"
-        "(https://github.com/kakchouch/ometeotl/blob/develop/leaderboard/LEADERBOARD_SPEC.md) · "
-        "[Methodology →](../)",
-        "",
-        "</details>",
-        "",
-    ])
+    lines.extend(
+        [
+            "---",
+            "",
+            "<details>",
+            "<summary>Scoring formula</summary>",
+            "",
+            "```",
+            "Raw score    S(u) = Σ weight(event) × 2^(−age / 90)",
+            "z-score      z(u) = (S(u) − μ) / σ",
+            f"Adjusted     f(z) = exp(sinh(clamp(z, {Z_MIN}, {Z_MAX})) / k)",
+            f"Smoothing    k    = max({K_FLOOR}, {K_OFFSET} − n_active)",
+            f"Shares       s(u) = f(z(u)) / Σf(z) × {TOTAL_SHARES}",
+            "```",
+            "",
+            f"Active contributor window: {ACTIVE_WINDOW} days (2× half-life). "
+            "Founder included in normalization, excluded from share allocation.",
+            "",
+            "[Full specification →]"
+            "(https://github.com/kakchouch/ometeotl/blob/develop/leaderboard/LEADERBOARD_SPEC.md) · "
+            "[Methodology →](../)",
+            "",
+            "</details>",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -579,6 +594,7 @@ def generate_hugo_page(data, repo_name):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main():
     token = os.environ.get("GITHUB_TOKEN")
@@ -617,8 +633,10 @@ def main():
     use_fallback = n_active < MIN_CONTRIBUTORS
 
     if use_fallback:
-        print(f"Cold start: n_active ({n_active}) < {MIN_CONTRIBUTORS}. "
-              "Using proportional fallback.")
+        print(
+            f"Cold start: n_active ({n_active}) < {MIN_CONTRIBUTORS}. "
+            "Using proportional fallback."
+        )
         z_scores = {u: 0.0 for u in raw_scores}
         adjusted_scores_dict = {u: 0.0 for u in raw_scores}
         shares = compute_leaderboard_fallback(raw_scores)

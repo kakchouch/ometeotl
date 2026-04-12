@@ -302,7 +302,7 @@ class SpaceObjectGraph:
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectGraph":
         """Create a SpaceObjectGraph instance from a dictionary representation."""
         graph = cls()
-        for space_data in data.get("spaces", {}).items():
+        for space_id, space_data in data.get("spaces", {}).items():
             graph.add_space(Space.from_dict(space_data))
         for object_membership_data in data.get("object_memberships", []):
             graph.add_object_membership(
