@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Mapping, Optional
 
-from .base import ModelObject
+from .base import ModelObject, JsonMap
 
 
 @dataclass
