@@ -167,6 +167,14 @@ class Perception:
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if self.timestamp is not None and not isinstance(
+            self.timestamp, (int, float, str)
+        ):
+            raise TypeError(
+                f"timestamp must be int, float, or str, got {type(self.timestamp).__name__}"
+            )
+
     # --- Query API ----------------------------------------------------------
 
     def get_perceived_space(self, space_id: SpaceId) -> Optional[PerceivedSpace]:
