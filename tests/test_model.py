@@ -929,6 +929,8 @@ def test_action_to_dict_contains_required_fields():
     assert action_dict["id"] == "action-full"
     assert action_dict["object_type"] == "action"
     assert action_dict["schema_version"] == "1.0"
+    assert isinstance(action_dict["attributes"], dict)
+    assert isinstance(action_dict["relations"], dict)
     assert action_dict["actor_id"] == "actor-1"
     assert action_dict["world_id"] == "world-1"
     assert action_dict["space_id"] == "space-1"
@@ -964,6 +966,10 @@ def test_action_to_dict_roundtrip():
             required_value="advanced",
         )
     )
+    original.set_attribute("difficulty", "high")
+    original.add_relation("targets", "resource-market")
+    original.set_state("phase", "open")
+    original.set_provenance("source", "unit-test")
     original.set_state_change("market_value", 100)
 
     # Serialize and deserialize
@@ -983,7 +989,23 @@ def test_action_to_dict_roundtrip():
     )
     assert len(restored.prerequisites) == len(original.prerequisites)
     assert restored.prerequisites[0].field_name == original.prerequisites[0].field_name
+    assert restored.attributes == original.attributes
+    assert restored.relations == original.relations
+    assert restored.state == original.state
+    assert restored.provenance == original.provenance
     assert restored.state_changes == original.state_changes
+
+
+def test_action_missing_actor_id_raises():
+    """Action must be bound to a performer actor."""
+    with pytest.raises(ValueError):
+        Action(
+            id="action-missing-actor",
+            actor_id="",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        )
 
 
 def test_action_deterministic_serialization():
