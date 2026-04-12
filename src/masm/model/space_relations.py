@@ -14,6 +14,7 @@ Object-to-space memberships are managed separately in spaces.py.
 from __future__ import annotations
 
 import copy
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Any
 
