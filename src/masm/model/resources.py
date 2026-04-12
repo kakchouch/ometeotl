@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Dict, Mapping
 
-from .base import relation_methods
+from .base import ModelObject, relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
@@ -262,16 +262,16 @@ class Resource(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":
         """Create the resource from a dictionary."""
+        payload = dict(data)
+        payload["object_type"] = payload.get("object_type") or "resource"
+        base_obj = ModelObject.from_dict(payload)
         return cls(
-            id=str(data["id"]),
-            object_type=str(data.get("object_type", "resource")),
-            schema_version=str(data.get("schema_version", _default_schema_version())),
-            attributes=dict(data.get("attributes", {})),
-            relations={
-                str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations", {})).items()
-            },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            id=base_obj.id,
+            object_type=base_obj.object_type,
+            schema_version=base_obj.schema_version,
+            attributes=base_obj.attributes,
+            relations=base_obj.relations,
+            state=base_obj.state,
+            context=base_obj.context,
+            provenance=base_obj.provenance,
         )

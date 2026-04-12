@@ -21,6 +21,7 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Iterable, Mapping
 
+from .base import ModelObject
 from .objects import GenericObject
 
 JsonMap = Dict[str, Any]
@@ -169,18 +170,18 @@ class Space(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Space":
         """Create a Space instance from a dictionary representation."""
+        payload = dict(data)
+        payload["object_type"] = payload.get("object_type") or "space"
+        base_obj = ModelObject.from_dict(payload)
         return cls(
-            id=str(data["id"]),
-            object_type=str(data.get("object_type", "space")),
-            schema_version=str(data.get("schema_version", _default_schema_version())),
-            attributes=dict(data.get("attributes", {})),
-            relations={
-                str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations", {})).items()
-            },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            id=base_obj.id,
+            object_type=base_obj.object_type,
+            schema_version=base_obj.schema_version,
+            attributes=base_obj.attributes,
+            relations=base_obj.relations,
+            state=base_obj.state,
+            context=base_obj.context,
+            provenance=base_obj.provenance,
         )
 
 
@@ -221,12 +222,16 @@ class SpaceObjectMembership:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectMembership":
         """Create a SpaceObjectMembership instance from a dictionary representation."""
+        if data.get("object_id") is None:
+            raise ValueError("Field 'object_id' cannot be null")
+        if data.get("space_id") is None:
+            raise ValueError("Field 'space_id' cannot be null")
         return cls(
             object_id=str(data["object_id"]),
             space_id=str(data["space_id"]),
-            role=str(data.get("role", "occupies")),
-            validity=dict(data.get("validity", {})),
-            metadata=dict(data.get("metadata", {})),
+            role=str(data.get("role") or "occupies"),
+            validity=dict(data.get("validity") or {}),
+            metadata=dict(data.get("metadata") or {}),
         )
 
 
@@ -335,9 +340,9 @@ class SpaceObjectGraph:
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectGraph":
         """Create a SpaceObjectGraph instance from a dictionary representation."""
         graph = cls()
-        for space_id, space_data in data.get("spaces", {}).items():
+        for space_id, space_data in (data.get("spaces") or {}).items():
             graph.add_space(Space.from_dict(space_data))
-        for object_membership_data in data.get("object_memberships", []):
+        for object_membership_data in data.get("object_memberships") or []:
             graph.add_object_membership(
                 SpaceObjectMembership.from_dict(object_membership_data)
             )

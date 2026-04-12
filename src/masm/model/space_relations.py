@@ -130,11 +130,17 @@ class SpaceRelation:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelation":
         """Create a SpaceRelation instance from a dictionary representation."""
+        if data.get("source_space_id") is None:
+            raise ValueError("Field 'source_space_id' cannot be null")
+        if data.get("target_space_id") is None:
+            raise ValueError("Field 'target_space_id' cannot be null")
+        if data.get("relation_type") is None:
+            raise ValueError("Field 'relation_type' cannot be null")
         return cls(
             source_space_id=str(data["source_space_id"]),
             target_space_id=str(data["target_space_id"]),
             relation_type=str(data["relation_type"]),
-            metadata=dict(data.get("metadata", {})),
+            metadata=dict(data.get("metadata") or {}),
         )
 
 
@@ -321,6 +327,6 @@ class SpaceRelationGraph:
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelationGraph":
         """Reconstruct a SpaceRelationGraph from a canonical dictionary representation."""
         graph = cls()
-        for relation_data in data.get("relations", []):
+        for relation_data in data.get("relations") or []:
             graph.add_relation(SpaceRelation.from_dict(relation_data))
         return graph

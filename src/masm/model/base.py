@@ -39,6 +39,14 @@ def _default_schema_version() -> str:
     return "1.0"
 
 
+def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
+    """Read a required string field and reject explicit null values."""
+    value = data.get(key)
+    if value is None:
+        raise ValueError(f"Field '{key}' cannot be null")
+    return str(value)
+
+
 @dataclass
 class ModelObject:
     """A base class for all objects in the model.
@@ -157,15 +165,15 @@ class ModelObject:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ModelObject":
         return cls(
-            id=str(data["id"]),
-            object_type=str(data["object_type"]),
-            schema_version=str(data.get("schema_version", _default_schema_version())),
-            attributes=dict(data.get("attributes", {})),
+            id=_require_non_null_string(data, "id"),
+            object_type=_require_non_null_string(data, "object_type"),
+            schema_version=str(data.get("schema_version") or _default_schema_version()),
+            attributes=dict(data.get("attributes") or {}),
             relations={
                 str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations", {})).items()
+                for key, value in dict(data.get("relations") or {}).items()
             },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            state=dict(data.get("state") or {}),
+            context=dict(data.get("context") or {}),
+            provenance=dict(data.get("provenance") or {}),
         )
