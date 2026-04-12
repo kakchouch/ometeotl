@@ -18,7 +18,6 @@ from .base import ModelObject, ObjectId, JsonMap
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
 from .registry import MinimalModelRegistry
-from .objects import GenericObject
 
 SpaceId = str
 
@@ -39,6 +38,8 @@ class World(Space):
     is_root_world: bool = True
     space_object_graph: SpaceObjectGraph = field(default_factory=SpaceObjectGraph)
     space_relation_graph: SpaceRelationGraph = field(default_factory=SpaceRelationGraph)
+    _authority_mode_enabled: bool = field(default=False, init=False, repr=False)
+    _authority_token: Optional[str] = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -46,18 +47,48 @@ class World(Space):
         self.attributes["kind"] = "world"
         self.attributes["is_root_world"] = self.is_root_world
 
+    def enable_authority_mode(self, token: str) -> None:
+        """Enable authoritative mutation mode.
+
+        When enabled, mutating world APIs only accept calls that carry the
+        expected authority token. This creates an explicit server-side
+        boundary while keeping backward compatibility for local/in-process use
+        when authority mode is disabled.
+        """
+        if not token:
+            raise ValueError("Authority token cannot be empty")
+        self._authority_mode_enabled = True
+        self._authority_token = token
+
+    def disable_authority_mode(self) -> None:
+        """Disable authoritative mutation mode."""
+        self._authority_mode_enabled = False
+        self._authority_token = None
+
+    def _assert_mutation_allowed(self, authority_token: Optional[str]) -> None:
+        if not self._authority_mode_enabled:
+            return
+        if authority_token != self._authority_token:
+            raise PermissionError(
+                "World mutation denied: use the authoritative command interface"
+            )
+
     # --- Sub-space management -----------------------------------------------
 
-    def add_space(self, space: Space) -> None:
+    def add_space(self, space: Space, authority_token: Optional[str] = None) -> None:
         """Add a sub-space to this world's space object graph."""
+        self._assert_mutation_allowed(authority_token)
         self.space_object_graph.add_space(space)
 
     def get_space(self, space_id: SpaceId) -> Optional[Space]:
         """Retrieve a sub-space by ID, or None if it does not exist."""
         return self.space_object_graph.get_space(space_id)
 
-    def add_space_relation(self, relation: SpaceRelation) -> None:
+    def add_space_relation(
+        self, relation: SpaceRelation, authority_token: Optional[str] = None
+    ) -> None:
         """Add a directional or symmetric relation between two sub-spaces."""
+        self._assert_mutation_allowed(authority_token)
         self.space_relation_graph.add_relation(relation)
 
     # --- Object placement ---------------------------------------------------
@@ -67,12 +98,14 @@ class World(Space):
         object_id: ObjectId,
         space_id: SpaceId,
         role: str = "occupies",
+        authority_token: Optional[str] = None,
     ) -> None:
         """Declare the presence of an object in a given sub-space.
 
         The target space must have been added to this world beforehand via
         ``add_space``.
         """
+        self._assert_mutation_allowed(authority_token)
         membership = SpaceObjectMembership(
             object_id=object_id,
             space_id=space_id,
@@ -82,12 +115,18 @@ class World(Space):
 
     # --- Registry operations ------------------------------------------------
 
-    def register_object(self, obj: GenericObject) -> None:
+    def register_object(
+        self, obj: ModelObject, authority_token: Optional[str] = None
+    ) -> None:
         """Register a minimal object in the shared minimal registry."""
+        self._assert_mutation_allowed(authority_token)
         MinimalModelRegistry.register(obj)
 
-    def unregister_object(self, obj_id: ObjectId) -> None:
+    def unregister_object(
+        self, obj_id: ObjectId, authority_token: Optional[str] = None
+    ) -> None:
         """Remove an object from the shared minimal registry."""
+        self._assert_mutation_allowed(authority_token)
         MinimalModelRegistry.unregister(obj_id)
 
     # --- Serialization ------------------------------------------------------
