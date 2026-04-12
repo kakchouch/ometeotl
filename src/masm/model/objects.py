@@ -79,6 +79,6 @@ class GenericObject(ModelObject):
         """Set a specific item in the object's profile."""
         if not key:
             raise ValueError("Profile key cannot be empty")
-        profile = dict(self.profile)
+        profile = self.profile
         profile[key] = value
         self.attributes["profile"] = dict(sorted(profile.items()))
