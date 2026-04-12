@@ -164,6 +164,7 @@ class Action(ModelObject):
                             x.quantity,
                             str(x.source_id),
                             str(x.target_id),
+                            str(dict(sorted(x.metadata.items()))),
                         ),
                     )
                 ],
@@ -175,6 +176,7 @@ class Action(ModelObject):
                             x.prerequisite_type,
                             x.field_name,
                             str(x.required_value),
+                            str(dict(sorted(x.metadata.items()))),
                         ),
                     )
                 ],

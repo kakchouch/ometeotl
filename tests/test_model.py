@@ -1043,6 +1043,74 @@ def test_action_deterministic_serialization():
     assert dict1["resource_effects"][1]["resource_id"] == "z-res"
 
 
+def test_action_deterministic_serialization_resource_effect_metadata_tie_break():
+    """resource_effects ordering should remain deterministic when only metadata differs."""
+    action = Action(
+        id="action-det-meta-re",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+        action_type="test",
+    )
+    # Same primary keys, different metadata; insertion order is reversed on purpose.
+    action.add_resource_effect(
+        ResourceEffect(
+            resource_id="res",
+            effect_type="consume",
+            quantity=1.0,
+            source_id="s",
+            target_id="t",
+            metadata={"z": 1},
+        )
+    )
+    action.add_resource_effect(
+        ResourceEffect(
+            resource_id="res",
+            effect_type="consume",
+            quantity=1.0,
+            source_id="s",
+            target_id="t",
+            metadata={"a": 1},
+        )
+    )
+
+    d = action.to_dict()
+    assert d["resource_effects"][0]["metadata"] == {"a": 1}
+    assert d["resource_effects"][1]["metadata"] == {"z": 1}
+
+
+def test_action_deterministic_serialization_prerequisite_metadata_tie_break():
+    """prerequisites ordering should remain deterministic when only metadata differs."""
+    action = Action(
+        id="action-det-meta-pre",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+        action_type="test",
+    )
+    # Same primary keys, different metadata; insertion order is reversed on purpose.
+    action.add_prerequisite(
+        ActionPrerequisite(
+            prerequisite_type="resource",
+            field_name="energy",
+            required_value=5,
+            metadata={"z": 1},
+        )
+    )
+    action.add_prerequisite(
+        ActionPrerequisite(
+            prerequisite_type="resource",
+            field_name="energy",
+            required_value=5,
+            metadata={"a": 1},
+        )
+    )
+
+    d = action.to_dict()
+    assert d["prerequisites"][0]["metadata"] == {"a": 1}
+    assert d["prerequisites"][1]["metadata"] == {"z": 1}
+
+
 def test_resource_effect_instantiation():
     """Verify that a resource effect instantiates correctly."""
     effect = ResourceEffect(

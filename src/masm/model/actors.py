@@ -30,7 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping
 
-from .base import relation_methods
+from .base import ModelObject, relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
@@ -256,20 +256,18 @@ class Actor(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Actor":
         """Create an Actor instance from a dictionary representation."""
-        if data.get("id") is None:
-            raise ValueError("Field 'id' cannot be null")
+        payload = dict(data)
+        payload["object_type"] = payload.get("object_type") or "actor"
+        base_obj = ModelObject.from_dict(payload)
         return cls(
-            id=str(data["id"]),
-            object_type=str(data.get("object_type") or "actor"),
-            schema_version=str(data.get("schema_version") or _default_schema_version()),
-            attributes=dict(data.get("attributes") or {}),
-            relations={
-                str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations") or {}).items()
-            },
-            state=dict(data.get("state") or {}),
-            context=dict(data.get("context") or {}),
-            provenance=dict(data.get("provenance") or {}),
+            id=base_obj.id,
+            object_type=base_obj.object_type,
+            schema_version=base_obj.schema_version,
+            attributes=base_obj.attributes,
+            relations=base_obj.relations,
+            state=base_obj.state,
+            context=base_obj.context,
+            provenance=base_obj.provenance,
         )
 
     def to_dict(self) -> JsonMap:

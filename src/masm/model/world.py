@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional
+from .base import ModelObject
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
 from .registry import MinimalModelRegistry
@@ -107,22 +108,20 @@ class World(Space):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "World":
         """Reconstruct a World from its canonical dictionary representation."""
-        if data.get("id") is None:
-            raise ValueError("Field 'id' cannot be null")
-        attributes = dict(data.get("attributes") or {})
+        payload = dict(data)
+        payload["object_type"] = payload.get("object_type") or "world"
+        base_obj = ModelObject.from_dict(payload)
+        attributes = base_obj.attributes
         is_root_world = bool(attributes.get("is_root_world", True))
         return cls(
-            id=str(data["id"]),
-            object_type=str(data.get("object_type") or "world"),
-            schema_version=str(data.get("schema_version") or "1.0"),
+            id=base_obj.id,
+            object_type=base_obj.object_type,
+            schema_version=base_obj.schema_version,
             attributes=attributes,
-            relations={
-                str(k): [str(v) for v in vals]
-                for k, vals in dict(data.get("relations") or {}).items()
-            },
-            state=dict(data.get("state") or {}),
-            context=dict(data.get("context") or {}),
-            provenance=dict(data.get("provenance") or {}),
+            relations=base_obj.relations,
+            state=base_obj.state,
+            context=base_obj.context,
+            provenance=base_obj.provenance,
             is_root_world=is_root_world,
             space_object_graph=SpaceObjectGraph.from_dict(
                 data.get("space_object_graph") or {}
