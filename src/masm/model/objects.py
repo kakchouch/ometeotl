@@ -66,7 +66,7 @@ class GenericObject(ModelObject):
         self.remove_from_attribute_list("tags", tag)
 
     @property
-    def profile(self) -> Mapping[str, Any]:
+    def profile(self) -> JsonMap:
         """Get the object's free-form profile.
 
         Structured data capturing specific characteristics or attributes of
