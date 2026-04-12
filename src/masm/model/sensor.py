@@ -40,7 +40,6 @@ from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
 from .world import World
 
-
 # ---------------------------------------------------------------------------
 # Coverage rules
 # ---------------------------------------------------------------------------
