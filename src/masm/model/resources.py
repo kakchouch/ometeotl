@@ -262,16 +262,18 @@ class Resource(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":
         """Create the resource from a dictionary."""
+        if data.get("id") is None:
+            raise ValueError("Field 'id' cannot be null")
         return cls(
             id=str(data["id"]),
-            object_type=str(data.get("object_type", "resource")),
-            schema_version=str(data.get("schema_version", _default_schema_version())),
-            attributes=dict(data.get("attributes", {})),
+            object_type=str(data.get("object_type") or "resource"),
+            schema_version=str(data.get("schema_version") or _default_schema_version()),
+            attributes=dict(data.get("attributes") or {}),
             relations={
                 str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations", {})).items()
+                for key, value in dict(data.get("relations") or {}).items()
             },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            state=dict(data.get("state") or {}),
+            context=dict(data.get("context") or {}),
+            provenance=dict(data.get("provenance") or {}),
         )

@@ -14,6 +14,7 @@ If there is a conflict between local code and SPEC_en.md, prefer SPEC_en.md unle
 - Do NOT move logic to a different layer unless explicitly required
 - Do NOT introduce new patterns inconsistent with the spec
 - Prefer small, safe, incremental changes over large rewrites
+- All python code should be PEP8-compliant
 
 ## Architecture rules
 - Follow the file organization defined in SPEC_en.md

@@ -54,6 +54,8 @@ class ResourceEffect:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ResourceEffect":
         """Deserialize a resource effect."""
+        if data.get("resource_id") is None:
+            raise ValueError("Field 'resource_id' cannot be null")
         return cls(
             resource_id=str(data["resource_id"]),
             effect_type=str(data.get("effect_type") or "consume"),
@@ -92,6 +94,8 @@ class ActionPrerequisite:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ActionPrerequisite":
         """Deserialize a prerequisite."""
+        if data.get("field_name") is None:
+            raise ValueError("Field 'field_name' cannot be null")
         return cls(
             prerequisite_type=str(data.get("prerequisite_type") or "resource"),
             field_name=str(data["field_name"]),
@@ -154,14 +158,24 @@ class Action(ModelObject):
                     re.to_dict()
                     for re in sorted(
                         self.resource_effects,
-                        key=lambda x: (x.resource_id, x.effect_type, x.quantity, str(x.source_id), str(x.target_id)),
+                        key=lambda x: (
+                            x.resource_id,
+                            x.effect_type,
+                            x.quantity,
+                            str(x.source_id),
+                            str(x.target_id),
+                        ),
                     )
                 ],
                 "prerequisites": [
                     p.to_dict()
                     for p in sorted(
                         self.prerequisites,
-                        key=lambda x: (x.prerequisite_type, x.field_name, str(x.required_value)),
+                        key=lambda x: (
+                            x.prerequisite_type,
+                            x.field_name,
+                            str(x.required_value),
+                        ),
                     )
                 ],
                 "outcome_description": self.outcome_description,
@@ -173,6 +187,12 @@ class Action(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Action":
         """Reconstruct an action from its canonical representation."""
+        if data.get("actor_id") is None:
+            raise ValueError("Field 'actor_id' cannot be null")
+        if data.get("world_id") is None:
+            raise ValueError("Field 'world_id' cannot be null")
+        if data.get("space_id") is None:
+            raise ValueError("Field 'space_id' cannot be null")
         base_obj = ModelObject.from_dict(data)
         return cls(
             id=base_obj.id,

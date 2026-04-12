@@ -72,10 +72,12 @@ class PerceivedSpace:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedSpace":
         """Reconstruct a PerceivedSpace from its canonical representation."""
+        if data.get("space") is None:
+            raise ValueError("Field 'space' cannot be null")
         return cls(
             space=Space.from_dict(data["space"]),
-            epistemic_status=str(data.get("epistemic_status", "certain")),
-            noise_metadata=dict(data.get("noise_metadata", {})),
+            epistemic_status=str(data.get("epistemic_status") or "certain"),
+            noise_metadata=dict(data.get("noise_metadata") or {}),
         )
 
 
@@ -101,10 +103,12 @@ class PerceivedMembership:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedMembership":
         """Reconstruct a PerceivedMembership from its canonical representation."""
+        if data.get("membership") is None:
+            raise ValueError("Field 'membership' cannot be null")
         return cls(
             membership=SpaceObjectMembership.from_dict(data["membership"]),
-            epistemic_status=str(data.get("epistemic_status", "certain")),
-            noise_metadata=dict(data.get("noise_metadata", {})),
+            epistemic_status=str(data.get("epistemic_status") or "certain"),
+            noise_metadata=dict(data.get("noise_metadata") or {}),
         )
 
 
@@ -130,10 +134,12 @@ class PerceivedRelation:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedRelation":
         """Reconstruct a PerceivedRelation from its canonical representation."""
+        if data.get("relation") is None:
+            raise ValueError("Field 'relation' cannot be null")
         return cls(
             relation=SpaceRelation.from_dict(data["relation"]),
-            epistemic_status=str(data.get("epistemic_status", "certain")),
-            noise_metadata=dict(data.get("noise_metadata", {})),
+            epistemic_status=str(data.get("epistemic_status") or "certain"),
+            noise_metadata=dict(data.get("noise_metadata") or {}),
         )
 
 
@@ -252,24 +258,30 @@ class Perception:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Perception":
         """Reconstruct a Perception from its canonical dictionary representation."""
+        if data.get("id") is None:
+            raise ValueError("Field 'id' cannot be null")
+        if data.get("actor_id") is None:
+            raise ValueError("Field 'actor_id' cannot be null")
+        if data.get("source_id") is None:
+            raise ValueError("Field 'source_id' cannot be null")
         return cls(
             id=str(data["id"]),
             actor_id=str(data["actor_id"]),
             source_id=str(data["source_id"]),
-            schema_version=str(data.get("schema_version", "1.0")),
+            schema_version=str(data.get("schema_version") or "1.0"),
             timestamp=data.get("timestamp"),
             perceived_spaces={
                 space_id: PerceivedSpace.from_dict(ps_data)
-                for space_id, ps_data in data.get("perceived_spaces", {}).items()
+                for space_id, ps_data in (data.get("perceived_spaces") or {}).items()
             },
             perceived_memberships=[
                 PerceivedMembership.from_dict(pm_data)
-                for pm_data in data.get("perceived_memberships", [])
+                for pm_data in (data.get("perceived_memberships") or [])
             ],
             perceived_relations=[
                 PerceivedRelation.from_dict(pr_data)
-                for pr_data in data.get("perceived_relations", [])
+                for pr_data in (data.get("perceived_relations") or [])
             ],
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            context=dict(data.get("context") or {}),
+            provenance=dict(data.get("provenance") or {}),
         )

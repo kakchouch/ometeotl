@@ -107,25 +107,27 @@ class World(Space):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "World":
         """Reconstruct a World from its canonical dictionary representation."""
-        attributes = dict(data.get("attributes", {}))
+        if data.get("id") is None:
+            raise ValueError("Field 'id' cannot be null")
+        attributes = dict(data.get("attributes") or {})
         is_root_world = bool(attributes.get("is_root_world", True))
         return cls(
             id=str(data["id"]),
-            object_type=str(data.get("object_type", "world")),
-            schema_version=str(data.get("schema_version", "1.0")),
+            object_type=str(data.get("object_type") or "world"),
+            schema_version=str(data.get("schema_version") or "1.0"),
             attributes=attributes,
             relations={
                 str(k): [str(v) for v in vals]
-                for k, vals in dict(data.get("relations", {})).items()
+                for k, vals in dict(data.get("relations") or {}).items()
             },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
+            state=dict(data.get("state") or {}),
+            context=dict(data.get("context") or {}),
+            provenance=dict(data.get("provenance") or {}),
             is_root_world=is_root_world,
             space_object_graph=SpaceObjectGraph.from_dict(
-                data.get("space_object_graph", {})
+                data.get("space_object_graph") or {}
             ),
             space_relation_graph=SpaceRelationGraph.from_dict(
-                data.get("space_relation_graph", {})
+                data.get("space_relation_graph") or {}
             ),
         )

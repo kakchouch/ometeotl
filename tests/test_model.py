@@ -1113,3 +1113,215 @@ def test_action_prerequisite_to_dict_roundtrip():
     assert restored.field_name == original.field_name
     assert restored.required_value == original.required_value
     assert restored.metadata == original.metadata
+
+
+# ============================================================
+# Null-handling deserialization tests
+# ============================================================
+
+
+def test_model_object_from_dict_null_optional_maps_defaults_empty():
+    """ModelObject.from_dict should treat null optional maps as empty dicts."""
+    obj = ModelObject.from_dict(
+        {
+            "id": "obj-null-1",
+            "object_type": "generic",
+            "attributes": None,
+            "relations": None,
+            "state": None,
+            "context": None,
+            "provenance": None,
+        }
+    )
+    assert obj.attributes == {}
+    assert obj.relations == {}
+    assert obj.state == {}
+    assert obj.context == {}
+    assert obj.provenance == {}
+
+
+def test_model_object_from_dict_null_required_raises():
+    """ModelObject.from_dict should reject null required identity fields."""
+    with pytest.raises(ValueError):
+        ModelObject.from_dict({"id": None, "object_type": "generic"})
+    with pytest.raises(ValueError):
+        ModelObject.from_dict({"id": "obj-1", "object_type": None})
+
+
+def test_actor_resource_space_from_dict_null_optional_maps_defaults_empty():
+    """Actor/Resource/Space should accept null optional maps in from_dict."""
+    actor = Actor.from_dict({"id": "a-null", "attributes": None, "relations": None})
+    resource = Resource.from_dict(
+        {"id": "r-null", "attributes": None, "relations": None}
+    )
+    space = Space.from_dict({"id": "s-null", "attributes": None, "relations": None})
+
+    assert isinstance(actor.attributes, dict)
+    assert actor.relations == {}
+    assert isinstance(resource.attributes, dict)
+    assert resource.relations == {}
+    assert isinstance(space.attributes, dict)
+    assert space.relations == {}
+
+
+def test_graph_from_dict_null_collections_defaults_empty():
+    """Graph deserializers should treat null collections as empty."""
+    sog = SpaceObjectGraph.from_dict({"spaces": None, "object_memberships": None})
+    srg = SpaceRelationGraph.from_dict({"relations": None})
+    assert sog.spaces == {}
+    assert sog.object_memberships == []
+    assert srg.relations == []
+
+
+def test_membership_and_relation_from_dict_null_required_raises():
+    """Membership and relation deserializers should reject null required IDs."""
+    with pytest.raises(ValueError):
+        SpaceObjectMembership.from_dict(
+            {"object_id": None, "space_id": "s1", "role": "occupies"}
+        )
+    with pytest.raises(ValueError):
+        SpaceRelation.from_dict(
+            {
+                "source_space_id": None,
+                "target_space_id": "s2",
+                "relation_type": "adjacent_to",
+            }
+        )
+
+
+def test_perception_from_dict_null_optional_collections_defaults_empty():
+    """Perception.from_dict should normalize null optional collections to empty."""
+    p = Perception.from_dict(
+        {
+            "id": "p-null-1",
+            "actor_id": "a1",
+            "source_id": "w1",
+            "perceived_spaces": None,
+            "perceived_memberships": None,
+            "perceived_relations": None,
+            "context": None,
+            "provenance": None,
+            "timestamp": None,
+        }
+    )
+    assert p.perceived_spaces == {}
+    assert p.perceived_memberships == []
+    assert p.perceived_relations == []
+    assert p.context == {}
+    assert p.provenance == {}
+
+
+def test_perceived_wrappers_from_dict_null_noise_defaults_empty():
+    """Perceived* wrappers should treat null noise metadata as empty dict."""
+    ps = PerceivedSpace.from_dict(
+        {
+            "space": Space(id="s1").to_dict(),
+            "epistemic_status": "certain",
+            "noise_metadata": None,
+        }
+    )
+    pm = PerceivedMembership.from_dict(
+        {
+            "membership": SpaceObjectMembership("a1", "s1", "occupies").to_dict(),
+            "epistemic_status": "certain",
+            "noise_metadata": None,
+        }
+    )
+    pr = PerceivedRelation.from_dict(
+        {
+            "relation": SpaceRelation("s1", "s2", "adjacent_to").to_dict(),
+            "epistemic_status": "certain",
+            "noise_metadata": None,
+        }
+    )
+    assert ps.noise_metadata == {}
+    assert pm.noise_metadata == {}
+    assert pr.noise_metadata == {}
+
+
+def test_world_from_dict_null_optional_maps_defaults_empty():
+    """World.from_dict should handle null optional maps and graph payloads."""
+    world = World.from_dict(
+        {
+            "id": "w-null",
+            "attributes": None,
+            "relations": None,
+            "state": None,
+            "context": None,
+            "provenance": None,
+            "space_object_graph": None,
+            "space_relation_graph": None,
+        }
+    )
+    assert world.attributes.get("kind") == "world"
+    assert world.relations == {}
+    assert world.state == {}
+    assert world.context == {}
+    assert world.provenance == {}
+    assert world.space_object_graph.spaces == {}
+    assert world.space_relation_graph.relations == []
+
+
+def test_action_related_from_dict_null_handling():
+    """Action-related from_dict methods should default null optional payloads."""
+    action = Action.from_dict(
+        {
+            "id": "act-null",
+            "object_type": "action",
+            "actor_id": "a1",
+            "world_id": "w1",
+            "space_id": "s1",
+            "action_type": None,
+            "resource_effects": None,
+            "prerequisites": None,
+            "outcome_description": None,
+            "state_changes": None,
+            "attributes": None,
+            "relations": None,
+            "state": None,
+            "context": None,
+            "provenance": None,
+        }
+    )
+    assert action.action_type == "generic"
+    assert action.resource_effects == []
+    assert action.prerequisites == []
+    assert action.outcome_description == ""
+    assert action.state_changes == {}
+    assert action.attributes == {}
+    assert action.relations == {}
+
+    effect = ResourceEffect.from_dict(
+        {
+            "resource_id": "res1",
+            "effect_type": None,
+            "quantity": None,
+            "metadata": None,
+        }
+    )
+    prereq = ActionPrerequisite.from_dict(
+        {"field_name": "energy", "prerequisite_type": None, "metadata": None}
+    )
+    assert effect.effect_type == "consume"
+    assert effect.quantity == 1.0
+    assert effect.metadata == {}
+    assert prereq.prerequisite_type == "resource"
+    assert prereq.metadata == {}
+
+
+def test_action_related_from_dict_null_required_raises():
+    """Action-related from_dict should reject null required fields."""
+    with pytest.raises(ValueError):
+        Action.from_dict(
+            {
+                "id": "act-bad",
+                "object_type": "action",
+                "actor_id": None,
+                "world_id": "w1",
+                "space_id": "s1",
+            }
+        )
+    with pytest.raises(ValueError):
+        ResourceEffect.from_dict({"resource_id": None})
+    with pytest.raises(ValueError):
+        ActionPrerequisite.from_dict({"field_name": None})
