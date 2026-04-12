@@ -56,11 +56,11 @@ class ResourceEffect:
         """Deserialize a resource effect."""
         return cls(
             resource_id=str(data["resource_id"]),
-            effect_type=str(data.get("effect_type", "consume")),
-            quantity=float(data.get("quantity", 1.0)),
+            effect_type=str(data.get("effect_type") or "consume"),
+            quantity=float(data.get("quantity") or 1.0),
             source_id=str(data["source_id"]) if data.get("source_id") else None,
             target_id=str(data["target_id"]) if data.get("target_id") else None,
-            metadata=dict(data.get("metadata", {})),
+            metadata=dict(data.get("metadata") or {}),
         )
 
 
