@@ -41,6 +41,8 @@ from masm.model.sensor import (
     IdentityNoiseRule,
 )
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
+from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
+from masm.core.runtime import build_runtime
 
 
 def test_model_object_instantiation():
@@ -283,6 +285,34 @@ def test_world_add_space_relation():
     assert "s2" in neighbors
 
 
+def test_world_authority_mode_blocks_direct_mutations():
+    """Direct mutations are blocked when authority mode is enabled."""
+    world = World(id="world-auth-1")
+    world.enable_authority_mode("secret")
+
+    with pytest.raises(PermissionError):
+        world.add_space(Space(id="forbidden"))
+
+
+def test_world_authority_mode_allows_authorized_mutations():
+    """Mutations succeed with the expected authority token."""
+    world = World(id="world-auth-2")
+    world.enable_authority_mode("secret")
+    world.add_space(Space(id="allowed"), authority_token="secret")
+
+    assert world.get_space("allowed") is not None
+
+
+def test_world_local_mode_mutations_do_not_require_authority_token():
+    """Local/in-process usage keeps direct mutation behavior by default."""
+    world = World(id="world-local-1")
+    world.add_space(Space(id="local-zone"))
+    world.place_object("actor-local", "local-zone")
+
+    assert world.get_space("local-zone") is not None
+    assert "actor-local" in world.space_object_graph.list_objects_in_space("local-zone")
+
+
 def test_world_register_and_unregister_object():
     """
     Verify that objects can be registered into and removed from the
@@ -302,6 +332,149 @@ def test_world_register_and_unregister_object():
     assert not MinimalModelRegistry.exists("actor-reg-1")
 
     MinimalModelRegistry.clear()
+
+
+def test_authority_handler_applies_allowlisted_commands():
+    """Allowlisted commands are accepted via the authority boundary."""
+    world = World(id="world-cmd-1")
+    handler = AuthorityCommandHandler(world)
+    try:
+        add_space_result = handler.submit(
+            CommandEnvelope(
+                command_id="c-1",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-1").to_dict()},
+            )
+        )
+        assert add_space_result.accepted is True
+
+        place_result = handler.submit(
+            CommandEnvelope(
+                command_id="c-2",
+                actor_id="system",
+                command_type="place_object",
+                sequence=2,
+                payload={"object_id": "actor-42", "space_id": "zone-1"},
+            )
+        )
+        assert place_result.accepted is True
+    finally:
+        handler.close()
+
+    assert "actor-42" in world.space_object_graph.list_objects_in_space("zone-1")
+
+
+def test_authority_handler_rejects_unknown_actor():
+    """Unknown actors are rejected before command application."""
+    from masm.model.registry import MinimalModelRegistry
+    from masm.model.actors import Actor
+
+    MinimalModelRegistry.clear()
+    world = World(id="world-cmd-2")
+    handler = AuthorityCommandHandler(world)
+    try:
+        result_unknown = handler.submit(
+            CommandEnvelope(
+                command_id="c-3",
+                actor_id="actor-unknown",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-2").to_dict()},
+            )
+        )
+        assert result_unknown.accepted is False
+
+        MinimalModelRegistry.register(Actor(id="actor-known"))
+        result_known = handler.submit(
+            CommandEnvelope(
+                command_id="c-4",
+                actor_id="actor-known",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-3").to_dict()},
+            )
+        )
+        assert result_known.accepted is True
+    finally:
+        handler.close()
+        MinimalModelRegistry.clear()
+
+
+def test_authority_handler_rejects_duplicate_and_out_of_order_sequence():
+    """Idempotency and sequence ordering are enforced."""
+    world = World(id="world-cmd-3")
+    handler = AuthorityCommandHandler(world)
+    try:
+        first = handler.submit(
+            CommandEnvelope(
+                command_id="c-5",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-4").to_dict()},
+            )
+        )
+        duplicate = handler.submit(
+            CommandEnvelope(
+                command_id="c-5",
+                actor_id="system",
+                command_type="add_space",
+                sequence=2,
+                payload={"space": Space(id="zone-5").to_dict()},
+            )
+        )
+        out_of_order = handler.submit(
+            CommandEnvelope(
+                command_id="c-6",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-6").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert first.accepted is True
+    assert duplicate.accepted is False
+    assert out_of_order.accepted is False
+
+
+def test_authority_handler_close_restores_local_mutations():
+    """Closing the handler removes the lock so local app flows continue to work."""
+    world = World(id="world-cmd-4")
+    handler = AuthorityCommandHandler(world)
+    handler.close()
+
+    # Must behave like legacy local flow once authority gateway is shut down.
+    world.add_space(Space(id="zone-after-close"))
+    assert world.get_space("zone-after-close") is not None
+
+
+def test_build_runtime_local_mode_keeps_world_unlocked():
+    """Runtime bootstrap does not lock world unless server flag is enabled."""
+    world = World(id="world-runtime-local-1")
+    runtime = build_runtime(world, server_authoritative=False)
+
+    assert runtime.authoritative is False
+    world.add_space(Space(id="zone-local-runtime"))
+    assert world.get_space("zone-local-runtime") is not None
+
+
+def test_build_runtime_server_mode_locks_then_unlocks_on_close():
+    """Server runtime enables lock; close restores local direct access."""
+    world = World(id="world-runtime-server-1")
+    runtime = build_runtime(world, server_authoritative=True)
+
+    assert runtime.authoritative is True
+    with pytest.raises(PermissionError):
+        world.add_space(Space(id="zone-blocked-runtime"))
+
+    runtime.close()
+    world.add_space(Space(id="zone-open-runtime"))
+    assert world.get_space("zone-open-runtime") is not None
 
 
 def test_world_to_dict_contains_required_fields():
