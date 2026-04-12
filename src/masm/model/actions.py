@@ -17,6 +17,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional
 
+from .base import ModelObject, RelationMap
+
 JsonMap = Dict[str, Any]
 ObjectId = str
 
