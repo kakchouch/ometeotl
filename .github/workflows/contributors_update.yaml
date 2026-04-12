@@ -190,43 +190,71 @@ jobs:
       - name: Commit and push CONTRIBUTORS.md
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
         run: |
+          set -euo pipefail
+
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
+          cp CONTRIBUTORS.md /tmp/CONTRIBUTORS.generated.md
 
           git add CONTRIBUTORS.md
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "docs(leaderboard): update activity shares [$(date -u +%Y-%m-%d)]"
+            pushed="false"
+            for attempt in 1 2 3; do
+              echo "Push attempt ${attempt}/3"
+              git fetch origin develop
 
-            if git pull --no-rebase origin develop; then
-              git push origin HEAD:develop
-            else
-              echo "::warning::Merge conflict during Contributors update. Aborting merge and opening an issue."
-              git merge --abort
-
-              # Reset to clean state (drop the contributors commit)
+              # Start each attempt from the latest remote develop without rebase.
               git reset --hard origin/develop
+              cp /tmp/CONTRIBUTORS.generated.md CONTRIBUTORS.md
+              git add CONTRIBUTORS.md
 
-              # Open a GitHub issue to alert maintainers
+              if git diff --cached --quiet; then
+                echo "No effective CONTRIBUTORS.md change against current develop."
+                pushed="true"
+                break
+              fi
+
+              git commit -m "docs(contributors): update @${{ github.actor }}"
+
+              if git push origin HEAD:develop; then
+                pushed="true"
+                break
+              fi
+
+              # Push can race with another concurrent run; try again from fresh develop.
+              echo "Push rejected (branch moved). Retrying from latest develop..."
+              git reset --hard origin/develop
+            done
+
+            if [ "${pushed}" = "false" ]; then
+              echo "::warning::Contributors update could not be pushed after retries. Opening an issue."
+              RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+              {
+                echo "The automated contributors update could not be pushed to develop after multiple retries."
+                echo ""
+                echo "What happened:"
+                echo "- The workflow generated and committed CONTRIBUTORS.md updates."
+                echo "- While pushing, develop moved forward and this job could not fast-forward safely."
+                echo ""
+                echo "What to do:"
+                echo "1. Re-run the contributors workflow."
+                echo "2. If needed, review and resolve conflicts in CONTRIBUTORS.md."
+                echo ""
+                echo "Run: ${RUN_URL}"
+              } > /tmp/contributors_update_failure.md
+
               gh issue create \
                 --repo "${{ github.repository }}" \
-                --title "[contributors-bot] Merge conflict on develop" \
-                --label "bot,contributors" \
-                --body "The automated leaderboard update failed due to a merge conflict on \`develop\`.
+                --title "[contributors-bot] Unable to push CONTRIBUTORS.md to develop" \
+                --body-file /tmp/contributors_update_failure.md || true
 
-              **What happened:**
-              The contributors workflow committed updated scores, but \`develop\` had diverged with conflicting changes in one of these paths:
-              - \`CONTRIBUTORS.md`
-
-              **What to do:**
-              1. Manually run the contributors workflow after resolving the conflicting files.
-              2. Or wait — the next scheduled run (daily at 06:00 UTC) will retry automatically.
-
-              **Run:** [$(date -u +%Y-%m-%dT%H:%M:%SZ)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-                            exit 0  # Don't fail the workflow — the issue is the alert
-                          fi
-                        fi
+              exit 0
+            fi
+          fi
