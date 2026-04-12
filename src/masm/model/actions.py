@@ -186,17 +186,17 @@ class Action(ModelObject):
             actor_id=str(data["actor_id"]),
             world_id=str(data["world_id"]),
             space_id=str(data["space_id"]),
-            action_type=str(data.get("action_type", "generic")),
+            action_type=str(data.get("action_type") or "generic"),
             resource_effects=[
                 ResourceEffect.from_dict(re_data)
-                for re_data in data.get("resource_effects", [])
+                for re_data in (data.get("resource_effects") or [])
             ],
             prerequisites=[
                 ActionPrerequisite.from_dict(p_data)
-                for p_data in data.get("prerequisites", [])
+                for p_data in (data.get("prerequisites") or [])
             ],
-            outcome_description=str(data.get("outcome_description", "")),
-            state_changes=dict(data.get("state_changes", {})),
+            outcome_description=str(data.get("outcome_description") or ""),
+            state_changes=dict(data.get("state_changes") or {}),
         )
 
     def add_resource_effect(self, effect: ResourceEffect) -> None:
