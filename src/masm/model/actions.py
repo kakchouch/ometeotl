@@ -93,10 +93,10 @@ class ActionPrerequisite:
     def from_dict(cls, data: Mapping[str, Any]) -> "ActionPrerequisite":
         """Deserialize a prerequisite."""
         return cls(
-            prerequisite_type=str(data.get("prerequisite_type", "resource")),
+            prerequisite_type=str(data.get("prerequisite_type") or "resource"),
             field_name=str(data["field_name"]),
             required_value=data.get("required_value"),
-            metadata=dict(data.get("metadata", {})),
+            metadata=dict(data.get("metadata") or {}),
         )
 
 
