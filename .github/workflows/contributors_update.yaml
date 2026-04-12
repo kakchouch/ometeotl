@@ -35,8 +35,8 @@ jobs:
         with:
           # MODIFIED: use PAT to allow push to the protected target branch
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-          # ADDED: checkout the branch targeted by the source workflow
-          ref: ${{ github.event.workflow_run.head_branch }}
+          # Always update target branch directly. Trigger source branches may be deleted.
+          ref: develop
 
       - name: Download rank artifact from triggering workflow
         env:
