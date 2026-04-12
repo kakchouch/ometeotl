@@ -19,7 +19,7 @@ Each perceived element carries:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
@@ -160,7 +160,7 @@ class Perception:
     actor_id: ObjectId
     source_id: ObjectId  # ID of the world or space this perception is derived from
     schema_version: str = "1.0"
-    timestamp: Optional[Any] = None
+    timestamp: Optional[Union[int, float, str]] = None
     perceived_spaces: Dict[SpaceId, PerceivedSpace] = field(default_factory=dict)
     perceived_memberships: List[PerceivedMembership] = field(default_factory=list)
     perceived_relations: List[PerceivedRelation] = field(default_factory=list)

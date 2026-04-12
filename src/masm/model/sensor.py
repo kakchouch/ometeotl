@@ -26,7 +26,7 @@ import copy
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from .perception import (
     VALID_EPISTEMIC_STATUSES,
@@ -201,7 +201,7 @@ class Sensor:
         self,
         world: World,
         actor_id: ObjectId,
-        timestamp: Optional[Any] = None,
+        timestamp: Optional[Union[int, float, str]] = None,
     ) -> Perception:
         """Build a Perception of the given world for the given actor.
 
@@ -212,13 +212,19 @@ class Sensor:
         Parameters
         ----------
         timestamp:
-            Optional simulation timestamp for this snapshot. When provided
-            it is embedded in the perception ID, making the ID deterministic
-            for the (actor_id, world.id, timestamp) triplet. When omitted a
+            Optional simulation timestamp for this snapshot. Must be an
+            ``int``, ``float``, or ``str`` to guarantee a deterministic
+            string representation. When provided it is embedded in the
+            perception ID, making the ID deterministic for the
+            (actor_id, world.id, timestamp) triplet. When omitted a
             random UUID suffix ensures uniqueness across calls.
         """
         if timestamp is not None:
-            perception_id = f"perception-{actor_id}-{world.id}-{timestamp}"
+            if not isinstance(timestamp, (int, float, str)):
+                raise TypeError(
+                    f"timestamp must be int, float, or str, got {type(timestamp).__name__}"
+                )
+            perception_id = f"perception-{actor_id}-{world.id}-{timestamp!s}"
         else:
             perception_id = f"perception-{actor_id}-{world.id}-{uuid.uuid4().hex}"
         perception = Perception(
