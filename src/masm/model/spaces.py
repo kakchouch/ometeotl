@@ -206,7 +206,7 @@ class SpaceObjectMembership:
 
     def __deepcopy__(self, memo: dict) -> "SpaceObjectMembership":
         """Optimised deep copy: immutable str fields are shared; mutable
-        dicts are shallow-copied (values are conventionally primitives)."""
+        dicts are deep-copied to ensure full insulation."""
         new_obj: SpaceObjectMembership = SpaceObjectMembership.__new__(SpaceObjectMembership)
         memo[id(self)] = new_obj
         new_obj.object_id = self.object_id
