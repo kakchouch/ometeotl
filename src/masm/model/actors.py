@@ -28,19 +28,11 @@ relations, and modeling conventions to be introduced progressively.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping
+from typing import Any, List, Mapping
 
-from .base import ModelObject, relation_methods
+from .base import ModelObject, ObjectId, JsonMap, relation_methods
 from .objects import GenericObject
 from .spaces import SpaceObjectGraph, SpaceObjectMembership
-
-# local aliases
-JsonMap = Dict[str, Any]
-ObjectId = str
-
-
-def _default_schema_version() -> str:
-    return "1.0"
 
 
 @relation_methods("action", "action")
@@ -77,7 +69,7 @@ class Actor(GenericObject):
         self.attributes.setdefault("kind", "generic")
         self.attributes.setdefault("tags", [])
         self.attributes.setdefault("roles", [])
-        self.attributes.setdefault("profiles", {})
+        self.attributes.setdefault("profile", {})
         self.attributes.setdefault("emergent", False)
         self.attributes.setdefault("composition_mode", "standalone")
 
@@ -102,24 +94,6 @@ class Actor(GenericObject):
         self.attributes["kind"] = value
 
     @property
-    def tags(self) -> List[str]:
-        """Return the actor's tags.
-
-        Tags are simple labels that can be used for categorization,
-        filtering, or search.
-        """
-        value = self.attributes.get("tags", [])
-        return sorted(list(value)) if value is not None else []
-
-    def add_tag(self, tag: str) -> None:
-        """Adds a tag to the actor."""
-        self.add_to_attribute_list("tags", tag)
-
-    def remove_tag(self, tag: str) -> None:
-        """Removes a tag from the actor."""
-        self.remove_from_attribute_list("tags", tag)
-
-    @property
     def roles(self) -> List[str]:
         """Return the actor's roles.
 
@@ -136,27 +110,6 @@ class Actor(GenericObject):
     def remove_role(self, role: str) -> None:
         """Removes a role from the actor."""
         self.remove_from_attribute_list("roles", role)
-
-    @property
-    def profile(self) -> JsonMap:
-        """Return the actor's free-form profile.
-
-        Structured data that can be used to capture specific characteristics,
-        preferences, or attributes of the actor in a more detailed and
-        organized way. This dictionary is intentionally open-ended and can
-        contain modeling details such as category-specific metadata,
-        identifiers, demographic information etc.
-        """
-        value = self.attributes.get("profile", {})
-        return dict(value) if isinstance(value, Mapping) else {}
-
-    def set_profile_item(self, key: str, value: Any) -> None:
-        """Sets a specific item in the actor's profile."""
-        if not key:
-            raise ValueError("Profile key cannot be empty")
-        profile = self.profile
-        profile[key] = value
-        self.attributes["profile"] = dict(sorted(profile.items()))
 
     @property
     def emergent(self) -> bool:
@@ -236,9 +189,9 @@ class Actor(GenericObject):
         )
 
     def remove_space_membership(
-        self, graph: "SpaceObjectGraph", space_id: ObjectId, role
+        self, graph: "SpaceObjectGraph", space_id: ObjectId, role: str = "occupies"
     ) -> None:
-        """Remove the declaration that this resource exists in a given space.
+        """Remove the declaration that this actor exists in a given space.
 
         Important:
         This method is only a convenience wrapper around SpaceObjectMembership
@@ -259,29 +212,4 @@ class Actor(GenericObject):
         payload = dict(data)
         payload["object_type"] = payload.get("object_type") or "actor"
         base_obj = ModelObject.from_dict(payload)
-        return cls(
-            id=base_obj.id,
-            object_type=base_obj.object_type,
-            schema_version=base_obj.schema_version,
-            attributes=base_obj.attributes,
-            relations=base_obj.relations,
-            state=base_obj.state,
-            context=base_obj.context,
-            provenance=base_obj.provenance,
-        )
-
-    def to_dict(self) -> JsonMap:
-        """Convert the Actor instance to a dictionary representation."""
-        return {
-            "id": self.id,
-            "object_type": self.object_type,
-            "schema_version": self.schema_version,
-            "attributes": dict(self.attributes),
-            "relations": {
-                key: sorted(list(set(value)))
-                for key, value in dict(self.relations).items()
-            },
-            "state": dict(self.state),
-            "context": dict(self.context),
-            "provenance": dict(self.provenance),
-        }
+        return cls(**base_obj._base_kwargs())

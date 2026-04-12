@@ -19,17 +19,10 @@ from __future__ import annotations
 import copy
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Iterable, Mapping
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
-from .base import ModelObject
+from .base import ModelObject, ObjectId, JsonMap
 from .objects import GenericObject
-
-JsonMap = Dict[str, Any]
-ObjectId = str
-
-
-def _default_schema_version() -> str:
-    return "1.0"
 
 
 @dataclass
@@ -70,23 +63,6 @@ class Space(GenericObject):
         if not value:
             raise ValueError("Kind cannot be empty")
         self.attributes["kind"] = str(value)
-
-    @property
-    def tags(self) -> List[str]:
-        """Get the list of tags associated with the space.
-        Tags are simple labels that can be used to categorize or describe the
-        space in a flexible way.
-        """
-        value = self.attributes.get("tags", [])
-        return sorted(list(value)) if value is not None else []
-
-    def add_tag(self, tag: str) -> None:
-        """Add a tag to the space."""
-        self.add_to_attribute_list("tags", tag)
-
-    def remove_tag(self, tag: str) -> None:
-        """Remove a tag from the space."""
-        self.remove_from_attribute_list("tags", tag)
 
     @property
     def dimensions(self) -> JsonMap:
@@ -173,16 +149,7 @@ class Space(GenericObject):
         payload = dict(data)
         payload["object_type"] = payload.get("object_type") or "space"
         base_obj = ModelObject.from_dict(payload)
-        return cls(
-            id=base_obj.id,
-            object_type=base_obj.object_type,
-            schema_version=base_obj.schema_version,
-            attributes=base_obj.attributes,
-            relations=base_obj.relations,
-            state=base_obj.state,
-            context=base_obj.context,
-            provenance=base_obj.provenance,
-        )
+        return cls(**base_obj._base_kwargs())
 
 
 @dataclass

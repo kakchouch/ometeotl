@@ -15,12 +15,9 @@ F-1 (canonical serialization).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
-from .base import ModelObject, RelationMap
-
-JsonMap = Dict[str, Any]
-ObjectId = str
+from .base import ModelObject, ObjectId, JsonMap, RelationMap
 
 
 @dataclass
@@ -59,7 +56,9 @@ class ResourceEffect:
         return cls(
             resource_id=str(data["resource_id"]),
             effect_type=str(data.get("effect_type") or "consume"),
-            quantity=float(data["quantity"]) if data.get("quantity") is not None else 1.0,
+            quantity=(
+                float(data["quantity"]) if data.get("quantity") is not None else 1.0
+            ),
             source_id=str(data["source_id"]) if data.get("source_id") else None,
             target_id=str(data["target_id"]) if data.get("target_id") else None,
             metadata=dict(data.get("metadata") or {}),

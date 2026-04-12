@@ -19,13 +19,12 @@ Each perceived element carries:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 
+from .base import ObjectId, JsonMap
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
 
-JsonMap = Dict[str, Any]
-ObjectId = str
 SpaceId = str
 
 VALID_EPISTEMIC_STATUSES: frozenset = frozenset(

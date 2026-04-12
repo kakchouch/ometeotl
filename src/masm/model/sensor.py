@@ -26,8 +26,9 @@ import copy
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
+from .base import ObjectId, JsonMap
 from .perception import (
     VALID_EPISTEMIC_STATUSES,
     Perception,
@@ -38,10 +39,6 @@ from .perception import (
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
 from .world import World
-
-JsonMap = Dict[str, Any]
-ObjectId = str
-
 
 # ---------------------------------------------------------------------------
 # Coverage rules

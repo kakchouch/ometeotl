@@ -18,8 +18,9 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Any
 
+from .base import JsonMap
+
 SpaceId = str
-JsonMap = Dict[str, Any]
 
 
 @dataclass(frozen=True)
