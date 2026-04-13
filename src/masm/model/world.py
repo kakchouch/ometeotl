@@ -59,6 +59,8 @@ class World(Space):
         """
         if not token:
             raise ValueError("Authority token cannot be empty")
+        if self._authority_mode_enabled:
+            raise RuntimeError("Authority mode is already enabled for this world")
         self._authority_mode_enabled = True
         self._authority_token = token
 
