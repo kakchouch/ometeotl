@@ -631,6 +631,55 @@ def test_authority_handler_supports_custom_command_handlers():
     }
 
 
+def test_authority_handler_register_object_preserves_concrete_subtypes():
+    """Authority registration keeps actor/resource concrete runtime types."""
+    world = World(id="world-cmd-13")
+    handler = AuthorityCommandHandler(world)
+    try:
+        register_actor = handler.submit(
+            CommandEnvelope(
+                command_id="c-22",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-poly",
+                        "object_type": "actor",
+                        "attributes": {"roles": ["leader"]},
+                    }
+                },
+            )
+        )
+        register_resource = handler.submit(
+            CommandEnvelope(
+                command_id="c-23",
+                actor_id="system",
+                command_type="register_object",
+                sequence=2,
+                payload={
+                    "object": {
+                        "id": "resource-poly",
+                        "object_type": "resource",
+                        "attributes": {"resource_mode": "flow"},
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    actor_obj = world.model_registry.get("actor-poly")
+    resource_obj = world.model_registry.get("resource-poly")
+
+    assert register_actor.accepted is True
+    assert register_resource.accepted is True
+    assert isinstance(actor_obj, Actor)
+    assert isinstance(resource_obj, Resource)
+    assert actor_obj.roles == ["leader"]
+    assert resource_obj.resource_mode == "flow"
+
+
 def test_command_envelope_from_dict_rejects_invalid_sequence_values():
     """Deserialization reports invalid sequence values explicitly."""
     with pytest.raises(ValueError):
@@ -686,6 +735,50 @@ def test_authority_handler_tracker_capacity_rejects_new_actor_without_reset():
     assert accepted_a.accepted is True
     assert rejected_b.accepted is False
     assert replay_a.accepted is False
+
+
+def test_authority_handler_tracker_capacity_ignores_unregistered_actors():
+    """Bounded tracker should admit new active actors after churn."""
+    from masm.model.actors import Actor
+
+    world = World(id="world-cmd-12")
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Actor(id="actor-b"))
+    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    try:
+        accepted_a = handler.submit(
+            CommandEnvelope(
+                command_id="c-19",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-16").to_dict()},
+            )
+        )
+        unregistered_a = handler.submit(
+            CommandEnvelope(
+                command_id="c-20",
+                actor_id="system",
+                command_type="unregister_object",
+                sequence=1,
+                payload={"object_id": "actor-a"},
+            )
+        )
+        accepted_b = handler.submit(
+            CommandEnvelope(
+                command_id="c-21",
+                actor_id="actor-b",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-17").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert accepted_a.accepted is True
+    assert unregistered_a.accepted is True
+    assert accepted_b.accepted is True
 
 
 def test_authority_handler_uses_bounded_audit_log():

@@ -14,7 +14,11 @@ import threading
 from typing import Any, Callable, Mapping, Optional, Sequence
 from uuid import uuid4
 
+from masm.model.actions import Action
+from masm.model.actors import Actor
 from masm.model.base import JsonMap, ModelObject, ObjectId
+from masm.model.objects import GenericObject
+from masm.model.resources import Resource
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
@@ -245,12 +249,22 @@ class AuthorityCommandHandler:
         return sequence > last_sequence
 
     def _has_sequence_capacity(self, actor_id: ObjectId) -> bool:
+        if actor_id == self.SYSTEM_ACTOR_ID:
+            return True
         if actor_id in self._last_sequence_by_actor:
             return True
         limit = self._sequence_tracker_max_actors
         if limit is None:
             return True
-        return len(self._last_sequence_by_actor) < limit
+        return self._active_tracked_actor_count() < limit
+
+    def _active_tracked_actor_count(self) -> int:
+        return sum(
+            1
+            for tracked_actor_id in self._last_sequence_by_actor
+            if tracked_actor_id != self.SYSTEM_ACTOR_ID
+            and self.world.model_registry.exists(tracked_actor_id)
+        )
 
     def _mark_processed(self, command_id: str) -> None:
         self._processed_command_ids.add(command_id)
@@ -330,9 +344,24 @@ class AuthorityCommandHandler:
         authority_token: str,
     ) -> JsonMap:
         payload = self._require_payload_fields(command.payload, ("object",))
-        obj = ModelObject.from_dict(payload["object"])
+        obj = self._reconstruct_registered_object(payload["object"])
         world.register_object(obj, authority_token=authority_token)
         return {"object_id": obj.id}
+
+    @staticmethod
+    def _reconstruct_registered_object(raw_object: Mapping[str, Any]) -> ModelObject:
+        object_payload = dict(raw_object)
+        object_type = str(object_payload.get("object_type") or "").lower()
+        object_factories: dict[str, Callable[[Mapping[str, Any]], ModelObject]] = {
+            "action": Action.from_dict,
+            "actor": Actor.from_dict,
+            "generic": GenericObject.from_dict,
+            "resource": Resource.from_dict,
+            "space": Space.from_dict,
+            "world": World.from_dict,
+        }
+        factory = object_factories.get(object_type, ModelObject.from_dict)
+        return factory(object_payload)
 
     def _handle_unregister_object(
         self,
