@@ -1396,6 +1396,52 @@ def test_action_related_from_dict_null_required_raises():
         ActionPrerequisite.from_dict({"field_name": None})
 
 
+def test_model_object_from_dict_rejects_unsupported_schema_version():
+    """Schema version mismatches must be rejected (F-8)."""
+    with pytest.raises(ValueError):
+        ModelObject.from_dict(
+            {
+                "id": "obj-schema-1",
+                "object_type": "generic",
+                "schema_version": "2.0",
+            }
+        )
+
+
+def test_perception_from_dict_rejects_unsupported_schema_version():
+    """Perception payloads also enforce schema-version compatibility."""
+    with pytest.raises(ValueError):
+        Perception.from_dict(
+            {
+                "id": "p-schema-1",
+                "actor_id": "a1",
+                "source_id": "w1",
+                "schema_version": "2.0",
+            }
+        )
+
+
+def test_action_to_dict_rejects_non_json_serializable_metadata():
+    """Action serialization must fail fast on non-canonical metadata types."""
+    action = Action(
+        id="action-non-json-meta",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+        action_type="test",
+    )
+    action.add_resource_effect(
+        ResourceEffect(
+            resource_id="res-x",
+            effect_type="consume",
+            metadata={"bad": object()},
+        )
+    )
+
+    with pytest.raises(ValueError):
+        action.to_dict()
+
+
 def test_authority_unregister_releases_active_capacity_slot():
     """Unregistering an actor frees an active-tracker slot for another actor."""
     from masm.core.authority import AuthorityCommandHandler, CommandEnvelope

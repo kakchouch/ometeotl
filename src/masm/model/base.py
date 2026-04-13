@@ -33,10 +33,22 @@ SchemaVersion = str
 ObjectId = str
 RelationMap = Dict[str, List[ObjectId]]
 JsonMap = Dict[str, Any]
+SUPPORTED_SCHEMA_VERSION = "1.0"
 
 
 def _default_schema_version() -> str:
-    return "1.0"
+    return SUPPORTED_SCHEMA_VERSION
+
+
+def _validate_schema_version(value: Any) -> str:
+    """Validate schema version and reject incompatible payloads."""
+    version = str(value or _default_schema_version())
+    if version != SUPPORTED_SCHEMA_VERSION:
+        raise ValueError(
+            "Unsupported schema_version: "
+            f"{version}. Expected {SUPPORTED_SCHEMA_VERSION}"
+        )
+    return version
 
 
 def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
@@ -184,7 +196,7 @@ class ModelObject:
         return cls(
             id=_require_non_null_string(data, "id"),
             object_type=_require_non_null_string(data, "object_type"),
-            schema_version=str(data.get("schema_version") or _default_schema_version()),
+            schema_version=_validate_schema_version(data.get("schema_version")),
             attributes=dict(data.get("attributes") or {}),
             relations={
                 str(key): [str(item) for item in value]

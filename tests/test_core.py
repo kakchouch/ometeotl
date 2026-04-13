@@ -152,6 +152,27 @@ def test_authority_handler_close_restores_local_mutations():
     assert world.get_space("zone-after-close") is not None
 
 
+def test_authority_handler_rejects_submit_after_close():
+    """Closed handlers must reject new commands instead of mutating world."""
+    world = World(id="world-cmd-close-1")
+    handler = AuthorityCommandHandler(world)
+    handler.close()
+
+    result = handler.submit(
+        CommandEnvelope(
+            command_id="close-1",
+            actor_id="system",
+            command_type="add_space",
+            sequence=1,
+            payload={"space": Space(id="zone-closed").to_dict()},
+        )
+    )
+
+    assert result.accepted is False
+    assert "closed" in result.reason.lower()
+    assert world.get_space("zone-closed") is None
+
+
 def test_build_runtime_local_mode_keeps_world_unlocked():
     """Runtime bootstrap does not lock world unless server flag is enabled."""
     world = World(id="world-runtime-local-1")
@@ -374,6 +395,58 @@ def test_authority_handler_register_object_preserves_concrete_subtypes():
     assert resource_obj.resource_mode == "flow"
 
 
+def test_authority_handler_add_space_preserves_concrete_space_subtypes():
+    """add_space should preserve specialized Space subclasses like World."""
+    world = World(id="world-cmd-14")
+    handler = AuthorityCommandHandler(world)
+    try:
+        nested_world_payload = World(id="nested-world").to_dict()
+        add_space = handler.submit(
+            CommandEnvelope(
+                command_id="c-24",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": nested_world_payload},
+            )
+        )
+    finally:
+        handler.close()
+
+    nested = world.get_space("nested-world")
+    assert add_space.accepted is True
+    assert isinstance(nested, World)
+
+
+def test_authority_handler_accepts_custom_object_factories():
+    """Custom object factories allow extension without core edits."""
+
+    def custom_actor_factory(payload):
+        return Actor(id=str(payload.get("id") or ""))
+
+    world = World(id="world-cmd-15")
+    handler = AuthorityCommandHandler(
+        world,
+        object_factories={"custom_actor": custom_actor_factory},
+    )
+    try:
+        register_custom = handler.submit(
+            CommandEnvelope(
+                command_id="c-25",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={"object": {"id": "actor-custom-type", "object_type": "custom_actor"}},
+            )
+        )
+    finally:
+        handler.close()
+
+    obj = world.model_registry.get("actor-custom-type")
+    assert register_custom.accepted is True
+    assert isinstance(obj, Actor)
+
+
 def test_command_envelope_from_dict_rejects_invalid_sequence_values():
     """Deserialization reports invalid sequence values explicitly."""
     with pytest.raises(ValueError):
@@ -471,6 +544,58 @@ def test_authority_handler_tracker_capacity_ignores_unregistered_actors():
     assert accepted_b.accepted is True
 
 
+def test_authority_unregister_releases_slot_but_keeps_replay_floor():
+    """Unregister frees active slot while keeping replay protection for same ID."""
+    world = World(id="world-cmd-16")
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Actor(id="actor-b"))
+    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    try:
+        first = handler.submit(
+            CommandEnvelope(
+                command_id="c-26",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=10,
+                payload={"space": Space(id="zone-18").to_dict()},
+            )
+        )
+        unregistered = handler.submit(
+            CommandEnvelope(
+                command_id="c-27",
+                actor_id="system",
+                command_type="unregister_object",
+                sequence=1,
+                payload={"object_id": "actor-a"},
+            )
+        )
+        accepted_b = handler.submit(
+            CommandEnvelope(
+                command_id="c-28",
+                actor_id="actor-b",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-19").to_dict()},
+            )
+        )
+        replay_a = handler.submit(
+            CommandEnvelope(
+                command_id="c-29",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-20").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert first.accepted is True
+    assert unregistered.accepted is True
+    assert accepted_b.accepted is True
+    assert replay_a.accepted is False
+
+
 def test_authority_handler_uses_bounded_audit_log():
     """Audit log keeps a bounded size to prevent unbounded growth."""
     world = World(id="world-cmd-6")
@@ -521,3 +646,74 @@ def test_authority_handler_rejects_invalid_limit_arguments():
 
     with pytest.raises(ValueError):
         AuthorityCommandHandler(world, sequence_tracker_max_actors=0)
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(
+            world,
+            processed_ids_maxlen=1,
+            sequence_tracker_max_actors=2,
+        )
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(world, sequence_history_max_actors=0)
+
+    with pytest.raises(ValueError):
+        AuthorityCommandHandler(
+            world,
+            sequence_tracker_max_actors=3,
+            sequence_history_max_actors=2,
+        )
+
+
+def test_build_runtime_passes_extensibility_hooks():
+    """Runtime builder should pass custom handlers and object factories through."""
+
+    def custom_ping(command, world, authority_token):
+        return {"ok": True, "world_id": world.id, "used_token": bool(authority_token)}
+
+    def custom_actor_factory(payload):
+        return Actor(id=str(payload.get("id") or ""))
+
+    world = World(id="world-runtime-ext-1")
+    world.register_object(Actor(id="actor-runtime-ext"))
+
+    with build_runtime(
+        world,
+        server_authoritative=True,
+        custom_command_handlers={"custom_ping": custom_ping},
+        object_factories={"custom_actor": custom_actor_factory},
+    ) as runtime:
+        assert runtime.authoritative is True
+        ping_result = runtime.authority_handler.submit(
+            CommandEnvelope(
+                command_id="rt-ext-1",
+                actor_id="actor-runtime-ext",
+                command_type="custom_ping",
+                sequence=1,
+                payload={},
+            )
+        )
+        register_result = runtime.authority_handler.submit(
+            CommandEnvelope(
+                command_id="rt-ext-2",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-runtime-custom",
+                        "object_type": "custom_actor",
+                    }
+                },
+            )
+        )
+
+    custom_obj = world.model_registry.get("actor-runtime-custom")
+    assert ping_result.accepted is True
+    assert ping_result.applied == {
+        "ok": True,
+        "world_id": "world-runtime-ext-1",
+        "used_token": True,
+    }
+    assert register_result.accepted is True
+    assert isinstance(custom_obj, Actor)

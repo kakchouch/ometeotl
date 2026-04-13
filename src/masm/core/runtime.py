@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, Type
+from typing import Any, Callable, Mapping, Optional, Sequence, Type
 
 from masm.model.world import World
 
-from .authority import AuthorityCommandHandler
+from .authority import AuthorityCommandHandler, CommandEnvelope
 
 
 @dataclass
@@ -50,9 +50,14 @@ def build_runtime(
     *,
     server_authoritative: bool = False,
     allowed_command_types: Optional[Sequence[str]] = None,
+    custom_command_handlers: Optional[
+        Mapping[str, Callable[[CommandEnvelope, World, str], dict[str, Any]]]
+    ] = None,
+    object_factories: Optional[Mapping[str, Callable[[Mapping[str, Any]], Any]]] = None,
     audit_log_maxlen: int = 1000,
     processed_ids_maxlen: int = 10000,
     sequence_tracker_max_actors: Optional[int] = 1000,
+    sequence_history_max_actors: Optional[int] = None,
 ) -> RuntimeContext:
     """Build a runtime context without changing local defaults.
 
@@ -66,8 +71,11 @@ def build_runtime(
         authority_handler=AuthorityCommandHandler(
             world,
             allowed_command_types=allowed_command_types,
+            custom_command_handlers=custom_command_handlers,
+            object_factories=object_factories,
             audit_log_maxlen=audit_log_maxlen,
             processed_ids_maxlen=processed_ids_maxlen,
             sequence_tracker_max_actors=sequence_tracker_max_actors,
+            sequence_history_max_actors=sequence_history_max_actors,
         ),
     )
