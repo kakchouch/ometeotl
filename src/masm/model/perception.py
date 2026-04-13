@@ -21,7 +21,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from .base import ObjectId, JsonMap, _validate_schema_version
+from .base import (
+    ObjectId,
+    JsonMap,
+    _canonical_json_map,
+    _require_non_null_mapping,
+    _require_non_null_string,
+    _validate_schema_version,
+)
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
 
@@ -65,16 +72,14 @@ class PerceivedSpace:
         return {
             "space": self.space.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": dict(sorted(self.noise_metadata.items())),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedSpace":
         """Reconstruct a PerceivedSpace from its canonical representation."""
-        if data.get("space") is None:
-            raise ValueError("Field 'space' cannot be null")
         return cls(
-            space=Space.from_dict(data["space"]),
+            space=Space.from_dict(_require_non_null_mapping(data, "space")),
             epistemic_status=str(data.get("epistemic_status") or "certain"),
             noise_metadata=dict(data.get("noise_metadata") or {}),
         )
@@ -96,16 +101,16 @@ class PerceivedMembership:
         return {
             "membership": self.membership.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": dict(sorted(self.noise_metadata.items())),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedMembership":
         """Reconstruct a PerceivedMembership from its canonical representation."""
-        if data.get("membership") is None:
-            raise ValueError("Field 'membership' cannot be null")
         return cls(
-            membership=SpaceObjectMembership.from_dict(data["membership"]),
+            membership=SpaceObjectMembership.from_dict(
+                _require_non_null_mapping(data, "membership")
+            ),
             epistemic_status=str(data.get("epistemic_status") or "certain"),
             noise_metadata=dict(data.get("noise_metadata") or {}),
         )
@@ -127,16 +132,16 @@ class PerceivedRelation:
         return {
             "relation": self.relation.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": dict(sorted(self.noise_metadata.items())),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedRelation":
         """Reconstruct a PerceivedRelation from its canonical representation."""
-        if data.get("relation") is None:
-            raise ValueError("Field 'relation' cannot be null")
         return cls(
-            relation=SpaceRelation.from_dict(data["relation"]),
+            relation=SpaceRelation.from_dict(
+                _require_non_null_mapping(data, "relation")
+            ),
             epistemic_status=str(data.get("epistemic_status") or "certain"),
             noise_metadata=dict(data.get("noise_metadata") or {}),
         )
@@ -250,23 +255,17 @@ class Perception:
                     ),
                 )
             ],
-            "context": dict(sorted(self.context.items())),
-            "provenance": dict(sorted(self.provenance.items())),
+            "context": _canonical_json_map(self.context),
+            "provenance": _canonical_json_map(self.provenance),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Perception":
         """Reconstruct a Perception from its canonical dictionary representation."""
-        if data.get("id") is None:
-            raise ValueError("Field 'id' cannot be null")
-        if data.get("actor_id") is None:
-            raise ValueError("Field 'actor_id' cannot be null")
-        if data.get("source_id") is None:
-            raise ValueError("Field 'source_id' cannot be null")
         return cls(
-            id=str(data["id"]),
-            actor_id=str(data["actor_id"]),
-            source_id=str(data["source_id"]),
+            id=_require_non_null_string(data, "id"),
+            actor_id=_require_non_null_string(data, "actor_id"),
+            source_id=_require_non_null_string(data, "source_id"),
             schema_version=_validate_schema_version(data.get("schema_version")),
             timestamp=data.get("timestamp"),
             perceived_spaces={

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from .base import ModelObject, JsonMap
+from .base import ModelObject, JsonMap, ObjectId, _canonical_json_map
+
+if TYPE_CHECKING:
+    from .spaces import SpaceObjectGraph
 
 
 @dataclass
@@ -81,4 +84,43 @@ class GenericObject(ModelObject):
             raise ValueError("Profile key cannot be empty")
         profile = self.profile
         profile[key] = value
-        self.attributes["profile"] = dict(sorted(profile.items()))
+        self.attributes["profile"] = _canonical_json_map(profile)
+
+    def add_space_membership(
+        self,
+        graph: "SpaceObjectGraph",
+        space_id: ObjectId,
+        role: str = "occupies",
+        *,
+        validity: Mapping[str, Any] | None = None,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Declare that this object exists in a given space."""
+        from .spaces import SpaceObjectMembership
+
+        graph.add_object_membership(
+            SpaceObjectMembership(
+                object_id=self.id,
+                space_id=space_id,
+                role=role,
+                validity=dict(validity or {}),
+                metadata=dict(metadata or {}),
+            )
+        )
+
+    def remove_space_membership(
+        self,
+        graph: "SpaceObjectGraph",
+        space_id: ObjectId,
+        role: str = "occupies",
+    ) -> None:
+        """Remove the declaration that this object exists in a given space."""
+        from .spaces import SpaceObjectMembership
+
+        graph.remove_object_membership(
+            SpaceObjectMembership(
+                object_id=self.id,
+                space_id=space_id,
+                role=role,
+            )
+        )

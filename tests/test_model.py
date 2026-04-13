@@ -382,6 +382,79 @@ def test_world_spaces_where_object_exists():
     assert "info" in space_ids
 
 
+def test_generic_object_space_membership_helper_updates_graph():
+    """Generic objects share the canonical space membership helper."""
+    graph = SpaceObjectGraph()
+    graph.add_space(Space(id="space-generic"))
+    obj = GenericObject(id="generic-1", object_type="generic")
+
+    obj.add_space_membership(
+        graph,
+        "space-generic",
+        role="observes",
+        metadata={"priority": 1},
+    )
+
+    assert len(graph.object_memberships) == 1
+    assert graph.object_memberships[0].metadata == {"priority": 1}
+
+    obj.remove_space_membership(graph, "space-generic", role="observes")
+    assert graph.object_memberships == []
+
+
+def test_space_object_graph_lists_unique_object_ids_per_space():
+    """list_objects_in_space remains stable even when one object has many roles."""
+    graph = SpaceObjectGraph()
+    graph.add_space(Space(id="space-roles"))
+    graph.add_object_membership(
+        SpaceObjectMembership(
+            object_id="actor-dup",
+            space_id="space-roles",
+            role="occupies",
+        )
+    )
+    graph.add_object_membership(
+        SpaceObjectMembership(
+            object_id="actor-dup",
+            space_id="space-roles",
+            role="observes",
+        )
+    )
+
+    assert graph.list_objects_in_space("space-roles") == ["actor-dup"]
+
+
+def test_world_to_dict_roundtrip_preserves_registered_objects():
+    """World roundtrip preserves registered object instances and their types."""
+    world = World(id="world-10")
+    actor = Actor(id="actor-rt-1")
+    resource = Resource(id="resource-rt-1")
+    actor.label = "Registered Actor"
+    resource.kind = "material"
+
+    world.register_object(actor)
+    world.register_object(resource)
+
+    restored = World.from_dict(world.to_dict())
+
+    restored_actor = restored.model_registry.get("actor-rt-1")
+    restored_resource = restored.model_registry.get("resource-rt-1")
+
+    assert isinstance(restored_actor, Actor)
+    assert isinstance(restored_resource, Resource)
+    assert restored_actor is not None
+    assert restored_actor.label == "Registered Actor"
+    assert restored_resource is not None
+    assert restored_resource.kind == "material"
+
+    restored.enable_authority_mode("secret")
+    try:
+        with pytest.raises(PermissionError):
+            restored_actor.attributes["label"] = "forbidden"
+    finally:
+        restored.disable_authority_mode()
+
+
 # ============================================================
 # Perception tests
 # ============================================================

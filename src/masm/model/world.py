@@ -159,6 +159,7 @@ class World(Space):
         base = super().to_dict()
         base["space_object_graph"] = self.space_object_graph.to_dict()
         base["space_relation_graph"] = self.space_relation_graph.to_dict()
+        base["model_registry"] = self.model_registry.to_dict()
         return base
 
     @classmethod
@@ -177,5 +178,8 @@ class World(Space):
             ),
             space_relation_graph=SpaceRelationGraph.from_dict(
                 data.get("space_relation_graph") or {}
+            ),
+            model_registry=WorldModelRegistry.from_dict(
+                data.get("model_registry") or {}
             ),
         )

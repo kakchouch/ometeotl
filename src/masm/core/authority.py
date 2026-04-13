@@ -14,11 +14,8 @@ import threading
 from typing import Any, Callable, Mapping, Optional, Sequence
 from uuid import uuid4
 
-from masm.model.actions import Action
-from masm.model.actors import Actor
 from masm.model.base import JsonMap, ModelObject, ObjectId
-from masm.model.objects import GenericObject
-from masm.model.resources import Resource
+from masm.model.registry import reconstruct_model_object
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
@@ -174,16 +171,10 @@ class AuthorityCommandHandler:
             raise ValueError(
                 "Allowed command type has no registered handler: " f"{unsupported}"
             )
-        self._object_factories: dict[str, ObjectFactory] = (
-            self._default_object_factories()
-        )
-        if object_factories:
-            self._object_factories.update(
-                {
-                    str(type_name).lower(): factory
-                    for type_name, factory in object_factories.items()
-                }
-            )
+        self._object_factories: dict[str, ObjectFactory] = {
+            str(type_name).lower(): factory
+            for type_name, factory in (object_factories or {}).items()
+        }
         self._audit_log: deque[AuditEntry] = deque(maxlen=audit_log_maxlen)
         self._processed_ids_maxlen = processed_ids_maxlen
         self._sequence_tracker_max_actors = sequence_tracker_max_actors
@@ -403,24 +394,10 @@ class AuthorityCommandHandler:
         world.register_object(obj, authority_token=authority_token)
         return {"object_id": obj.id}
 
-    @staticmethod
-    def _default_object_factories() -> dict[str, ObjectFactory]:
-        return {
-            "action": Action.from_dict,
-            "actor": Actor.from_dict,
-            "generic": GenericObject.from_dict,
-            "resource": Resource.from_dict,
-            "space": Space.from_dict,
-            "world": World.from_dict,
-        }
-
     def _reconstruct_registered_object(
         self, raw_object: Mapping[str, Any]
     ) -> ModelObject:
-        object_payload = dict(raw_object)
-        object_type = str(object_payload.get("object_type") or "").lower()
-        factory = self._object_factories.get(object_type, ModelObject.from_dict)
-        return factory(object_payload)
+        return reconstruct_model_object(raw_object, self._object_factories)
 
     def _handle_unregister_object(
         self,

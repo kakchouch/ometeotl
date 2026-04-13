@@ -7,8 +7,45 @@ but only those considered minimal for the simulation.
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, Optional
-from .base import ModelObject, ObjectId
+from typing import Any, Callable, Dict, Mapping, Optional
+
+from .base import JsonMap, ModelObject, ObjectId
+
+ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
+
+
+def reconstruct_model_object(
+    raw_object: Mapping[str, Any],
+    object_factories: Optional[Mapping[str, ObjectFactory]] = None,
+) -> ModelObject:
+    """Reconstruct a model object from its canonical serialized form."""
+    from .actions import Action
+    from .actors import Actor
+    from .objects import GenericObject
+    from .resources import Resource
+    from .spaces import Space
+    from .world import World
+
+    factories: dict[str, ObjectFactory] = {
+        "action": Action.from_dict,
+        "actor": Actor.from_dict,
+        "generic": GenericObject.from_dict,
+        "resource": Resource.from_dict,
+        "space": Space.from_dict,
+        "world": World.from_dict,
+    }
+    if object_factories:
+        factories.update(
+            {
+                str(type_name).lower(): factory
+                for type_name, factory in object_factories.items()
+            }
+        )
+
+    object_payload = dict(raw_object)
+    object_type = str(object_payload.get("object_type") or "").lower()
+    factory = factories.get(object_type, ModelObject.from_dict)
+    return factory(object_payload)
 
 
 class WorldModelRegistry:
@@ -60,13 +97,37 @@ class WorldModelRegistry:
         """Return the registered object for the given ID, if any."""
         return self._instances.get(obj_id)
 
-    def clear(self) -> None:
+    def clear(self, authority_token: Optional[str] = None) -> None:
         """Clear the registry."""
+        self._assert_mutation_allowed(authority_token)
         self._instances.clear()
 
     def all_ids(self) -> list[ObjectId]:
         """Return all registered object IDs in sorted order."""
         return sorted(self._instances.keys())
+
+    def to_dict(self) -> JsonMap:
+        """Serialize registered objects in deterministic ID order."""
+        return {
+            "objects": {
+                object_id: obj.to_dict()
+                for object_id, obj in sorted(self._instances.items())
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "WorldModelRegistry":
+        """Reconstruct a registry from canonical serialized objects."""
+        registry = cls()
+        for object_id, raw_object in sorted(dict(data.get("objects") or {}).items()):
+            obj = reconstruct_model_object(raw_object)
+            if obj.id != str(object_id):
+                raise ValueError(
+                    "Registry object key does not match serialized object id: "
+                    f"{object_id}"
+                )
+            registry.register(obj)
+        return registry
 
 
 class MinimalModelRegistry:
