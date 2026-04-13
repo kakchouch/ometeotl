@@ -13,11 +13,14 @@ Object-to-space memberships are managed separately in spaces.py.
 
 from __future__ import annotations
 
+import copy
+import dataclasses
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Mapping, Optional, Any
+
+from .base import JsonMap, _canonical_json_map, _require_non_null_string
 
 SpaceId = str
-JsonMap = Dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -104,6 +107,37 @@ class SpaceRelation:
             )
         return self
 
+    def to_dict(self) -> JsonMap:
+        """Convert the SpaceRelation instance to a dictionary representation."""
+        return {
+            "source_space_id": self.source_space_id,
+            "target_space_id": self.target_space_id,
+            "relation_type": self.relation_type,
+            "metadata": _canonical_json_map(self.metadata),
+        }
+
+    def __deepcopy__(self, memo: dict) -> "SpaceRelation":
+        """Optimised deep copy: immutable str fields are shared; only
+        the mutable metadata dict is deep-copied."""
+        cls = self.__class__
+        new_obj: SpaceRelation = cls.__new__(cls)
+        memo[id(self)] = new_obj
+        for f in dataclasses.fields(self):
+            object.__setattr__(
+                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+            )
+        return new_obj
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelation":
+        """Create a SpaceRelation instance from a dictionary representation."""
+        return cls(
+            source_space_id=_require_non_null_string(data, "source_space_id"),
+            target_space_id=_require_non_null_string(data, "target_space_id"),
+            relation_type=_require_non_null_string(data, "relation_type"),
+            metadata=dict(data.get("metadata") or {}),
+        )
+
 
 @dataclass
 class SpaceRelationGraph:
@@ -119,6 +153,29 @@ class SpaceRelationGraph:
     """
 
     relations: List[SpaceRelation] = field(default_factory=list)
+    _relation_keys: set[tuple[SpaceId, SpaceId, str]] = field(
+        default_factory=set,
+        init=False,
+        repr=False,
+    )
+
+    def __post_init__(self) -> None:
+        unique_relations = {}
+        for relation in self.relations:
+            normalized_relation = relation.canonicalize()
+            unique_relations[self._relation_key(normalized_relation)] = (
+                normalized_relation
+            )
+        self.relations = [unique_relations[key] for key in sorted(unique_relations)]
+        self._relation_keys = set(unique_relations)
+
+    @staticmethod
+    def _relation_key(relation: SpaceRelation) -> tuple[SpaceId, SpaceId, str]:
+        return (
+            relation.source_space_id,
+            relation.target_space_id,
+            relation.relation_type,
+        )
 
     def add_relation(self, relation: SpaceRelation) -> None:
         """Add a relation between two spaces.
@@ -150,16 +207,19 @@ class SpaceRelationGraph:
             )
 
         #
+        relation_key = self._relation_key(normalized_relation)
+
         if relation_def.is_antisymmetric:
-            inverse_relation_exists = any(
-                existing.source_space_id == normalized_relation.target_space_id
-                and existing.target_space_id == normalized_relation.source_space_id
-                and existing.relation_type == normalized_relation.relation_type
-                and existing.source_space_id
-                != existing.target_space_id  # Ensure it's not a self-reflexive relation
-                for existing in self.relations
+            inverse_key = (
+                normalized_relation.target_space_id,
+                normalized_relation.source_space_id,
+                normalized_relation.relation_type,
             )
-            if inverse_relation_exists:
+            if (
+                normalized_relation.source_space_id
+                != normalized_relation.target_space_id
+                and inverse_key in self._relation_keys
+            ):
                 raise ValueError(
                     f"Cannot add relation '{normalized_relation.relation_type}'"
                     f" from '{normalized_relation.source_space_id}' to"
@@ -168,12 +228,11 @@ class SpaceRelationGraph:
                 )
 
         # Check for duplicates based on the canonicalized relation
-        duplicate = any(existing == normalized_relation for existing in self.relations)
-
-        if duplicate:
+        if relation_key in self._relation_keys:
             return
 
         self.relations.append(normalized_relation)
+        self._relation_keys.add(relation_key)
         self.relations.sort(
             key=lambda r: (r.source_space_id, r.target_space_id, r.relation_type)
         )  # Keep relations sorted for consistency
@@ -187,6 +246,9 @@ class SpaceRelationGraph:
             target_space_id=target_space_id,
             relation_type=relation_type,
         ).canonicalize()
+        relation_key = self._relation_key(normalized_relation)
+        if relation_key not in self._relation_keys:
+            return
 
         self.relations = [
             r
@@ -197,6 +259,7 @@ class SpaceRelationGraph:
                 and r.relation_type == normalized_relation.relation_type
             )
         ]
+        self._relation_keys.discard(relation_key)
 
     def relations_from(
         self, space_id: SpaceId, relation_type: Optional[str] = None
@@ -277,3 +340,17 @@ class SpaceRelationGraph:
             for relation in self.relations_to(space_id, relation_type="intersects_with")
         }
         return sorted(outgoing_intersections.union(incoming_intersections))
+
+    def to_dict(self) -> JsonMap:
+        """Convert the SpaceRelationGraph to a canonical dictionary representation."""
+        return {
+            "relations": [r.to_dict() for r in self.relations],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelationGraph":
+        """Reconstruct a SpaceRelationGraph from a canonical dictionary representation."""
+        graph = cls()
+        for relation_data in data.get("relations") or []:
+            graph.add_relation(SpaceRelation.from_dict(relation_data))
+        return graph

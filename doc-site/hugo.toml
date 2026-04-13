@@ -13,6 +13,23 @@ defaultContentLanguage = 'en'
   [params.theme]
   palette = "ometeotl-solarized-light"
 
+# Sidebar : about
+[params.about]
+title = "Ometeotl"
+description = "A Python library to build complex multi-agent simulations, wargames, and AI-driven strategies"
+logo_image = "/ometeotl/images/logo.png"
+
+# Sidebar : social links
+[[params.socialLinks]]
+icon = "fa-brands fa-github"
+title = "GitHub"
+url = "https://github.com/kakchouch/ometeotl"
+
+[[params.socialLinks]]
+icon = "fa-solid fa-globe"
+title = "Portfolio"
+url = "https://akchouch.fr"
+
 [languages]
   [languages.en]
     languageName = 'English'
@@ -26,4 +43,8 @@ defaultContentLanguage = 'en'
       name = 'documentation'
       pageRef = '/documentation/'
       weight = 20
+    [[languages.en.menus.main]]
+      name = 'leaderboard'
+      pageRef = '/leaderboard/'
+      weight = 30
  

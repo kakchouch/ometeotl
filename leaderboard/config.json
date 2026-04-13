@@ -1,0 +1,21 @@
+{
+  "founder": "kakchouch",
+  "total_shares": 1000,
+  "k_floor": 3,
+  "k_offset": 12,
+  "z_clamp_min": -3.0,
+  "z_clamp_max": 4.0,
+  "half_life_days": 90,
+  "active_contributor_window_days": 180,
+  "min_active_contributors_for_z_score": 3,
+  "weights": {
+    "merged_pr": 10,
+    "pr_review": 4,
+    "issue_opened": 2,
+    "issue_comment": 1,
+    "pr_comment": 1,
+    "commit_in_merged_pr": 3,
+    "lines_changed_per_unit": 0.01,
+    "lines_changed_cap_per_pr": 200
+  }
+}

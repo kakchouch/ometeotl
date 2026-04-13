@@ -19,19 +19,10 @@ intended business logic.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, List, Dict, Mapping
+from typing import Any, Mapping
 
-from .base import relation_methods
+from .base import ModelObject, relation_methods
 from .objects import GenericObject
-from .spaces import SpaceObjectGraph, SpaceObjectMembership
-
-# local aliases
-JsonMap = Dict[str, Any]
-ObjectId = str
-
-
-def _default_schema_version() -> str:
-    return "1.0"
 
 
 @relation_methods("user", "used_by")
@@ -109,20 +100,6 @@ class Resource(GenericObject):
         self.attributes["kind"] = str(value)
 
     @property
-    def tags(self) -> List[str]:
-        """The tags of the resource."""
-        value = self.attributes.get("tags", [])
-        return sorted(list(value)) if value is not None else []
-
-    def add_tag(self, tag: str) -> None:
-        """Add a tag to the resource."""
-        self.add_to_attribute_list("tags", tag)
-
-    def remove_tag(self, tag: str) -> None:
-        """Remove a tag from the resource."""
-        self.remove_from_attribute_list("tags", tag)
-
-    @property
     def resource_mode(self) -> str:
         """The resource mode of the resource."""
         value = self.attributes.get("resource_mode", "stock")
@@ -185,25 +162,6 @@ class Resource(GenericObject):
         """Set whether the resource is composite."""
         self.attributes["composite"] = bool(value)
 
-    @property
-    def profile(self) -> JsonMap:
-        """Returns the free-form profile of the resource, which are structured
-        data that can be used to capture specific characteristics, preferences,
-        or attributes of the resource in a more detailed and organized way.
-        This dictionnary is intentionally open-ended and can contain
-        modeling details such as category-specific metadata,
-        identifiers etc."""
-        value = self.attributes.get("profile", {})
-        return dict(value) if isinstance(value, Mapping) else {}
-
-    def set_profile_item(self, key: str, value: Any) -> None:
-        """Sets a specific item in the resource's profile."""
-        if not key:
-            raise ValueError("Profile key cannot be empty")
-        profile = self.profile
-        profile[key] = value
-        self.attributes["profile"] = dict(sorted(profile.items()))
-
     # ------------------------------------------------------------------
     # Domain relations
     # ------------------------------------------------------------------
@@ -216,62 +174,10 @@ class Resource(GenericObject):
     # It ensures fidelity with  ModelObject.relations, which is the
     # canonical place for storing links between model objects.
 
-    def add_space_membership(
-        self,
-        graph: "SpaceObjectGraph",
-        space_id: ObjectId,
-        role: str = "occupies",
-        *,
-        validity: Mapping[str, Any] | None = None,
-        metadata: Mapping[str, Any] | None = None,
-    ) -> None:
-        """Declare that this resource exists in a given space.
-
-        Important:
-        This method is only a convenience wrapper around SpaceObjectMembership
-        and SpaceObjectGraph. The canonical membership data is stored in the graph.
-        """
-
-        graph.add_object_membership(
-            SpaceObjectMembership(
-                object_id=self.id,
-                space_id=space_id,
-                role=role,
-                validity=dict(validity or {}),
-                metadata=dict(metadata or {}),
-            )
-        )
-
-    def remove_space_membership(
-        self, graph: "SpaceObjectGraph", space_id: ObjectId, role: str = "occupies"
-    ) -> None:
-        """Remove the declaration that this resource exists in a given space.
-
-        Important:
-        This method is only a convenience wrapper around SpaceObjectMembership
-        and SpaceObjectGraph. The canonical membership data is stored in the graph.
-        """
-        graph.remove_object_membership(
-            SpaceObjectMembership(
-                object_id=self.id,
-                space_id=space_id,
-                role=role,
-            )
-        )
-
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":
         """Create the resource from a dictionary."""
-        return cls(
-            id=str(data["id"]),
-            object_type=str(data.get("object_type", "resource")),
-            schema_version=str(data.get("schema_version", _default_schema_version())),
-            attributes=dict(data.get("attributes", {})),
-            relations={
-                str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations", {})).items()
-            },
-            state=dict(data.get("state", {})),
-            context=dict(data.get("context", {})),
-            provenance=dict(data.get("provenance", {})),
-        )
+        payload = dict(data)
+        payload["object_type"] = payload.get("object_type") or "resource"
+        base_obj = ModelObject.from_dict(payload)
+        return cls(**base_obj._base_kwargs())

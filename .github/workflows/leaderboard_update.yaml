@@ -1,0 +1,96 @@
+name: Ometeotl Leaderboard
+
+on:
+  # Recalculate daily at 06:00 UTC (recency factors change every day)
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Recalculate after every rank assignment (i.e. after every merged PR)
+  workflow_run:
+    workflows: ["Ometeotl Rank"]
+    types: [completed]
+
+  # Manual trigger for testing or recalibration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  compute-leaderboard:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          ref: develop
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install PyGithub numpy
+
+      - name: Compute leaderboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python leaderboard/compute_leaderboard.py
+
+      - name: Commit and push leaderboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.name "ometeotl-bot"
+          git config --local user.email "bot@ometeotl.local"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
+          git add leaderboard/LEADERBOARD.md leaderboard/leaderboard-data.json doc-site/content/en/leaderboard/live.md
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "docs(leaderboard): update activity shares [$(date -u +%Y-%m-%d)]"
+
+            if git pull --no-rebase origin develop; then
+              git push origin HEAD:develop
+            else
+              echo "::warning::Merge conflict during leaderboard update. Aborting merge and opening an issue."
+              git merge --abort
+
+              # Reset to clean state (drop the leaderboard commit)
+              git reset --hard origin/develop
+
+              # Open a GitHub issue to alert maintainers
+              gh issue create \
+                --repo "${{ github.repository }}" \
+                --title "[leaderboard-bot] Merge conflict on develop" \
+                --label "bot,leaderboard" \
+                --body "The automated leaderboard update failed due to a merge conflict on \`develop\`.
+
+              **What happened:**
+              The leaderboard workflow committed updated scores, but \`develop\` had diverged with conflicting changes in one of these paths:
+              - \`leaderboard/LEADERBOARD.md\`
+              - \`leaderboard/leaderboard-data.json\`
+              - \`doc-site/content/en/leaderboard/live.md\`
+
+              **What to do:**
+              1. Manually run the leaderboard workflow after resolving the conflicting files.
+              2. Or wait — the next scheduled run (daily at 06:00 UTC) will retry automatically.
+
+              **Run:** [$(date -u +%Y-%m-%dT%H:%M:%SZ)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                            exit 0  # Don't fail the workflow — the issue is the alert
+                          fi
+                        fi

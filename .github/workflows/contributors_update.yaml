@@ -1,13 +1,28 @@
 name: Ometeotl Contributors
+# 04/08/2026 - (hopefully) last iteration
+# before stabilizing the contributors workflow
+# -> contributors is updated in develop
+# 15:32 - test after conflict 
+# in contributors
 
 on:
+  # Recalculate daily at 06:00 UTC (recency factors change every day)
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Recalculate after every rank assignment (i.e. after every merged PR)
   workflow_run:
     workflows: ["Ometeotl Rank"]
     types: [completed]
 
+  # Manual trigger for testing or recalibration
+  workflow_dispatch:
+
 permissions:
   contents: write
   actions: read
+  pull-requests: read
+  issues: write
 
 jobs:
   update-contributors:
@@ -18,10 +33,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # ADDED: use PAT to allow push to the protected target branch
+          # MODIFIED: use PAT to allow push to the protected target branch
           token: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
-          # ADDED: checkout the branch targeted by the source workflow
-          ref: ${{ github.event.workflow_run.head_branch }}
+          # Always update target branch directly. Trigger source branches may be deleted.
+          ref: develop
 
       - name: Download rank artifact from triggering workflow
         env:
@@ -175,15 +190,71 @@ jobs:
       - name: Commit and push CONTRIBUTORS.md
         env:
           GITHUB_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
+          GH_TOKEN: ${{ secrets.OMETEOTL_BOT_TOKEN_CONTRIBUTORS }}
         run: |
+          set -euo pipefail
+
           git config --local user.name "ometeotl-bot"
           git config --local user.email "bot@ometeotl.local"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          git add CONTRIBUTORS.md
 
+          cp CONTRIBUTORS.md /tmp/CONTRIBUTORS.generated.md
+
+          git add CONTRIBUTORS.md
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes to commit."
           else
-            git commit -m "docs(contributors): update @$(node -p "require('./rank-data.json').username")"
-            git push origin HEAD:${{ github.event.workflow_run.head_branch }}
+            pushed="false"
+            for attempt in 1 2 3; do
+              echo "Push attempt ${attempt}/3"
+              git fetch origin develop
+
+              # Start each attempt from the latest remote develop without rebase.
+              git reset --hard origin/develop
+              cp /tmp/CONTRIBUTORS.generated.md CONTRIBUTORS.md
+              git add CONTRIBUTORS.md
+
+              if git diff --cached --quiet; then
+                echo "No effective CONTRIBUTORS.md change against current develop."
+                pushed="true"
+                break
+              fi
+
+              git commit -m "docs(contributors): update @${{ github.actor }}"
+
+              if git push origin HEAD:develop; then
+                pushed="true"
+                break
+              fi
+
+              # Push can race with another concurrent run; try again from fresh develop.
+              echo "Push rejected (branch moved). Retrying from latest develop..."
+              git reset --hard origin/develop
+            done
+
+            if [ "${pushed}" = "false" ]; then
+              echo "::warning::Contributors update could not be pushed after retries. Opening an issue."
+              RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+              {
+                echo "The automated contributors update could not be pushed to develop after multiple retries."
+                echo ""
+                echo "What happened:"
+                echo "- The workflow generated and committed CONTRIBUTORS.md updates."
+                echo "- While pushing, develop moved forward and this job could not fast-forward safely."
+                echo ""
+                echo "What to do:"
+                echo "1. Re-run the contributors workflow."
+                echo "2. If needed, review and resolve conflicts in CONTRIBUTORS.md."
+                echo ""
+                echo "Run: ${RUN_URL}"
+              } > /tmp/contributors_update_failure.md
+
+              gh issue create \
+                --repo "${{ github.repository }}" \
+                --title "[contributors-bot] Unable to push CONTRIBUTORS.md to develop" \
+                --body-file /tmp/contributors_update_failure.md || true
+
+              exit 0
+            fi
           fi

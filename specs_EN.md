@@ -107,88 +107,76 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 5. Minimal game-theory interface.
 6. Two examples: a simple world and a hierarchical multi-actor case.
 
-## Implementation
+## Current repository state (April 2026)
 
-Here is a first architecture:
+The project is in an early but functional core phase.
+
+### Implemented and tested now
+
+1. Core object model in `src/masm/model/`:
+    - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+2. Spatial structures:
+    - `SpaceObjectGraph` and `SpaceObjectMembership`.
+    - `SpaceRelation` and `SpaceRelationGraph` with canonicalization and relation constraints.
+3. Perception layer:
+    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
+    - Epistemic status validation (`certain`, `believed`, `hypothesis`, `projected`, `error`).
+    - Deterministic serialization order for perceived memberships and relations.
+4. Sensor pipeline:
+    - `CoverageRule` and `NoiseRule` abstractions.
+    - `TotalCoverageRule` and `IdentityNoiseRule` defaults.
+    - Snapshot timestamp support in `Sensor.sense(...)`.
+    - Deterministic perception IDs when timestamp is provided.
+    - Unique perception IDs when timestamp is omitted.
+5. Quality gate:
+    - Automated model tests in `tests/test_model.py` (45 tests passing).
+
+### Scaffolded but not implemented yet
+
+The following packages currently contain bootstrap files only and are planned for later phases:
+
+- `src/masm/core/`
+- `src/masm/io/`
+- `src/masm/generation/`
+- `src/masm/game/`
+- `src/masm/validation/`
+- `src/masm/examples/`
+
+### Current source layout
 
 ```
 ometeotl/
-├── pyproject.toml
-├── README.md
 ├── src/
 │   └── masm/
-│       ├── __init__.py
-│       │
-│       ├── core/
-│       │   ├── __init__.py
-│       │   ├── ids.py
-│       │   ├── types.py
-│       │   ├── time.py
-│       │   ├── errors.py
-│       │   └── protocols.py
-│       │
-│       ├── model/
-│       │   ├── __init__.py
-│       │   ├── base.py
-│       │   ├── objects.py
-│       │   ├── actors.py
-│       │   ├── resources.py
-│       │   ├── spaces.py
-│       │   ├── space_relations.py
-│       │   ├── actions.py
-│       │   ├── metrics.py
-│       │   ├── perception.py
-│       │   ├── goals.py
-│       │   ├── emergence.py
-│       │   ├── world_state.py
-│       │   └── relations.py
-│       │
-│       ├── validation/
-│       │   ├── __init__.py
-│       │   ├── result.py
-│       │   ├── structural.py
-│       │   ├── temporal.py
-│       │   ├── spatial.py
-│       │   ├── epistemic.py
-│       │   ├── admissibility.py
-│       │   └── pipeline.py
-│       │
-│       ├── io/
-│       │   ├── __init__.py
-│       │   ├── schema.py
-│       │   ├── serializable.py
-│       │   ├── json_codec.py
-│       │   ├── yaml_codec.py
-│       │   ├── llm_codec.py
-│       │   └── registry.py
-│       │
-│       ├── generation/
-│       │   ├── __init__.py
-│       │   ├── context.py
-│       │   ├── builders.py
-│       │   ├── prompts.py
-│       │   ├── parser.py
-│       │   ├── repair.py
-│       │   └── pipeline.py
-│       │
-│       ├── game/
-│       │   ├── __init__.py
-│       │   ├── strategies.py
-│       │   ├── utility.py
-│       │   ├── game_state.py
-│       │   ├── transforms.py
-│       │   ├── dominance.py
-│       │   └── equilibrium.py
-│       │
-│       └── examples/
-│           ├── __init__.py
-│           ├── simple_world.py
-│           └── hierarchical_world.py
-│
+│       ├── core/               # scaffolded
+│       ├── io/                 # scaffolded
+│       ├── generation/         # scaffolded
+│       ├── game/               # scaffolded
+│       ├── validation/         # scaffolded
+│       ├── examples/           # scaffolded
+│       └── model/              # implemented in V1-incremental form
+│           ├── base.py
+│           ├── objects.py
+│           ├── actors.py
+│           ├── resources.py
+│           ├── spaces.py
+│           ├── space_relations.py
+│           ├── perception.py
+│           ├── sensor.py
+│           ├── world.py
+│           └── registry.py
 └── tests/
-    ├── test_model.py
-    ├── test_validation.py
-    ├── test_io.py
-    ├── test_generation.py
-    └── test_game.py
+     └── test_model.py
 ```
+
+### Practical V1 interpretation
+
+V1 is currently validated on the modeling/perception/sensor core. Full implementation of generation, game-theory projection, and validation/io pipelines remains on the roadmap.
+
+
+## Status
+This document is the source of truth for architecture and behavior.
+
+If parts are outdated:
+- Prefer current implementation for those parts
+- Flag inconsistencies explicitly in PRs

@@ -1,15 +1,138 @@
-""" 
-The model registry tracks all objects in the world
-and ensures object ids used as parameters for the decorator 
-methods @relation_methods do exist.
 """
-from __future__ import annotations
-from typing import Dict, Optional
-from .base import ModelObject, ObjectId
+The model registry tracks basic objects in the world
+and ensures object ids used as parameters for the decorator
+methods @relation_methods do exist.
+Warning : this registry is not intended to register all objects,
+but only those considered minimal for the simulation.
+"""
 
-class ModelRegistry:
+from __future__ import annotations
+from typing import Any, Callable, Dict, Mapping, Optional
+
+from .base import JsonMap, ModelObject, ObjectId
+
+ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
+
+
+def reconstruct_model_object(
+    raw_object: Mapping[str, Any],
+    object_factories: Optional[Mapping[str, ObjectFactory]] = None,
+) -> ModelObject:
+    """Reconstruct a model object from its canonical serialized form."""
+    from .actions import Action
+    from .actors import Actor
+    from .objects import GenericObject
+    from .resources import Resource
+    from .spaces import Space
+    from .world import World
+
+    factories: dict[str, ObjectFactory] = {
+        "action": Action.from_dict,
+        "actor": Actor.from_dict,
+        "generic": GenericObject.from_dict,
+        "resource": Resource.from_dict,
+        "space": Space.from_dict,
+        "world": World.from_dict,
+    }
+    if object_factories:
+        factories.update(
+            {
+                str(type_name).lower(): factory
+                for type_name, factory in object_factories.items()
+            }
+        )
+
+    object_payload = dict(raw_object)
+    object_type = str(object_payload.get("object_type") or "").lower()
+    factory = factories.get(object_type, ModelObject.from_dict)
+    return factory(object_payload)
+
+
+class WorldModelRegistry:
+    """World-scoped in-memory registry.
+
+    This registry is intended to support authoritative world operations without
+    relying on global mutable state.
     """
-    Global in-memory registry for model objects.
+
+    def __init__(self) -> None:
+        self._instances: Dict[ObjectId, ModelObject] = {}
+        self._mutation_guard: Optional[Callable[[Optional[str]], None]] = None
+
+    def set_mutation_guard(
+        self,
+        guard: Optional[Callable[[Optional[str]], None]],
+    ) -> None:
+        """Attach an optional mutation guard callback.
+
+        The callback is expected to raise when mutation is not allowed.
+        """
+        self._mutation_guard = guard
+
+    def _assert_mutation_allowed(self, authority_token: Optional[str]) -> None:
+        if self._mutation_guard is None:
+            return
+        self._mutation_guard(authority_token)
+
+    def register(self, obj: ModelObject, authority_token: Optional[str] = None) -> None:
+        """Register a model object in this world-scoped registry."""
+        self._assert_mutation_allowed(authority_token)
+        existing = self._instances.get(obj.id)
+        if existing is not None and existing is not obj:
+            raise ValueError(f"Duplicate model object id: {obj.id}")
+        self._instances[obj.id] = obj
+
+    def unregister(
+        self, obj_id: ObjectId, authority_token: Optional[str] = None
+    ) -> None:
+        """Remove an object if the given ID is registered."""
+        self._assert_mutation_allowed(authority_token)
+        self._instances.pop(obj_id, None)
+
+    def exists(self, obj_id: ObjectId) -> bool:
+        """Return True if the given object ID is registered."""
+        return obj_id in self._instances
+
+    def get(self, obj_id: ObjectId) -> Optional[ModelObject]:
+        """Return the registered object for the given ID, if any."""
+        return self._instances.get(obj_id)
+
+    def clear(self, authority_token: Optional[str] = None) -> None:
+        """Clear the registry."""
+        self._assert_mutation_allowed(authority_token)
+        self._instances.clear()
+
+    def all_ids(self) -> list[ObjectId]:
+        """Return all registered object IDs in sorted order."""
+        return sorted(self._instances.keys())
+
+    def to_dict(self) -> JsonMap:
+        """Serialize registered objects in deterministic ID order."""
+        return {
+            "objects": {
+                object_id: obj.to_dict()
+                for object_id, obj in sorted(self._instances.items())
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "WorldModelRegistry":
+        """Reconstruct a registry from canonical serialized objects."""
+        registry = cls()
+        for object_id, raw_object in sorted(dict(data.get("objects") or {}).items()):
+            obj = reconstruct_model_object(raw_object)
+            if obj.id != str(object_id):
+                raise ValueError(
+                    "Registry object key does not match serialized object id: "
+                    f"{object_id}"
+                )
+            registry.register(obj)
+        return registry
+
+
+class MinimalModelRegistry:
+    """
+    Global in-memory registry for minimal objects.
     This registry provides a minimal referential
     integrity layer :
     - register model objects by ID;
@@ -22,36 +145,34 @@ class ModelRegistry:
 
     @classmethod
     def register(cls, obj: ModelObject) -> None:
-        """ Register a model object.
+        """Register a model object.
         Raises a ValueError if another object
         with the same ID is already registered.
         """
         existing = cls._instances.get(obj.id)
-        if (existing is not None and
-            existing is not obj):
-            raise ValueError("Duplicate model"
-            f"object id : {obj.id}")
+        if existing is not None and existing is not obj:
+            raise ValueError("Duplicate model" f"object id : {obj.id}")
         cls._instances[obj.id] = obj
 
     @classmethod
     def unregister(cls, obj_id: ObjectId) -> None:
-        """Remove an object if the given id is 
+        """Remove an object if the given id is
         registered.
         """
         cls._instances.pop(obj_id, None)
-    
+
     @classmethod
     def exists(cls, obj_id: ObjectId) -> bool:
-        """Return True if the given 
+        """Return True if the given
         object ID is registered"""
         return obj_id in cls._instances
-    
+
     @classmethod
     def get(cls, obj_id: ObjectId) -> Optional[ModelObject]:
         """Return the registered object for
         the given ID, if any"""
         return cls._instances.get(obj_id)
-    
+
     @classmethod
     def clear(cls) -> None:
         """Clear the registry.
@@ -60,8 +181,7 @@ class ModelRegistry:
         cls._instances.clear()
 
     @classmethod
-    def all_ids(cls)-> list[ObjectId]:
-        """Return all registered object ids 
+    def all_ids(cls) -> list[ObjectId]:
+        """Return all registered object ids
         in sorted order."""
         return sorted(cls._instances.keys())
-
