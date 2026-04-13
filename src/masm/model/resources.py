@@ -21,9 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from .base import ModelObject, ObjectId, JsonMap, relation_methods
+from .base import ModelObject, relation_methods
 from .objects import GenericObject
-from .spaces import SpaceObjectGraph, SpaceObjectMembership
 
 
 @relation_methods("user", "used_by")
@@ -174,49 +173,6 @@ class Resource(GenericObject):
     # clearer separation of concerns.
     # It ensures fidelity with  ModelObject.relations, which is the
     # canonical place for storing links between model objects.
-
-    def add_space_membership(
-        self,
-        graph: "SpaceObjectGraph",
-        space_id: ObjectId,
-        role: str = "occupies",
-        *,
-        validity: Mapping[str, Any] | None = None,
-        metadata: Mapping[str, Any] | None = None,
-    ) -> None:
-        """Declare that this resource exists in a given space.
-
-        Important:
-        This method is only a convenience wrapper around SpaceObjectMembership
-        and SpaceObjectGraph. The canonical membership data is stored in the graph.
-        """
-
-        graph.add_object_membership(
-            SpaceObjectMembership(
-                object_id=self.id,
-                space_id=space_id,
-                role=role,
-                validity=dict(validity or {}),
-                metadata=dict(metadata or {}),
-            )
-        )
-
-    def remove_space_membership(
-        self, graph: "SpaceObjectGraph", space_id: ObjectId, role: str = "occupies"
-    ) -> None:
-        """Remove the declaration that this resource exists in a given space.
-
-        Important:
-        This method is only a convenience wrapper around SpaceObjectMembership
-        and SpaceObjectGraph. The canonical membership data is stored in the graph.
-        """
-        graph.remove_object_membership(
-            SpaceObjectMembership(
-                object_id=self.id,
-                space_id=space_id,
-                role=role,
-            )
-        )
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":

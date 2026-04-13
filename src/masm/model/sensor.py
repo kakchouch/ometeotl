@@ -311,26 +311,27 @@ class Sensor:
     def _apply_noise_to_space(
         self, space: Space, actor_id: ObjectId
     ) -> Tuple[Space, JsonMap]:
-        merged_meta: JsonMap = {}
-        for rule in self.noise_rules:
-            space, meta = rule.apply_to_space(space, actor_id)
-            merged_meta.update(meta)
-        return space, merged_meta
+        return self._apply_noise(space, actor_id, "apply_to_space")
 
     def _apply_noise_to_membership(
         self, membership: SpaceObjectMembership, actor_id: ObjectId
     ) -> Tuple[SpaceObjectMembership, JsonMap]:
-        merged_meta: JsonMap = {}
-        for rule in self.noise_rules:
-            membership, meta = rule.apply_to_membership(membership, actor_id)
-            merged_meta.update(meta)
-        return membership, merged_meta
+        return self._apply_noise(membership, actor_id, "apply_to_membership")
 
     def _apply_noise_to_relation(
         self, relation: SpaceRelation, actor_id: ObjectId
     ) -> Tuple[SpaceRelation, JsonMap]:
+        return self._apply_noise(relation, actor_id, "apply_to_relation")
+
+    def _apply_noise(
+        self,
+        element: Any,
+        actor_id: ObjectId,
+        method_name: str,
+    ) -> Tuple[Any, JsonMap]:
         merged_meta: JsonMap = {}
         for rule in self.noise_rules:
-            relation, meta = rule.apply_to_relation(relation, actor_id)
+            apply_method = getattr(rule, method_name)
+            element, meta = apply_method(element, actor_id)
             merged_meta.update(meta)
-        return relation, merged_meta
+        return element, merged_meta

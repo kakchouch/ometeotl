@@ -18,7 +18,13 @@ from dataclasses import dataclass, field
 import json
 from typing import Any, List, Mapping, Optional
 
-from .base import ModelObject, ObjectId, JsonMap, RelationMap
+from .base import (
+    ModelObject,
+    ObjectId,
+    JsonMap,
+    _canonical_json_map,
+    _require_non_null_string,
+)
 
 
 def _canonical_json(value: Any) -> str:
@@ -56,16 +62,14 @@ class ResourceEffect:
             "quantity": self.quantity,
             "source_id": self.source_id,
             "target_id": self.target_id,
-            "metadata": dict(sorted(self.metadata.items())),
+            "metadata": _canonical_json_map(self.metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ResourceEffect":
         """Deserialize a resource effect."""
-        if data.get("resource_id") is None:
-            raise ValueError("Field 'resource_id' cannot be null")
         return cls(
-            resource_id=str(data["resource_id"]),
+            resource_id=_require_non_null_string(data, "resource_id"),
             effect_type=str(data.get("effect_type") or "consume"),
             quantity=(
                 float(data["quantity"]) if data.get("quantity") is not None else 1.0
@@ -98,17 +102,15 @@ class ActionPrerequisite:
             "prerequisite_type": self.prerequisite_type,
             "field_name": self.field_name,
             "required_value": self.required_value,
-            "metadata": dict(sorted(self.metadata.items())),
+            "metadata": _canonical_json_map(self.metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ActionPrerequisite":
         """Deserialize a prerequisite."""
-        if data.get("field_name") is None:
-            raise ValueError("Field 'field_name' cannot be null")
         return cls(
             prerequisite_type=str(data.get("prerequisite_type") or "resource"),
-            field_name=str(data["field_name"]),
+            field_name=_require_non_null_string(data, "field_name"),
             required_value=data.get("required_value"),
             metadata=dict(data.get("metadata") or {}),
         )
@@ -191,7 +193,7 @@ class Action(ModelObject):
                     )
                 ],
                 "outcome_description": self.outcome_description,
-                "state_changes": dict(sorted(self.state_changes.items())),
+                "state_changes": _canonical_json_map(self.state_changes),
             }
         )
         return base
@@ -199,25 +201,12 @@ class Action(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Action":
         """Reconstruct an action from its canonical representation."""
-        if data.get("actor_id") is None:
-            raise ValueError("Field 'actor_id' cannot be null")
-        if data.get("world_id") is None:
-            raise ValueError("Field 'world_id' cannot be null")
-        if data.get("space_id") is None:
-            raise ValueError("Field 'space_id' cannot be null")
         base_obj = ModelObject.from_dict(data)
         return cls(
-            id=base_obj.id,
-            object_type=base_obj.object_type,
-            schema_version=base_obj.schema_version,
-            attributes=base_obj.attributes,
-            relations=base_obj.relations,
-            state=base_obj.state,
-            context=base_obj.context,
-            provenance=base_obj.provenance,
-            actor_id=str(data["actor_id"]),
-            world_id=str(data["world_id"]),
-            space_id=str(data["space_id"]),
+            **base_obj._base_kwargs(),
+            actor_id=_require_non_null_string(data, "actor_id"),
+            world_id=_require_non_null_string(data, "world_id"),
+            space_id=_require_non_null_string(data, "space_id"),
             action_type=str(data.get("action_type") or "generic"),
             resource_effects=[
                 ResourceEffect.from_dict(re_data)

@@ -21,7 +21,13 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
-from .base import ModelObject, ObjectId, JsonMap
+from .base import (
+    ModelObject,
+    ObjectId,
+    JsonMap,
+    _canonical_json_map,
+    _require_non_null_string,
+)
 from .objects import GenericObject
 
 
@@ -170,8 +176,8 @@ class SpaceObjectMembership:
             "object_id": self.object_id,
             "space_id": self.space_id,
             "role": self.role,
-            "validity": dict(sorted(self.validity.items())),
-            "metadata": dict(sorted(self.metadata.items())),
+            "validity": _canonical_json_map(self.validity),
+            "metadata": _canonical_json_map(self.metadata),
         }
 
     def __deepcopy__(self, memo: dict) -> "SpaceObjectMembership":
@@ -189,13 +195,9 @@ class SpaceObjectMembership:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "SpaceObjectMembership":
         """Create a SpaceObjectMembership instance from a dictionary representation."""
-        if data.get("object_id") is None:
-            raise ValueError("Field 'object_id' cannot be null")
-        if data.get("space_id") is None:
-            raise ValueError("Field 'space_id' cannot be null")
         return cls(
-            object_id=str(data["object_id"]),
-            space_id=str(data["space_id"]),
+            object_id=_require_non_null_string(data, "object_id"),
+            space_id=_require_non_null_string(data, "space_id"),
             role=str(data.get("role") or "occupies"),
             validity=dict(data.get("validity") or {}),
             metadata=dict(data.get("metadata") or {}),
@@ -208,6 +210,31 @@ class SpaceObjectGraph:
 
     spaces: Dict[ObjectId, Space] = field(default_factory=dict)
     object_memberships: List[SpaceObjectMembership] = field(default_factory=list)
+    _membership_keys: set[tuple[ObjectId, ObjectId, str]] = field(
+        default_factory=set,
+        init=False,
+        repr=False,
+    )
+
+    def __post_init__(self) -> None:
+        unique_memberships = {
+            self._membership_key(membership): membership
+            for membership in self.object_memberships
+        }
+        self.object_memberships = [
+            unique_memberships[key] for key in sorted(unique_memberships)
+        ]
+        self._membership_keys = set(unique_memberships)
+
+    @staticmethod
+    def _membership_key(
+        membership: SpaceObjectMembership,
+    ) -> tuple[ObjectId, ObjectId, str]:
+        return (
+            membership.object_id,
+            membership.space_id,
+            membership.role,
+        )
 
     def add_space(self, space: Space) -> None:
         """Add a space to the graph, ensuring no duplicate IDs."""
@@ -227,22 +254,24 @@ class SpaceObjectGraph:
                 f"Space with id {object_membership.space_id} does not exist in the graph"
             )
 
-        duplicate = any(
-            existing.object_id == object_membership.object_id
-            and existing.space_id == object_membership.space_id
-            and existing.role == object_membership.role
-            for existing in self.object_memberships
+        membership_key = self._membership_key(object_membership)
+        if membership_key in self._membership_keys:
+            return
+
+        self.object_memberships.append(object_membership)
+        self._membership_keys.add(membership_key)
+        self.object_memberships.sort(
+            key=lambda item: (item.space_id, item.object_id, item.role)
         )
-        if not duplicate:
-            self.object_memberships.append(object_membership)
-            self.object_memberships.sort(
-                key=lambda item: (item.space_id, item.object_id, item.role)
-            )
 
     def remove_object_membership(
         self, object_membership: SpaceObjectMembership
     ) -> None:
         """Remove a membership relation and update the corresponding space."""
+        membership_key = self._membership_key(object_membership)
+        if membership_key not in self._membership_keys:
+            return
+
         self.object_memberships = [
             existing
             for existing in self.object_memberships
@@ -252,6 +281,7 @@ class SpaceObjectGraph:
                 and existing.role == object_membership.role
             )
         ]
+        self._membership_keys.discard(membership_key)
 
     def spaces_where_object_exists(self, object_id: ObjectId) -> List[Space]:
         """Find spaces where a given object ID exists based on objectmemberships."""
@@ -282,9 +312,11 @@ class SpaceObjectGraph:
     def list_objects_in_space(self, space_id: ObjectId) -> List[ObjectId]:
         """List object IDs that are members of a given space ID."""
         return sorted(
-            object_membership.object_id
-            for object_membership in self.object_memberships
-            if object_membership.space_id == space_id
+            {
+                object_membership.object_id
+                for object_membership in self.object_memberships
+                if object_membership.space_id == space_id
+            }
         )
 
     def to_dict(self) -> JsonMap:

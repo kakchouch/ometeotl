@@ -64,6 +64,11 @@ def _deep_plain_copy(value: Any) -> Any:
     return copy.deepcopy(value)
 
 
+def _canonical_json_map(mapping: Mapping[str, Any] | None) -> JsonMap:
+    """Return a deterministically ordered plain dict."""
+    return dict(sorted(dict(mapping or {}).items()))
+
+
 class GuardedJsonDict(dict[str, Any]):
     """Dict wrapper that can reject direct mutations under authority mode."""
 
@@ -212,12 +217,25 @@ def _validate_schema_version(value: Any) -> str:
     return version
 
 
-def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
-    """Read a required string field and reject explicit null values."""
+def _require_non_null_value(data: Mapping[str, Any], key: str) -> Any:
+    """Read a required field and reject explicit null values."""
     value = data.get(key)
     if value is None:
         raise ValueError(f"Field '{key}' cannot be null")
-    return str(value)
+    return value
+
+
+def _require_non_null_mapping(data: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    """Read a required mapping field and reject non-mapping payloads."""
+    value = _require_non_null_value(data, key)
+    if not isinstance(value, Mapping):
+        raise ValueError(f"Field '{key}' must be a mapping")
+    return value
+
+
+def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
+    """Read a required string field and reject explicit null values."""
+    return str(_require_non_null_value(data, key))
 
 
 @dataclass
@@ -335,14 +353,14 @@ class ModelObject:
             "id": self.id,
             "object_type": self.object_type,
             "schema_version": self.schema_version,
-            "attributes": dict(sorted(self.attributes.items())),
+            "attributes": _canonical_json_map(self.attributes),
             "relations": {
                 key: sorted(str(value) for value in values)
                 for key, values in sorted(self.relations.items())
             },
-            "state": dict(sorted(self.state.items())),
-            "context": dict(sorted(self.context.items())),
-            "provenance": dict(sorted(self.provenance.items())),
+            "state": _canonical_json_map(self.state),
+            "context": _canonical_json_map(self.context),
+            "provenance": _canonical_json_map(self.provenance),
         }
 
     def _base_kwargs(self) -> "JsonMap":

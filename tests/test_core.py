@@ -258,6 +258,18 @@ def test_world_model_registry_direct_mutation_blocked_in_authority_mode():
         handler.close()
 
 
+def test_world_model_registry_clear_blocked_in_authority_mode():
+    """Clearing the registry is also a direct mutation and must be blocked."""
+    world = World(id="world-cmd-9b")
+    world.register_object(Actor(id="actor-clear-guarded"))
+    handler = AuthorityCommandHandler(world)
+    try:
+        with pytest.raises(PermissionError):
+            world.model_registry.clear()
+    finally:
+        handler.close()
+
+
 def test_authority_mode_blocks_direct_registered_object_attribute_mutation():
     """Registered objects cannot bypass authority by mutating attribute dicts."""
     world = World(id="world-cmd-attr-1")
