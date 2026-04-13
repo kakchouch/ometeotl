@@ -15,9 +15,20 @@ F-1 (canonical serialization).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import json
 from typing import Any, List, Mapping, Optional
 
 from .base import ModelObject, ObjectId, JsonMap, RelationMap
+
+
+def _canonical_json(value: Any) -> str:
+    """Return deterministic JSON for sorting and validation."""
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Metadata must be JSON-serializable for deterministic serialization"
+        ) from exc
 
 
 @dataclass
@@ -163,7 +174,7 @@ class Action(ModelObject):
                             x.quantity,
                             str(x.source_id),
                             str(x.target_id),
-                            str(dict(sorted(x.metadata.items()))),
+                            _canonical_json(x.metadata),
                         ),
                     )
                 ],
@@ -175,7 +186,7 @@ class Action(ModelObject):
                             x.prerequisite_type,
                             x.field_name,
                             str(x.required_value),
-                            str(dict(sorted(x.metadata.items()))),
+                            _canonical_json(x.metadata),
                         ),
                     )
                 ],

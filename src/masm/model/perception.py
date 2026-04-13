@@ -19,9 +19,9 @@ Each perceived element carries:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
-from .base import ObjectId, JsonMap
+from .base import ObjectId, JsonMap, _validate_schema_version
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
 
@@ -267,7 +267,7 @@ class Perception:
             id=str(data["id"]),
             actor_id=str(data["actor_id"]),
             source_id=str(data["source_id"]),
-            schema_version=str(data.get("schema_version") or "1.0"),
+            schema_version=_validate_schema_version(data.get("schema_version")),
             timestamp=data.get("timestamp"),
             perceived_spaces={
                 space_id: PerceivedSpace.from_dict(ps_data)

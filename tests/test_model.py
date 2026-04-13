@@ -285,8 +285,7 @@ def test_world_add_space_relation():
 
 def test_world_register_and_unregister_object():
     """
-    Verify that objects can be registered into and removed from the
-    minimal registry through the world interface.
+    Verify that objects are tracked only in the world-scoped registry.
     """
     from masm.model.registry import MinimalModelRegistry
     from masm.model.actors import Actor
@@ -296,9 +295,11 @@ def test_world_register_and_unregister_object():
     actor = Actor(id="actor-reg-1")
 
     world.register_object(actor)
-    assert MinimalModelRegistry.exists("actor-reg-1")
+    assert world.model_registry.exists("actor-reg-1")
+    assert not MinimalModelRegistry.exists("actor-reg-1")
 
     world.unregister_object("actor-reg-1")
+    assert not world.model_registry.exists("actor-reg-1")
     assert not MinimalModelRegistry.exists("actor-reg-1")
 
     MinimalModelRegistry.clear()
@@ -1393,3 +1394,163 @@ def test_action_related_from_dict_null_required_raises():
         ResourceEffect.from_dict({"resource_id": None})
     with pytest.raises(ValueError):
         ActionPrerequisite.from_dict({"field_name": None})
+
+
+def test_model_object_from_dict_rejects_unsupported_schema_version():
+    """Schema version mismatches must be rejected (F-8)."""
+    with pytest.raises(ValueError):
+        ModelObject.from_dict(
+            {
+                "id": "obj-schema-1",
+                "object_type": "generic",
+                "schema_version": "2.0",
+            }
+        )
+
+
+def test_perception_from_dict_rejects_unsupported_schema_version():
+    """Perception payloads also enforce schema-version compatibility."""
+    with pytest.raises(ValueError):
+        Perception.from_dict(
+            {
+                "id": "p-schema-1",
+                "actor_id": "a1",
+                "source_id": "w1",
+                "schema_version": "2.0",
+            }
+        )
+
+
+def test_action_to_dict_rejects_non_json_serializable_metadata():
+    """Action serialization must fail fast on non-canonical metadata types."""
+    action = Action(
+        id="action-non-json-meta",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+        action_type="test",
+    )
+    action.add_resource_effect(
+        ResourceEffect(
+            resource_id="res-x",
+            effect_type="consume",
+            metadata={"bad": object()},
+        )
+    )
+
+    with pytest.raises(ValueError):
+        action.to_dict()
+
+
+def test_authority_unregister_releases_active_capacity_slot():
+    """Unregistering an actor frees an active-tracker slot for another actor."""
+    from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
+
+    world = World(id="world-cap-1")
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Actor(id="actor-b"))
+    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    try:
+        first = handler.submit(
+            CommandEnvelope(
+                command_id="cap-1",
+                actor_id="actor-a",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-cap-1").to_dict()},
+            )
+        )
+        unregister = handler.submit(
+            CommandEnvelope(
+                command_id="cap-2",
+                actor_id="system",
+                command_type="unregister_object",
+                sequence=1,
+                payload={"object_id": "actor-a"},
+            )
+        )
+        second = handler.submit(
+            CommandEnvelope(
+                command_id="cap-3",
+                actor_id="actor-b",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-cap-2").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert first.accepted is True
+    assert unregister.accepted is True
+    assert second.accepted is True
+
+
+def test_authority_sequence_history_is_bounded():
+    """Sequence history growth is bounded by processed_ids_maxlen."""
+    from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
+
+    world = World(id="world-cap-2")
+    world.register_object(Actor(id="actor-h1"))
+    world.register_object(Actor(id="actor-h2"))
+    world.register_object(Actor(id="actor-h3"))
+
+    handler = AuthorityCommandHandler(
+        world,
+        processed_ids_maxlen=2,
+        sequence_tracker_max_actors=2,
+    )
+    try:
+        r1 = handler.submit(
+            CommandEnvelope(
+                command_id="hist-1",
+                actor_id="actor-h1",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-h1").to_dict()},
+            )
+        )
+        r2 = handler.submit(
+            CommandEnvelope(
+                command_id="hist-2",
+                actor_id="actor-h1",
+                command_type="unregister_object",
+                sequence=2,
+                payload={"object_id": "actor-h1"},
+            )
+        )
+        r3 = handler.submit(
+            CommandEnvelope(
+                command_id="hist-3",
+                actor_id="actor-h2",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-h2").to_dict()},
+            )
+        )
+        r4 = handler.submit(
+            CommandEnvelope(
+                command_id="hist-4",
+                actor_id="actor-h2",
+                command_type="unregister_object",
+                sequence=2,
+                payload={"object_id": "actor-h2"},
+            )
+        )
+        r5 = handler.submit(
+            CommandEnvelope(
+                command_id="hist-5",
+                actor_id="actor-h3",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-h3").to_dict()},
+            )
+        )
+    finally:
+        handler.close()
+
+    assert r1.accepted is True
+    assert r2.accepted is True
+    assert r3.accepted is True
+    assert r4.accepted is True
+    assert r5.accepted is False
