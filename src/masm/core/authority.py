@@ -23,7 +23,6 @@ from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
 
-
 CommandHandler = Callable[["CommandEnvelope", World, str], JsonMap]
 
 
@@ -154,16 +153,17 @@ class AuthorityCommandHandler:
         if unsupported_allowed_types:
             unsupported = ", ".join(sorted(unsupported_allowed_types))
             raise ValueError(
-                "Allowed command type has no registered handler: "
-                f"{unsupported}"
+                "Allowed command type has no registered handler: " f"{unsupported}"
             )
         self._audit_log: deque[AuditEntry] = deque(maxlen=audit_log_maxlen)
         self._processed_ids_maxlen = processed_ids_maxlen
         self._sequence_tracker_max_actors = sequence_tracker_max_actors
+        self._sequence_history_max_actors = processed_ids_maxlen
         self._processed_command_ids: set[str] = set()
         self._processed_command_order: deque[str] = deque()
         # First-come tracker: existing actors keep their sequence slot.
         self._last_sequence_by_actor: dict[ObjectId, int] = {}
+        self._active_tracked_actor_ids: set[ObjectId] = set()
         self._lock = threading.Lock()
         # Lock activation is the final init step to avoid partial-init lock side effects.
         self.world.enable_authority_mode(self._authority_token)
@@ -251,20 +251,17 @@ class AuthorityCommandHandler:
     def _has_sequence_capacity(self, actor_id: ObjectId) -> bool:
         if actor_id == self.SYSTEM_ACTOR_ID:
             return True
+        if actor_id in self._active_tracked_actor_ids:
+            return True
+
+        limit = self._sequence_tracker_max_actors
+        if limit is not None and len(self._active_tracked_actor_ids) >= limit:
+            return False
+
         if actor_id in self._last_sequence_by_actor:
             return True
-        limit = self._sequence_tracker_max_actors
-        if limit is None:
-            return True
-        return self._active_tracked_actor_count() < limit
 
-    def _active_tracked_actor_count(self) -> int:
-        return sum(
-            1
-            for tracked_actor_id in self._last_sequence_by_actor
-            if tracked_actor_id != self.SYSTEM_ACTOR_ID
-            and self.world.model_registry.exists(tracked_actor_id)
-        )
+        return len(self._last_sequence_by_actor) < self._sequence_history_max_actors
 
     def _mark_processed(self, command_id: str) -> None:
         self._processed_command_ids.add(command_id)
@@ -276,8 +273,12 @@ class AuthorityCommandHandler:
     def _set_last_sequence(self, actor_id: ObjectId, sequence: int) -> None:
         if actor_id in self._last_sequence_by_actor:
             self._last_sequence_by_actor[actor_id] = sequence
+            if actor_id != self.SYSTEM_ACTOR_ID:
+                self._active_tracked_actor_ids.add(actor_id)
             return
         self._last_sequence_by_actor[actor_id] = sequence
+        if actor_id != self.SYSTEM_ACTOR_ID:
+            self._active_tracked_actor_ids.add(actor_id)
 
     def _append_audit(self, entry: AuditEntry) -> None:
         self._audit_log.append(entry)
@@ -372,6 +373,7 @@ class AuthorityCommandHandler:
         payload = self._require_payload_fields(command.payload, ("object_id",))
         object_id = str(payload["object_id"])
         world.unregister_object(object_id, authority_token=authority_token)
+        self._active_tracked_actor_ids.discard(object_id)
         return {"object_id": object_id}
 
     @staticmethod

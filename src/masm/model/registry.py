@@ -45,7 +45,9 @@ class WorldModelRegistry:
             raise ValueError(f"Duplicate model object id: {obj.id}")
         self._instances[obj.id] = obj
 
-    def unregister(self, obj_id: ObjectId, authority_token: Optional[str] = None) -> None:
+    def unregister(
+        self, obj_id: ObjectId, authority_token: Optional[str] = None
+    ) -> None:
         """Remove an object if the given ID is registered."""
         self._assert_mutation_allowed(authority_token)
         self._instances.pop(obj_id, None)
