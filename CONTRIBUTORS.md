@@ -5,10 +5,16 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 16
+- **Merged PRs:** 22
 
 #### Merged Pull Requests
 
+- [#38 added authority boundary layer for future client-server locking featu…](https://github.com/kakchouch/ometeotl/pull/38)
+- [#37 DRY refactoring run](https://github.com/kakchouch/ometeotl/pull/37)
+- [#29 first implementation](https://github.com/kakchouch/ometeotl/pull/29)
+- [#27 fixing attempt to issues 22 to 26](https://github.com/kakchouch/ometeotl/pull/27)
+- [#21 added world, perception and sensor](https://github.com/kakchouch/ometeotl/pull/21)
+- [#20 leaderboard pages deploy](https://github.com/kakchouch/ometeotl/pull/20)
 - [#19 added leaderboard workflow job, doc-site entry, calculation script](https://github.com/kakchouch/ometeotl/pull/19)
 - [#18 doc-site update](https://github.com/kakchouch/ometeotl/pull/18)
 - [#17 fetching full history to prevent conflicts](https://github.com/kakchouch/ometeotl/pull/17)
