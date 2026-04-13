@@ -174,7 +174,9 @@ class AuthorityCommandHandler:
             raise ValueError(
                 "Allowed command type has no registered handler: " f"{unsupported}"
             )
-        self._object_factories: dict[str, ObjectFactory] = self._default_object_factories()
+        self._object_factories: dict[str, ObjectFactory] = (
+            self._default_object_factories()
+        )
         if object_factories:
             self._object_factories.update(
                 {
@@ -347,8 +349,7 @@ class AuthorityCommandHandler:
         space = self._reconstruct_registered_object(payload["space"])
         if not isinstance(space, Space):
             raise ValueError(
-                "Payload does not describe a Space "
-                f"(got {type(space).__name__})"
+                "Payload does not describe a Space " f"(got {type(space).__name__})"
             )
         world.add_space(space, authority_token=authority_token)
         return {"space_id": space.id}
@@ -413,7 +414,9 @@ class AuthorityCommandHandler:
             "world": World.from_dict,
         }
 
-    def _reconstruct_registered_object(self, raw_object: Mapping[str, Any]) -> ModelObject:
+    def _reconstruct_registered_object(
+        self, raw_object: Mapping[str, Any]
+    ) -> ModelObject:
         object_payload = dict(raw_object)
         object_type = str(object_payload.get("object_type") or "").lower()
         factory = self._object_factories.get(object_type, ModelObject.from_dict)

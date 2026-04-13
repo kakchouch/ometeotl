@@ -258,6 +258,54 @@ def test_world_model_registry_direct_mutation_blocked_in_authority_mode():
         handler.close()
 
 
+def test_authority_mode_blocks_direct_registered_object_attribute_mutation():
+    """Registered objects cannot bypass authority by mutating attribute dicts."""
+    world = World(id="world-cmd-attr-1")
+    actor = Actor(id="actor-guarded-1")
+    world.register_object(actor)
+    handler = AuthorityCommandHandler(world)
+    try:
+        with pytest.raises(PermissionError):
+            actor.attributes["label"] = "forbidden"
+    finally:
+        handler.close()
+
+    actor.attributes["label"] = "allowed"
+    assert actor.attributes["label"] == "allowed"
+
+
+def test_authority_mode_blocks_nested_registered_object_list_mutation():
+    """Nested mutable values exposed through attributes are also guarded."""
+    world = World(id="world-cmd-attr-2")
+    actor = Actor(id="actor-guarded-2")
+    world.register_object(actor)
+    handler = AuthorityCommandHandler(world)
+    try:
+        with pytest.raises(PermissionError):
+            actor.attributes["roles"].append("intruder")
+    finally:
+        handler.close()
+
+    actor.attributes["roles"].append("member")
+    assert actor.roles == ["member"]
+
+
+def test_authority_mode_blocks_direct_subspace_attribute_mutation():
+    """Spaces attached to an authoritative world cannot be mutated directly."""
+    world = World(id="world-cmd-attr-3")
+    space = Space(id="zone-guarded")
+    world.add_space(space)
+    handler = AuthorityCommandHandler(world)
+    try:
+        with pytest.raises(PermissionError):
+            space.attributes["label"] = "forbidden"
+    finally:
+        handler.close()
+
+    space.attributes["label"] = "allowed"
+    assert space.attributes["label"] == "allowed"
+
+
 def test_unregistered_actor_id_does_not_reset_sequence_history():
     """Sequence history must survive unregister/register cycles for same actor ID."""
     world = World(id="world-cmd-10")
@@ -436,7 +484,9 @@ def test_authority_handler_accepts_custom_object_factories():
                 actor_id="system",
                 command_type="register_object",
                 sequence=1,
-                payload={"object": {"id": "actor-custom-type", "object_type": "custom_actor"}},
+                payload={
+                    "object": {"id": "actor-custom-type", "object_type": "custom_actor"}
+                },
             )
         )
     finally:

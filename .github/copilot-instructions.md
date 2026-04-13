@@ -75,3 +75,56 @@ Check:
 * Does it break architecture?
 * Are tests needed?
 * Could this introduce regression?
+
+
+## Advanced code risk scanning
+
+When analyzing or modifying code, proactively scan for the following classes of issues across the codebase, not just in the modified lines.
+
+### Performance and scalability
+- Identify functions that do not scale with large inputs (e.g. O(n²) patterns, repeated loops, unbounded memory growth)
+- Flag inefficient data structures or unnecessary recomputations
+- Propose optimized implementations where relevant
+- Ensure fixes remain compliant with `specs_EN.md`
+
+### Data isolation and access control
+- Detect violations of data separation boundaries
+- Identify any unintended data access, leakage, or cross-domain coupling
+- Flag bypasses of intended access control or domain isolation rules
+- Ensure strict adherence to data ownership and boundaries defined in `specs_EN.md`
+
+### Memory safety
+- Identify potential memory leaks (e.g. retained references, unbounded caches, missing cleanup, long-lived objects)
+- Flag resource mismanagement (files, connections, handles, async tasks)
+- Propose safe lifecycle management patterns
+
+### Deprecated usage
+- Detect usage of deprecated functions, APIs, or patterns
+- Propose modern, supported alternatives
+- Ensure migration does not break backward compatibility unless explicitly intended
+
+### Thread safety and concurrency
+- Identify non-thread-safe operations (shared mutable state, race conditions, missing locks or guards)
+- Detect unsafe async usage or concurrency issues
+- Propose safe synchronization or isolation strategies
+
+### Extensibility and hard-coded behavior
+- Detect hard-coded parameters, constants, or logic that should be configurable or extensible
+- Propose abstractions or configuration mechanisms where appropriate
+- Avoid premature abstraction: only generalize when the intent is clear
+
+### Undefined behavior and unsafe assumptions
+- Identify code paths that may lead to undefined, unsafe, or unpredictable behavior
+- Flag unsafe assumptions about input validity, object state, initialization order, lifetimes, nullability, bounds, casting, or external system responses
+- Detect missing guards around invalid states, partial states, or unexpected transitions
+- Prefer explicit validation, defensive checks, and well-defined failure modes over implicit assumptions
+- Ensure behavior remains deterministic and well-bounded under invalid, extreme, or unexpected inputs
+- Propose fixes that make the behavior explicit, safe, and testable
+
+## Expected behavior
+- Do not only flag issues — propose concrete fixes whenever possible
+- Prefer repository-wide fixes when the same issue appears multiple times
+- Keep fixes minimal but complete
+- Ensure all fixes remain compliant with `specs_EN.md`
+- Add or update tests when behavior or risk is involved
+- When multiple risk categories overlap, prioritize the fix that reduces systemic risk rather than local issues

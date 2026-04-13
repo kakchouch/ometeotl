@@ -48,6 +48,19 @@ class World(Space):
         self.attributes["kind"] = "world"
         self.attributes["is_root_world"] = self.is_root_world
         self.model_registry.set_mutation_guard(self._assert_mutation_allowed)
+        self.set_mutation_guard(self._assert_bound_object_mutation_allowed)
+        self._bind_existing_objects()
+
+    def _assert_bound_object_mutation_allowed(self) -> None:
+        self._assert_mutation_allowed(None)
+
+    def _bind_existing_objects(self) -> None:
+        for space in self.space_object_graph.spaces.values():
+            space.set_mutation_guard(self._assert_bound_object_mutation_allowed)
+        for obj_id in self.model_registry.all_ids():
+            obj = self.model_registry.get(obj_id)
+            if obj is not None:
+                obj.set_mutation_guard(self._assert_bound_object_mutation_allowed)
 
     def enable_authority_mode(self, token: str) -> None:
         """Enable authoritative mutation mode.
@@ -83,6 +96,7 @@ class World(Space):
         """Add a sub-space to this world's space object graph."""
         self._assert_mutation_allowed(authority_token)
         self.space_object_graph.add_space(space)
+        space.set_mutation_guard(self._assert_bound_object_mutation_allowed)
 
     def get_space(self, space_id: SpaceId) -> Optional[Space]:
         """Retrieve a sub-space by ID, or None if it does not exist."""
@@ -125,6 +139,7 @@ class World(Space):
         """Register a minimal object in this world-scoped registry."""
         self._assert_mutation_allowed(authority_token)
         self.model_registry.register(obj, authority_token=authority_token)
+        obj.set_mutation_guard(self._assert_bound_object_mutation_allowed)
 
     def unregister_object(
         self, obj_id: ObjectId, authority_token: Optional[str] = None
