@@ -981,8 +981,7 @@ def test_strategy_serialization_is_deterministic():
 
     assert [node["node_id"] for node in payload["nodes"]] == ["node-a", "node-b"]
     assert [
-        branch["branch_id"]
-        for branch in payload["nodes"][1]["outcome_branches"]
+        branch["branch_id"] for branch in payload["nodes"][1]["outcome_branches"]
     ] == ["a", "z"]
     assert restored.to_dict() == payload
 

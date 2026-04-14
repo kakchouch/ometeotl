@@ -18,6 +18,7 @@ If there is a conflict between local code and `specs_EN.md`, prefer `specs_EN.md
 * Do NOT introduce new patterns inconsistent with the spec
 * Prefer small, safe, incremental changes over large rewrites
 * All Python code must be PEP8-compliant
+* Run a Black formatter run after each code addition
 
 ## Architecture rules
 
