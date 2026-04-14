@@ -41,6 +41,7 @@ from masm.model.sensor import (
     IdentityNoiseRule,
 )
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
+from masm.model.strategies import Strategy, StrategyNode, StrategyOutcomeBranch
 
 
 def test_model_object_instantiation():
@@ -915,6 +916,99 @@ def test_action_instantiation():
     assert isinstance(action.state_changes, dict)
     assert isinstance(action.context, dict)
     assert isinstance(action.provenance, dict)
+
+
+def test_strategy_instantiation():
+    """Verify that strategy scaffold objects instantiate with required fields."""
+    strategy = Strategy(
+        id="strategy-1",
+        actor_id="actor-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-1",
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="success",
+                        label="success",
+                    )
+                ],
+            )
+        ],
+    )
+
+    assert strategy.id == "strategy-1"
+    assert strategy.object_type == "strategy"
+    assert strategy.actor_id == "actor-1"
+    assert strategy.root_node_id == "node-root"
+    assert strategy.projection_policy == "perception_first"
+    assert len(strategy.nodes) == 1
+
+
+def test_strategy_serialization_is_deterministic():
+    """Verify deterministic ordering of nodes and branches in strategy export."""
+    strategy = Strategy(
+        id="strategy-2",
+        actor_id="actor-1",
+        root_node_id="node-a",
+        nodes=[
+            StrategyNode(
+                node_id="node-b",
+                action_id="action-2",
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="z",
+                        label="late",
+                        child_node_id="node-a",
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="a",
+                        label="early",
+                        child_node_id="node-a",
+                    ),
+                ],
+            ),
+            StrategyNode(
+                node_id="node-a",
+                action_id="action-1",
+            ),
+        ],
+    )
+
+    payload = strategy.to_dict()
+    restored = Strategy.from_dict(payload)
+
+    assert [node["node_id"] for node in payload["nodes"]] == ["node-a", "node-b"]
+    assert [
+        branch["branch_id"]
+        for branch in payload["nodes"][1]["outcome_branches"]
+    ] == ["a", "z"]
+    assert restored.to_dict() == payload
+
+
+def test_strategy_validate_tree_rejects_unknown_child_node():
+    """Verify that tree validation rejects branches to unknown child nodes."""
+    strategy = Strategy(
+        id="strategy-3",
+        actor_id="actor-1",
+        root_node_id="node-a",
+        nodes=[
+            StrategyNode(
+                node_id="node-a",
+                action_id="action-1",
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="failure",
+                        child_node_id="node-missing",
+                    )
+                ],
+            )
+        ],
+    )
+
+    with pytest.raises(ValueError, match="child_node_id"):
+        strategy.validate_tree()
 
 
 def test_action_add_resource_effect():

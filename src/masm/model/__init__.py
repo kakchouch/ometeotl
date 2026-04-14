@@ -22,6 +22,7 @@ from .sensor import (
 )
 from .world import World
 from .actions import Action, ActionPrerequisite, ResourceEffect
+from .strategies import Strategy, StrategyNode, StrategyOutcomeBranch
 
 __all__ = [
     "ModelObject",
@@ -47,4 +48,7 @@ __all__ = [
     "Action",
     "ActionPrerequisite",
     "ResourceEffect",
+    "Strategy",
+    "StrategyNode",
+    "StrategyOutcomeBranch",
 ]
