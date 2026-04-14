@@ -3,11 +3,132 @@
 import pytest
 
 from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
+from masm.model.projection import (
+    ActionProjection,
+    ProjectionBatch,
+    ScaffoldProjectionTool,
+    project_actions,
+)
 from masm.core.runtime import build_runtime
+from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
 from masm.model.actors import Actor
+from masm.model.perception import Perception
 from masm.model.resources import Resource
 from masm.model.spaces import Space
 from masm.model.world import World
+
+
+def _build_projection_action() -> Action:
+    return Action(
+        id="action-proj-1",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+        action_type="consume",
+        resource_effects=[
+            ResourceEffect(
+                resource_id="energy-1",
+                effect_type="consume",
+                quantity=2.0,
+                source_id="actor-1",
+            )
+        ],
+        prerequisites=[
+            ActionPrerequisite(
+                prerequisite_type="capability",
+                field_name="can_consume",
+                required_value=True,
+            )
+        ],
+    )
+
+
+def test_projection_builds_assumptions_from_action_perception_and_resources():
+    """Projection produces assumption sets without building strategy nodes."""
+    action = _build_projection_action()
+    perception = Perception(
+        id="perception-proj-1",
+        actor_id="actor-1",
+        source_id="world-1",
+    )
+    resource = Resource(id="energy-1")
+
+    projection = ScaffoldProjectionTool().project_action(
+        action,
+        perception,
+        resources=[resource],
+    )
+
+    assumption_ids = {assumption.assumption_id for assumption in projection.assumptions}
+
+    assert projection.status == "projected"
+    assert projection.metadata["projection_basis"] == "perception"
+    assert projection.resource_ids == ["energy-1"]
+    assert f"{action.id}:actor_binding" in assumption_ids
+    assert f"{action.id}:source_context" in assumption_ids
+    assert f"{action.id}:effect:energy-1:consume" in assumption_ids
+    assert (
+        f"{action.id}:prerequisite:capability:can_consume" in assumption_ids
+    )
+
+
+def test_projection_blocks_on_actor_mismatch():
+    """Projection rejects actions evaluated through another actor's perception."""
+    action = _build_projection_action()
+    perception = Perception(
+        id="perception-proj-2",
+        actor_id="actor-2",
+        source_id="world-1",
+    )
+
+    projection = ScaffoldProjectionTool().project_action(action, perception)
+
+    assert projection.status == "blocked"
+    actor_assumption = next(
+        assumption
+        for assumption in projection.assumptions
+        if assumption.assumption_type == "actor_binding"
+    )
+    assert actor_assumption.satisfied is False
+
+
+def test_projection_marks_missing_required_resources_partial():
+    """Missing required consume/transfer resources are surfaced as partial projections."""
+    action = _build_projection_action()
+    perception = Perception(
+        id="perception-proj-3",
+        actor_id="actor-1",
+        source_id="world-1",
+    )
+
+    projection = ScaffoldProjectionTool().project_action(action, perception)
+
+    assert projection.status == "partial"
+    resource_assumption = next(
+        assumption
+        for assumption in projection.assumptions
+        if assumption.assumption_type == "resource_effect"
+    )
+    assert resource_assumption.satisfied is False
+
+
+def test_projection_batch_round_trip_serialization():
+    """Projection batches stay deterministic under serialization round-trips."""
+    action = _build_projection_action()
+    perception = Perception(
+        id="perception-proj-4",
+        actor_id="actor-1",
+        source_id="world-1",
+    )
+    batch = project_actions([action], perception, resources=[Resource(id="energy-1")])
+
+    payload = batch.to_dict()
+    restored = ProjectionBatch.from_dict(payload)
+
+    assert restored.to_dict() == payload
+    assert ActionProjection.from_dict(payload["projections"][0]).to_dict() == payload[
+        "projections"
+    ][0]
 
 
 def test_world_authority_mode_blocks_direct_mutations():
@@ -746,6 +867,7 @@ def test_build_runtime_passes_extensibility_hooks():
         object_factories={"custom_actor": custom_actor_factory},
     ) as runtime:
         assert runtime.authoritative is True
+        assert runtime.authority_handler is not None
         ping_result = runtime.authority_handler.submit(
             CommandEnvelope(
                 command_id="rt-ext-1",

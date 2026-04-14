@@ -19,6 +19,8 @@ If there is a conflict between local code and `specs_EN.md`, prefer `specs_EN.md
 * Prefer small, safe, incremental changes over large rewrites
 * All Python code must be PEP8-compliant
 * Run a Black formatter run after each code addition
+* Update code documentation in the doc-site after each coding run
+* Before proceeding to documentation update, wait for my validation of your code proposals
 
 ## Architecture rules
 
@@ -129,3 +131,7 @@ When analyzing or modifying code, proactively scan for the following classes of 
 - Ensure all fixes remain compliant with `specs_EN.md`
 - Add or update tests when behavior or risk is involved
 - When multiple risk categories overlap, prioritize the fix that reduces systemic risk rather than local issues
+
+## Project-specific rules 
+- Domain behavior lives in the `model` module
+- `Core` is only for generic infrastructure and computation, type-handling etc.

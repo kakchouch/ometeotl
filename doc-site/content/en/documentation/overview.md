@@ -47,7 +47,8 @@ The implemented pipeline follows this flow:
 5. Serialize deterministically with `to_dict()` methods (canonical sorting for stable diffs).
 6. Rebuild canonical objects with `from_dict()` methods.
 7. Generate actor-relative snapshots via [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/) into [Perception](/ometeotl/documentation/class-reference/model/perception/perception/).
-8. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+8. Derive first-order projection assumptions from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [ScaffoldProjectionTool](/ometeotl/documentation/class-reference/model/projection/scaffold-projection-tool/).
+9. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -107,3 +108,11 @@ Primary extension seams are intentionally abstract and composable:
 - server-authoritative mode: command-gated mutation via [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
 
 This keeps local testing ergonomics while preserving an enforceable server boundary for multi-client systems.
+
+### 6. First-order projection seam
+
+[ScaffoldProjectionTool](/ometeotl/documentation/class-reference/model/projection/scaffold-projection-tool/) is intentionally separate from the strategy model layer.
+
+It consumes [Action](/ometeotl/documentation/class-reference/model/actions/action/), [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and [Resource](/ometeotl/documentation/class-reference/model/resources/resource/) inputs and emits [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/) collections grouped as [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/) or [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/).
+
+This keeps first-order projection focused on assumption building, while leaving later strategy-node construction and branching as a separate concern.

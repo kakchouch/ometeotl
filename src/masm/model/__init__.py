@@ -22,6 +22,14 @@ from .sensor import (
 )
 from .world import World
 from .actions import Action, ActionPrerequisite, ResourceEffect
+from .projection import (
+    ActionProjection,
+    ProjectionAssumption,
+    ProjectionBatch,
+    ProjectionTool,
+    ScaffoldProjectionTool,
+    project_actions,
+)
 from .strategies import Strategy, StrategyNode, StrategyOutcomeBranch
 
 __all__ = [
@@ -48,6 +56,12 @@ __all__ = [
     "Action",
     "ActionPrerequisite",
     "ResourceEffect",
+    "ProjectionAssumption",
+    "ActionProjection",
+    "ProjectionBatch",
+    "ProjectionTool",
+    "ScaffoldProjectionTool",
+    "project_actions",
     "Strategy",
     "StrategyNode",
     "StrategyOutcomeBranch",
