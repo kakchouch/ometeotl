@@ -1,6 +1,6 @@
 ---
 title: "Current Standings"
-date: 2026-04-16
+date: 2026-04-17
 weight: 1
 toc: false
 ---
@@ -8,7 +8,7 @@ toc: false
 # 🜂 Current Activity Standings
 
 <p style="color: var(--base04); font-size: 0.9em;">
-Last computed: <strong>2026-04-16 07:18 UTC</strong> · 
+Last computed: <strong>2026-04-17 07:18 UTC</strong> · 
 Active contributors: <strong>1</strong> · 
 Smoothing factor k: <strong>11</strong> · 
 Total shares: <strong>1000</strong>
@@ -20,7 +20,7 @@ Cold start mode: fewer than 3 active contributors. Shares allocated proportional
 
 <table>
 <tr style="border-bottom: 2px solid var(--base02);"><th style="text-align:center; padding: 8px;">Rank</th><th style="padding: 8px;">Contributor</th><th style="text-align:right; padding: 8px;">Raw Score</th><th style="text-align:right; padding: 8px;">Shares</th></tr>
-<tr><td style="text-align:center; padding: 6px 8px; font-weight:bold;">1</td><td style="padding: 6px 8px;"><a href="https://github.com/kamalakchouch">@kamalakchouch</a></td><td style="text-align:right; padding: 6px 8px;">5.9</td><td style="text-align:right; padding: 6px 8px;"><strong>1000.0</strong> <span style="color: var(--base04);">(100.0%)</span><div style="background: var(--base0C); height: 4px; width: 100%; border-radius: 2px; margin-top: 2px;"></div></td></tr>
+<tr><td style="text-align:center; padding: 6px 8px; font-weight:bold;">1</td><td style="padding: 6px 8px;"><a href="https://github.com/kamalakchouch">@kamalakchouch</a></td><td style="text-align:right; padding: 6px 8px;">5.8</td><td style="text-align:right; padding: 6px 8px;"><strong>1000.0</strong> <span style="color: var(--base04);">(100.0%)</span><div style="background: var(--base0C); height: 4px; width: 100%; border-radius: 2px; margin-top: 2px;"></div></td></tr>
 </table>
 
 ---
@@ -29,7 +29,7 @@ Cold start mode: fewer than 3 active contributors. Shares allocated proportional
 
 <table>
 <tr style="border-bottom: 2px solid var(--base02);"><th style="padding: 8px;">Contributor</th><th style="text-align:right; padding: 8px;">Raw Score</th></tr>
-<tr style="opacity: 0.7;"><td style="padding: 6px 8px;"><a href="https://github.com/kakchouch">@kakchouch</a></td><td style="text-align:right; padding: 6px 8px;">555.4</td></tr>
+<tr style="opacity: 0.7;"><td style="padding: 6px 8px;"><a href="https://github.com/kakchouch">@kakchouch</a></td><td style="text-align:right; padding: 6px 8px;">551.1</td></tr>
 </table>
 
 ---
