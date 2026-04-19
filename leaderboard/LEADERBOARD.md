@@ -1,6 +1,6 @@
 # 🜂 Ometeotl Activity Leaderboard
 
-> Last updated: 2026-04-18 06:55 UTC
+> Last updated: 2026-04-19 07:06 UTC
 > Repository: kakchouch/ometeotl
 > Total activity-shares: **1000**
 > Scoring: `f(z) = exp(sinh(z) / k)` — k = max(3, 12 − n_active)
@@ -12,7 +12,7 @@
 
 | Rank | Contributor | Raw Score | Shares |
 |------|-------------|-----------|--------|
-| 1 | @kamalakchouch | 5.8 | 1000.0 |
+| 1 | @kamalakchouch | 5.7 | 1000.0 |
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Contributor | Raw Score |
 |-------------|-----------|
-| @kakchouch | 546.9 |
+| @kakchouch | 542.7 |
 
 ---
 
