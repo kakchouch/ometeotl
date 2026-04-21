@@ -32,7 +32,12 @@ from .projection import (
     DefaultProjectionTool,
     project_actions,
 )
-from .strategies import Strategy, StrategyNode, StrategyOutcomeBranch
+from .strategies import (
+    Strategy,
+    StrategyNode,
+    StrategyOutcomeBranch,
+    build_linear_strategy,
+)
 
 __all__ = [
     "ModelObject",
@@ -69,4 +74,5 @@ __all__ = [
     "Strategy",
     "StrategyNode",
     "StrategyOutcomeBranch",
+    "build_linear_strategy",
 ]

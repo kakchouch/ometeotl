@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
-from typing import Any, List, Mapping, Optional
+from typing import Any, Iterable, List, Mapping, Optional
 
 from .base import (
     JsonMap,
@@ -24,7 +24,14 @@ from .base import (
     _canonical_json_map,
     _require_non_null_string,
 )
-from .projection import ProjectedPerceptionState
+from .actions import Action
+from .perception import Perception
+from .projection import (
+    DefaultProjectionTool,
+    ProjectedPerceptionState,
+    ProjectionTool,
+)
+from .resources import Resource
 
 
 def _canonical_json(value: Any) -> str:
@@ -277,3 +284,87 @@ class Strategy(ModelObject):
             ],
             projection_policy=str(data.get("projection_policy") or "perception_first"),
         )
+
+
+def _default_strategy_node_id(index: int, action: Action) -> ObjectId:
+    return f"node-{index:04d}-{action.id}"
+
+
+def build_linear_strategy(
+    strategy_id: ObjectId,
+    initial_perception: Perception,
+    actions: Iterable[Action],
+    *,
+    resources: Iterable[Resource] = (),
+    projection_tool: Optional[ProjectionTool] = None,
+    projection_policy: str = "perception_first",
+) -> Strategy:
+    """Build a minimal chained strategy from an ordered action sequence.
+
+    Each action is projected against the current perceived state, and the next
+    node consumes the successor projected perception produced by the previous
+    node. The builder currently constructs a linear success chain only.
+    """
+    ordered_actions = list(actions)
+    if not ordered_actions:
+        raise ValueError("build_linear_strategy requires at least one action")
+
+    resolved_projection_tool = projection_tool or DefaultProjectionTool()
+    resource_list = list(resources)
+    current_perception = initial_perception
+    nodes: list[StrategyNode] = []
+    planned_node_ids = [
+        _default_strategy_node_id(index, action)
+        for index, action in enumerate(ordered_actions, start=1)
+    ]
+
+    for index, action in enumerate(ordered_actions):
+        projection = resolved_projection_tool.project_action(
+            action,
+            current_perception,
+            resources=resource_list,
+        )
+        projected_state = projection.projected_state
+        if projected_state is None:
+            raise ValueError(
+                "build_linear_strategy cannot continue without a projected successor perception"
+            )
+
+        next_node_id = (
+            planned_node_ids[index + 1] if index + 1 < len(planned_node_ids) else None
+        )
+        outcome_branches = []
+        if next_node_id is not None:
+            outcome_branches.append(
+                StrategyOutcomeBranch(
+                    branch_id=f"{planned_node_ids[index]}:success",
+                    label="success",
+                    child_node_id=next_node_id,
+                    metadata={"projection_status": projection.status},
+                )
+            )
+
+        nodes.append(
+            StrategyNode(
+                node_id=planned_node_ids[index],
+                action_id=action.id,
+                source_perception_id=current_perception.id,
+                projected_state=projected_state,
+                outcome_branches=outcome_branches,
+                metadata={
+                    "projection_status": projection.status,
+                    "projection_basis": projection.metadata.get("projection_basis"),
+                },
+            )
+        )
+        current_perception = projected_state.perception
+
+    strategy = Strategy(
+        id=strategy_id,
+        actor_id=initial_perception.actor_id,
+        root_node_id=planned_node_ids[0],
+        nodes=nodes,
+        projection_policy=projection_policy,
+    )
+    strategy.validate_tree()
+    return strategy

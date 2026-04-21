@@ -42,7 +42,12 @@ from masm.model.sensor import (
 )
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
 from masm.model.projection import DefaultProjectionTool
-from masm.model.strategies import Strategy, StrategyNode, StrategyOutcomeBranch
+from masm.model.strategies import (
+    Strategy,
+    StrategyNode,
+    StrategyOutcomeBranch,
+    build_linear_strategy,
+)
 
 
 def test_model_object_instantiation():
@@ -1146,6 +1151,95 @@ def test_strategy_validate_tree_accepts_child_chained_to_parent_projection():
     )
 
     strategy.validate_tree()
+
+
+def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
+    """A linear builder chains each node from the previous projected perception."""
+    initial_perception = Perception(
+        id="perception-build-root",
+        actor_id="actor-1",
+        source_id="world-1",
+    )
+    actions = [
+        Action(
+            id="action-build-1",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+            state_changes={"context_updates": {"step": 1}},
+        ),
+        Action(
+            id="action-build-2",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="observe",
+            state_changes={"context_updates": {"step": 2}},
+        ),
+    ]
+
+    strategy = build_linear_strategy(
+        "strategy-linear-1",
+        initial_perception,
+        actions,
+    )
+
+    assert strategy.root_node_id == "node-0001-action-build-1"
+    assert [node.node_id for node in strategy.nodes] == [
+        "node-0001-action-build-1",
+        "node-0002-action-build-2",
+    ]
+    assert strategy.nodes[0].source_perception_id == "perception-build-root"
+    assert (
+        strategy.nodes[1].source_perception_id
+        == strategy.nodes[0].successor_perception_id
+    )
+    assert (
+        strategy.nodes[0].outcome_branches[0].child_node_id
+        == "node-0002-action-build-2"
+    )
+    assert strategy.nodes[1].projected_state is not None
+    assert strategy.nodes[1].projected_state.perception.context["step"] == 2
+
+
+def test_build_linear_strategy_rejects_empty_action_sequence():
+    """The linear builder requires at least one action."""
+    with pytest.raises(ValueError, match="at least one action"):
+        build_linear_strategy(
+            "strategy-linear-empty",
+            Perception(
+                id="perception-empty",
+                actor_id="actor-1",
+                source_id="world-1",
+            ),
+            [],
+        )
+
+
+def test_build_linear_strategy_rejects_blocked_projection_chain():
+    """The linear builder rejects sequences that cannot produce a successor perception."""
+    with pytest.raises(
+        ValueError,
+        match="cannot continue without a projected successor perception",
+    ):
+        build_linear_strategy(
+            "strategy-linear-blocked",
+            Perception(
+                id="perception-blocked",
+                actor_id="actor-1",
+                source_id="world-1",
+            ),
+            [
+                Action(
+                    id="action-blocked",
+                    actor_id="actor-2",
+                    world_id="world-1",
+                    space_id="space-1",
+                    action_type="move",
+                )
+            ],
+        )
 
 
 def test_action_add_resource_effect():
