@@ -41,6 +41,7 @@ from masm.model.sensor import (
     IdentityNoiseRule,
 )
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
+from masm.model.projection import DefaultProjectionTool
 from masm.model.strategies import Strategy, StrategyNode, StrategyOutcomeBranch
 
 
@@ -920,6 +921,20 @@ def test_action_instantiation():
 
 def test_strategy_instantiation():
     """Verify that strategy objects instantiate with required fields."""
+    root_projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-1",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
     strategy = Strategy(
         id="strategy-1",
         actor_id="actor-1",
@@ -928,6 +943,8 @@ def test_strategy_instantiation():
             StrategyNode(
                 node_id="node-root",
                 action_id="action-1",
+                source_perception_id="perception-root",
+                projected_state=root_projection.projected_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="success",
@@ -944,10 +961,31 @@ def test_strategy_instantiation():
     assert strategy.root_node_id == "node-root"
     assert strategy.projection_policy == "perception_first"
     assert len(strategy.nodes) == 1
+    assert strategy.nodes[0].source_perception_id == "perception-root"
+    assert (
+        strategy.nodes[0].successor_perception_id
+        == "projection-perception-root-action-1"
+    )
 
 
 def test_strategy_serialization_is_deterministic():
     """Verify deterministic ordering of nodes and branches in strategy export."""
+    root_projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-1",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-chain-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    root_projected_state = root_projection.projected_state
+    assert root_projected_state is not None
     strategy = Strategy(
         id="strategy-2",
         actor_id="actor-1",
@@ -956,6 +994,7 @@ def test_strategy_serialization_is_deterministic():
             StrategyNode(
                 node_id="node-b",
                 action_id="action-2",
+                source_perception_id=root_projected_state.perception.id,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="z",
@@ -972,6 +1011,8 @@ def test_strategy_serialization_is_deterministic():
             StrategyNode(
                 node_id="node-a",
                 action_id="action-1",
+                source_perception_id="perception-chain-root",
+                projected_state=root_projected_state,
             ),
         ],
     )
@@ -980,6 +1021,10 @@ def test_strategy_serialization_is_deterministic():
     restored = Strategy.from_dict(payload)
 
     assert [node["node_id"] for node in payload["nodes"]] == ["node-a", "node-b"]
+    assert payload["nodes"][0]["source_perception_id"] == "perception-chain-root"
+    assert payload["nodes"][0]["projected_state"]["perception"]["id"] == (
+        "projection-perception-chain-root-action-1"
+    )
     assert [
         branch["branch_id"] for branch in payload["nodes"][1]["outcome_branches"]
     ] == ["a", "z"]
@@ -1008,6 +1053,99 @@ def test_strategy_validate_tree_rejects_unknown_child_node():
 
     with pytest.raises(ValueError, match="child_node_id"):
         strategy.validate_tree()
+
+
+def test_strategy_validate_tree_rejects_child_not_chained_to_parent_projection():
+    """Child nodes must start from the parent projected successor perception."""
+    root_projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-root",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-strategy-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    root_projected_state = root_projection.projected_state
+    assert root_projected_state is not None
+    strategy = Strategy(
+        id="strategy-4",
+        actor_id="actor-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-root",
+                source_perception_id="perception-strategy-root",
+                projected_state=root_projected_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="success",
+                        child_node_id="node-child",
+                    )
+                ],
+            ),
+            StrategyNode(
+                node_id="node-child",
+                action_id="action-child",
+                source_perception_id="perception-wrong",
+            ),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="consume the parent projected perception"):
+        strategy.validate_tree()
+
+
+def test_strategy_validate_tree_accepts_child_chained_to_parent_projection():
+    """Child nodes can explicitly consume the parent successor projected perception."""
+    root_projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-root-ok",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-strategy-ok-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    root_projected_state = root_projection.projected_state
+    assert root_projected_state is not None
+    strategy = Strategy(
+        id="strategy-5",
+        actor_id="actor-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-root-ok",
+                source_perception_id="perception-strategy-ok-root",
+                projected_state=root_projected_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="success",
+                        child_node_id="node-child",
+                    )
+                ],
+            ),
+            StrategyNode(
+                node_id="node-child",
+                action_id="action-child-ok",
+                source_perception_id=root_projected_state.perception.id,
+            ),
+        ],
+    )
+
+    strategy.validate_tree()
 
 
 def test_action_add_resource_effect():

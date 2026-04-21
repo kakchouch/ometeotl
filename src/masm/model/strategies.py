@@ -24,6 +24,7 @@ from .base import (
     _canonical_json_map,
     _require_non_null_string,
 )
+from .projection import ProjectedPerceptionState
 
 
 def _canonical_json(value: Any) -> str:
@@ -90,6 +91,8 @@ class StrategyNode:
 
     node_id: ObjectId
     action_id: ObjectId
+    source_perception_id: Optional[ObjectId] = None
+    projected_state: Optional[ProjectedPerceptionState] = None
     outcome_branches: List[StrategyOutcomeBranch] = field(default_factory=list)
     metadata: JsonMap = field(default_factory=dict)
 
@@ -98,12 +101,38 @@ class StrategyNode:
             raise ValueError("StrategyNode node_id cannot be empty")
         if not self.action_id:
             raise ValueError("StrategyNode action_id cannot be empty")
+        if self.source_perception_id is not None and not self.source_perception_id:
+            raise ValueError("StrategyNode source_perception_id cannot be empty")
+        if self.projected_state is not None:
+            if self.projected_state.generating_action_id != self.action_id:
+                raise ValueError(
+                    "StrategyNode projected_state must match the node action_id"
+                )
+            if self.source_perception_id is None:
+                self.source_perception_id = self.projected_state.source_perception_id
+            elif self.source_perception_id != self.projected_state.source_perception_id:
+                raise ValueError(
+                    "StrategyNode source_perception_id must match the projected_state source"
+                )
+
+    @property
+    def successor_perception_id(self) -> Optional[ObjectId]:
+        """Return the successor perception ID produced by this node, if any."""
+        if self.projected_state is None:
+            return None
+        return self.projected_state.perception.id
 
     def to_dict(self) -> JsonMap:
         """Serialize the node in canonical form."""
         return {
             "node_id": self.node_id,
             "action_id": self.action_id,
+            "source_perception_id": self.source_perception_id,
+            "projected_state": (
+                self.projected_state.to_dict()
+                if self.projected_state is not None
+                else None
+            ),
             "outcome_branches": [
                 branch.to_dict()
                 for branch in sorted(
@@ -127,6 +156,16 @@ class StrategyNode:
         return cls(
             node_id=_require_non_null_string(data, "node_id"),
             action_id=_require_non_null_string(data, "action_id"),
+            source_perception_id=(
+                str(data["source_perception_id"])
+                if data.get("source_perception_id")
+                else None
+            ),
+            projected_state=(
+                ProjectedPerceptionState.from_dict(data["projected_state"])
+                if data.get("projected_state") is not None
+                else None
+            ),
             outcome_branches=[
                 StrategyOutcomeBranch.from_dict(raw_branch)
                 for raw_branch in (data.get("outcome_branches") or [])
@@ -173,6 +212,7 @@ class Strategy(ModelObject):
     def validate_tree(self) -> None:
         """Validate minimal structural integrity of the strategy tree."""
         node_ids = {node.node_id for node in self.nodes}
+        node_index = {node.node_id: node for node in self.nodes}
         if self.root_node_id not in node_ids:
             raise ValueError("Strategy root_node_id must reference an existing node")
 
@@ -187,6 +227,24 @@ class Strategy(ModelObject):
                 if branch.child_node_id and branch.child_node_id not in node_ids:
                     raise ValueError(
                         "Strategy branch child_node_id must reference an existing node"
+                    )
+                if branch.child_node_id is None:
+                    continue
+
+                child_node = node_index[branch.child_node_id]
+                if node.projected_state is None:
+                    continue
+
+                expected_source_perception_id = node.successor_perception_id
+                if expected_source_perception_id is None:
+                    continue
+                if child_node.source_perception_id is None:
+                    raise ValueError(
+                        "Strategy child node must declare the parent projected perception"
+                    )
+                if child_node.source_perception_id != expected_source_perception_id:
+                    raise ValueError(
+                        "Strategy child node must consume the parent projected perception"
                     )
 
     def to_dict(self) -> JsonMap:
