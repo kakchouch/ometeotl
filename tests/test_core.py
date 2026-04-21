@@ -6,6 +6,8 @@ from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
 from masm.model.projection import (
     ActionProjection,
     ProjectionAssumption,
+    ProjectedPerceptionChange,
+    ProjectedPerceptionState,
     ProjectionBatch,
     DefaultProjectionTool,
     project_actions,
@@ -15,6 +17,7 @@ from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
 from masm.model.actors import Actor
 from masm.model.perception import Perception
 from masm.model.resources import Resource
+from masm.model.sensor import Sensor
 from masm.model.spaces import Space
 from masm.model.world import World
 
@@ -65,6 +68,9 @@ def test_projection_builds_assumptions_from_action_perception_and_resources():
     assert projection.status == "projected"
     assert projection.metadata["projection_basis"] == "perception"
     assert projection.resource_ids == ["energy-1"]
+    assert projection.projected_state is not None
+    assert projection.projected_state.source_perception_id == perception.id
+    assert projection.projected_state.generating_action_id == action.id
     assert f"{action.id}:actor_binding" in assumption_ids
     assert f"{action.id}:source_context" in assumption_ids
     assert f"{action.id}:effect:energy-1:consume" in assumption_ids
@@ -129,6 +135,58 @@ def test_projection_batch_round_trip_serialization():
         ActionProjection.from_dict(payload["projections"][0]).to_dict()
         == payload["projections"][0]
     )
+
+
+def test_projection_builds_successor_perceived_state_from_previous_perception():
+    """Projected perceptions carry forward and mutate the prior perceived state."""
+    world = World(id="world-proj-state-1")
+    world.add_space(Space(id="space-1"))
+    world.place_object("energy-1", "space-1")
+    perception = Sensor().sense(world, "actor-1")
+
+    action = _build_projection_action()
+    action.state_changes = {"context_updates": {"next_focus": "regroup"}}
+
+    projection = DefaultProjectionTool().project_action(
+        action,
+        perception,
+        resources=[Resource(id="energy-1")],
+    )
+
+    assert projection.projected_state is not None
+    successor = projection.projected_state.perception
+
+    assert successor.id == f"projection-{perception.id}-{action.id}"
+    assert successor.context["next_focus"] == "regroup"
+    assert successor.memberships_for_object("energy-1") == []
+    assert all(
+        perceived_space.epistemic_status == "projected"
+        for perceived_space in successor.perceived_spaces.values()
+    )
+
+
+def test_projected_perception_state_round_trip_serialization():
+    """Projected successor states remain deterministic under serialization."""
+    state = ProjectedPerceptionState(
+        source_perception_id="perception-1",
+        generating_action_id="action-1",
+        perception=Perception(id="projection-1", actor_id="actor-1", source_id="w-1"),
+        changes=[
+            ProjectedPerceptionChange(
+                change_id="action-1:state_changes",
+                change_type="state_changes",
+                subject_id="action-1",
+                applied=True,
+                metadata={"state_changes": {"context_updates": {"a": 1}}},
+            )
+        ],
+        metadata={"projection_basis": "perception"},
+    )
+
+    payload = state.to_dict()
+    restored = ProjectedPerceptionState.from_dict(payload)
+
+    assert restored.to_dict() == payload
 
 
 def test_projection_assumption_from_dict_rejects_non_boolean_satisfied():

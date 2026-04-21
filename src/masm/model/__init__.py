@@ -25,6 +25,8 @@ from .actions import Action, ActionPrerequisite, ResourceEffect
 from .projection import (
     ActionProjection,
     ProjectionAssumption,
+    ProjectedPerceptionChange,
+    ProjectedPerceptionState,
     ProjectionBatch,
     ProjectionTool,
     DefaultProjectionTool,
@@ -57,6 +59,8 @@ __all__ = [
     "ActionPrerequisite",
     "ResourceEffect",
     "ProjectionAssumption",
+    "ProjectedPerceptionChange",
+    "ProjectedPerceptionState",
     "ActionProjection",
     "ProjectionBatch",
     "ProjectionTool",
