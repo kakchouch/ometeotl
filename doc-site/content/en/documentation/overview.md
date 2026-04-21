@@ -29,6 +29,13 @@ Each actor can have a subjective, possibly imperfect view of the world:
 - [CoverageRule](/ometeotl/documentation/class-reference/model/sensor/coverage-rule/) controls what is visible
 - [NoiseRule](/ometeotl/documentation/class-reference/model/sensor/noise-rule/) controls how observed data is distorted
 
+Candidate actions can then be projected from that perceived state into explicit future-facing strategy artifacts:
+
+- [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/) derives projection assumptions and successor perceived states
+- [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/) stores the projected successor perception for one action
+- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action to one input perception and one projected successor perceived state
+- [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) groups nodes into a linear or branching perception-driven tree
+
 For server-authoritative setups, mutations can be routed through:
 
 - [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
@@ -47,8 +54,9 @@ The implemented pipeline follows this flow:
 5. Serialize deterministically with `to_dict()` methods (canonical sorting for stable diffs).
 6. Rebuild canonical objects with `from_dict()` methods.
 7. Generate actor-relative snapshots via [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/) into [Perception](/ometeotl/documentation/class-reference/model/perception/perception/).
-8. Derive first-order projection assumptions from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
-9. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+8. Derive first-order projection assumptions and projected successor perceived states from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
+9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py).
+10. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -113,6 +121,32 @@ This keeps local testing ergonomics while preserving an enforceable server bound
 
 [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/) is intentionally separate from the strategy model layer.
 
-It consumes [Action](/ometeotl/documentation/class-reference/model/actions/action/), [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and [Resource](/ometeotl/documentation/class-reference/model/resources/resource/) inputs and emits [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/) collections grouped as [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/) or [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/).
+It consumes [Action](/ometeotl/documentation/class-reference/model/actions/action/), [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and [Resource](/ometeotl/documentation/class-reference/model/resources/resource/) inputs and emits [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/) collections grouped as [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/) or [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/), together with a [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/) representing the successor perceived state for that action.
 
-This keeps first-order projection focused on assumption building, while leaving later strategy-node construction and branching as a separate concern.
+This keeps first-order projection focused on assumption building plus successor-state derivation, while leaving later strategy-node construction and branching as a separate concern.
+
+### 7. Strategy chaining seam
+
+The strategy layer is implemented in [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/), [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/), [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/), and [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/).
+
+The important rule is that a strategy node is anchored to:
+
+- one action id
+- one source perception id
+- one projected successor perceived state
+
+`validate_tree()` enforces that a child node must consume the parent node's projected successor perception when a branch links the two nodes.
+
+This makes strategy hops explicitly perception-driven rather than action-list driven.
+
+### 8. Builder seam
+
+Two minimal builders exist today in `src/masm/model/strategies.py`:
+
+- `build_linear_strategy(...)` for ordered action sequences
+- `build_branching_strategy(...)` for recursive action trees built from [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)
+
+Both builders project each action from the currently active perceived state and pass the resulting successor perceived state to the next node or subtree.
+
+The current implementation intentionally keeps one projected successor perceived state per node.
+Future support for one-action-to-many-outcomes branching is tracked as a TODO in the strategy layer, with the preferred direction being branch-specific projected outcomes on [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/).
