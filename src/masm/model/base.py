@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping
+from typing import Any, Callable, Dict, Iterable, List, Mapping, SupportsIndex
 
 
 # NEW: Decorator for auto-generating add/remove methods
@@ -143,7 +143,7 @@ class GuardedJsonList(list[Any]):
     def _assert_mutation_allowed(self) -> None:
         self._mutation_guard()
 
-    def __setitem__(self, index: int | slice, value: Any) -> None:
+    def __setitem__(self, index: SupportsIndex | slice, value: Any) -> None:
         self._assert_mutation_allowed()
         if isinstance(index, slice):
             wrapped_values = [
@@ -153,7 +153,7 @@ class GuardedJsonList(list[Any]):
             return
         super().__setitem__(index, _wrap_mutable_value(value, self._mutation_guard))
 
-    def __delitem__(self, index: int | slice) -> None:
+    def __delitem__(self, index: SupportsIndex | slice) -> None:
         self._assert_mutation_allowed()
         super().__delitem__(index)
 
@@ -165,17 +165,17 @@ class GuardedJsonList(list[Any]):
         self._assert_mutation_allowed()
         super().clear()
 
-    def extend(self, values: List[Any]) -> None:
+    def extend(self, values: Iterable[Any]) -> None:
         self._assert_mutation_allowed()
         super().extend(
             _wrap_mutable_value(value, self._mutation_guard) for value in values
         )
 
-    def insert(self, index: int, value: Any) -> None:
+    def insert(self, index: SupportsIndex, value: Any) -> None:
         self._assert_mutation_allowed()
         super().insert(index, _wrap_mutable_value(value, self._mutation_guard))
 
-    def pop(self, index: int = -1) -> Any:
+    def pop(self, index: SupportsIndex = -1) -> Any:
         self._assert_mutation_allowed()
         return super().pop(index)
 
@@ -191,7 +191,7 @@ class GuardedJsonList(list[Any]):
         self._assert_mutation_allowed()
         super().sort(*args, **kwargs)
 
-    def __iadd__(self, values: List[Any]) -> "GuardedJsonList":
+    def __iadd__(self, values: Iterable[Any]) -> "GuardedJsonList":
         self._assert_mutation_allowed()
         super().extend(
             _wrap_mutable_value(value, self._mutation_guard) for value in values
