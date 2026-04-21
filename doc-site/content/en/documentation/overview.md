@@ -66,6 +66,19 @@ Operationally, [World](/ometeotl/documentation/class-reference/model/world/world
 
 This separation prevents layer mixing and aligns with the architecture constraints in [specs_EN.md](https://github.com/kakchouch/ometeotl/blob/main/specs_EN.md).
 
+## Test Layout
+
+The test suite follows the same layer separation as the source tree:
+
+- `tests/model/`: tests for `masm.model.*`
+- `tests/core/`: tests for `masm.core.*`
+
+Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
+
+Run the complete suite from the repository root in one command:
+
+- `pytest`
+
 ## Expert View
 
 At expert level, the core implementation can be read as a set of deterministic state-transition boundaries.
