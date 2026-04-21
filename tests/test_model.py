@@ -919,7 +919,7 @@ def test_action_instantiation():
 
 
 def test_strategy_instantiation():
-    """Verify that strategy scaffold objects instantiate with required fields."""
+    """Verify that strategy objects instantiate with required fields."""
     strategy = Strategy(
         id="strategy-1",
         actor_id="actor-1",

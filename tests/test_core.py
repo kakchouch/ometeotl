@@ -5,8 +5,9 @@ import pytest
 from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
 from masm.model.projection import (
     ActionProjection,
+    ProjectionAssumption,
     ProjectionBatch,
-    ScaffoldProjectionTool,
+    DefaultProjectionTool,
     project_actions,
 )
 from masm.core.runtime import build_runtime
@@ -53,7 +54,7 @@ def test_projection_builds_assumptions_from_action_perception_and_resources():
     )
     resource = Resource(id="energy-1")
 
-    projection = ScaffoldProjectionTool().project_action(
+    projection = DefaultProjectionTool().project_action(
         action,
         perception,
         resources=[resource],
@@ -67,9 +68,7 @@ def test_projection_builds_assumptions_from_action_perception_and_resources():
     assert f"{action.id}:actor_binding" in assumption_ids
     assert f"{action.id}:source_context" in assumption_ids
     assert f"{action.id}:effect:energy-1:consume" in assumption_ids
-    assert (
-        f"{action.id}:prerequisite:capability:can_consume" in assumption_ids
-    )
+    assert f"{action.id}:prerequisite:capability:can_consume" in assumption_ids
 
 
 def test_projection_blocks_on_actor_mismatch():
@@ -81,7 +80,7 @@ def test_projection_blocks_on_actor_mismatch():
         source_id="world-1",
     )
 
-    projection = ScaffoldProjectionTool().project_action(action, perception)
+    projection = DefaultProjectionTool().project_action(action, perception)
 
     assert projection.status == "blocked"
     actor_assumption = next(
@@ -101,7 +100,7 @@ def test_projection_marks_missing_required_resources_partial():
         source_id="world-1",
     )
 
-    projection = ScaffoldProjectionTool().project_action(action, perception)
+    projection = DefaultProjectionTool().project_action(action, perception)
 
     assert projection.status == "partial"
     resource_assumption = next(
@@ -126,9 +125,23 @@ def test_projection_batch_round_trip_serialization():
     restored = ProjectionBatch.from_dict(payload)
 
     assert restored.to_dict() == payload
-    assert ActionProjection.from_dict(payload["projections"][0]).to_dict() == payload[
-        "projections"
-    ][0]
+    assert (
+        ActionProjection.from_dict(payload["projections"][0]).to_dict()
+        == payload["projections"][0]
+    )
+
+
+def test_projection_assumption_from_dict_rejects_non_boolean_satisfied():
+    """Projection assumptions should reject non-boolean satisfied payloads."""
+    with pytest.raises(TypeError, match="ProjectionAssumption.satisfied"):
+        ProjectionAssumption.from_dict(
+            {
+                "assumption_id": "assumption-1",
+                "assumption_type": "actor_binding",
+                "description": "Actor binding must remain explicit.",
+                "satisfied": "false",
+            }
+        )
 
 
 def test_world_authority_mode_blocks_direct_mutations():

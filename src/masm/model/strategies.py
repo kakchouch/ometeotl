@@ -1,6 +1,6 @@
 """Strategy model primitives.
 
-This module defines a minimal, serializable strategy tree scaffold.
+This module defines a minimal, serializable strategy tree.
 
 A strategy is represented as:
 - a root node;
@@ -8,7 +8,7 @@ A strategy is represented as:
 - outcome branches from each node to the next node(s).
 
 This module intentionally contains only declarative model objects. Projection,
-execution, and utility ranking remain out of scope for this scaffold.
+execution, and utility ranking remain out of scope for this iteration.
 """
 
 from __future__ import annotations

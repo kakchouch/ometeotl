@@ -30,4 +30,4 @@ Methods:
 
 See also:
 - [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/)
-- [ScaffoldProjectionTool](/ometeotl/documentation/class-reference/model/projection/scaffold-projection-tool/)
+- [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/)

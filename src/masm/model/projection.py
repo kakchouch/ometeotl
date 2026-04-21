@@ -1,4 +1,4 @@
-"""Projection scaffold built from actions, perceptions, and resources.
+"""Projection layer built from actions, perceptions, and resources.
 
 Projection is a domain construct that derives explicit assumption sets from an
 action considered under one actor-specific perception and a set of available
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping, Optional
 
 from .actions import Action
 from .base import JsonMap, ObjectId, _canonical_json_map, _require_non_null_string
@@ -27,12 +27,12 @@ def _evaluate_projection_requirements(
     perception: Perception,
     *,
     resource_ids: Iterable[str],
-) -> dict[str, object]:
+) -> dict[str, Any]:
     """Evaluate baseline projection assumptions and status inputs."""
     resource_id_set = set(resource_ids)
     actor_match = action.actor_id == perception.actor_id
 
-    assumption_payloads: list[dict[str, object]] = [
+    assumption_payloads: list[dict[str, Any]] = [
         {
             "assumption_id": f"{action.id}:actor_binding",
             "assumption_type": "actor_binding",
@@ -86,17 +86,17 @@ def _evaluate_projection_requirements(
                     "resource set."
                 ),
                 "subject_id": effect.resource_id,
-                "satisfied": (
-                    resource_available if effect_requires_resource else None
-                ),
+                "satisfied": (resource_available if effect_requires_resource else None),
                 "rationale": (
                     "Required resource is present in the supplied projection set."
                     if effect_requires_resource and resource_available
-                    else "Required resource is missing from the supplied projection set."
-                    if effect_requires_resource
                     else (
-                        "Produced resources do not require prior availability "
-                        "in this scaffold."
+                        "Required resource is missing from the supplied projection set."
+                        if effect_requires_resource
+                        else (
+                            "Produced resources do not require prior availability "
+                            "in this projection layer."
+                        )
                     )
                 ),
                 "metadata": {
@@ -123,7 +123,7 @@ def _evaluate_projection_requirements(
                 "subject_id": prerequisite.field_name,
                 "satisfied": None,
                 "rationale": (
-                    "This scaffold records prerequisites but does not resolve "
+                    "This projection layer records prerequisites but does not resolve "
                     "them generically."
                 ),
                 "metadata": {
@@ -154,6 +154,14 @@ def _validate_epistemic_status(status: str) -> None:
             f"Invalid epistemic status: '{status}'. "
             f"Must be one of {sorted(VALID_EPISTEMIC_STATUSES)}."
         )
+
+
+def _normalize_optional_bool(value: Any, *, field_name: str) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    raise TypeError(f"{field_name} must be a bool or None")
 
 
 @dataclass
@@ -192,7 +200,7 @@ class ProjectionAssumption:
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "ProjectionAssumption":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ProjectionAssumption":
         """Reconstruct an assumption from serialized data."""
         return cls(
             assumption_id=_require_non_null_string(data, "assumption_id"),
@@ -200,7 +208,10 @@ class ProjectionAssumption:
             description=_require_non_null_string(data, "description"),
             subject_id=str(data["subject_id"]) if data.get("subject_id") else None,
             epistemic_status=str(data.get("epistemic_status") or "projected"),
-            satisfied=data.get("satisfied"),
+            satisfied=_normalize_optional_bool(
+                data.get("satisfied"),
+                field_name="ProjectionAssumption.satisfied",
+            ),
             rationale=str(data.get("rationale") or ""),
             metadata=dict(data.get("metadata") or {}),
         )
@@ -250,7 +261,7 @@ class ActionProjection:
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "ActionProjection":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ActionProjection":
         """Reconstruct an action projection from serialized data."""
         return cls(
             action_id=_require_non_null_string(data, "action_id"),
@@ -302,7 +313,7 @@ class ProjectionBatch:
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "ProjectionBatch":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ProjectionBatch":
         """Reconstruct a projection batch from serialized data."""
         return cls(
             actor_id=_require_non_null_string(data, "actor_id"),
@@ -351,10 +362,10 @@ class ProjectionTool(ABC):
         )
 
 
-class ScaffoldProjectionTool(ProjectionTool):
+class DefaultProjectionTool(ProjectionTool):
     """Minimal projection tool based on action, perception, and resource inputs.
 
-    This scaffold does not execute actions and does not build strategy nodes.
+    This default tool does not execute actions and does not build strategy nodes.
     It only externalizes the assumptions that a later strategy-building step may
     consume.
     """
@@ -403,5 +414,5 @@ def project_actions(
     projection_tool: Optional[ProjectionTool] = None,
 ) -> ProjectionBatch:
     """Project multiple actions into assumption sets using the provided tool."""
-    resolved_tool = projection_tool or ScaffoldProjectionTool()
+    resolved_tool = projection_tool or DefaultProjectionTool()
     return resolved_tool.project_actions(actions, perception, resources=resources)

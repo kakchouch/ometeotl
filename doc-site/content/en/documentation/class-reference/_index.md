@@ -64,7 +64,7 @@ Repository source:
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)
 - [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/)
 - [ProjectionTool](/ometeotl/documentation/class-reference/model/projection/projection-tool/)
-- [ScaffoldProjectionTool](/ometeotl/documentation/class-reference/model/projection/scaffold-projection-tool/)
+- [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/)
 
 ## Model/registry.py
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)

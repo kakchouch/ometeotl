@@ -27,7 +27,7 @@ from .projection import (
     ProjectionAssumption,
     ProjectionBatch,
     ProjectionTool,
-    ScaffoldProjectionTool,
+    DefaultProjectionTool,
     project_actions,
 )
 from .strategies import Strategy, StrategyNode, StrategyOutcomeBranch
@@ -60,7 +60,7 @@ __all__ = [
     "ActionProjection",
     "ProjectionBatch",
     "ProjectionTool",
-    "ScaffoldProjectionTool",
+    "DefaultProjectionTool",
     "project_actions",
     "Strategy",
     "StrategyNode",
