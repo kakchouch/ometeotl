@@ -59,6 +59,21 @@ Repository source:
 - [ResourceEffect](/ometeotl/documentation/class-reference/model/actions/resource-effect/)
 - [ActionPrerequisite](/ometeotl/documentation/class-reference/model/actions/action-prerequisite/)
 
+## Model/projection.py
+- [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/)
+- [ProjectedPerceptionChange](/ometeotl/documentation/class-reference/model/projection/projected-perception-change/)
+- [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)
+- [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)
+- [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/)
+- [ProjectionTool](/ometeotl/documentation/class-reference/model/projection/projection-tool/)
+- [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/)
+
+## Model/strategies.py
+- [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)
+- [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/)
+- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)
+- [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/)
+
 ## Model/registry.py
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)
 - [MinimalModelRegistry](/ometeotl/documentation/class-reference/model/registry/minimal-model-registry/)

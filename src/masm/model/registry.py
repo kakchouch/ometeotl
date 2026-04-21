@@ -24,6 +24,7 @@ def reconstruct_model_object(
     from .objects import GenericObject
     from .resources import Resource
     from .spaces import Space
+    from .strategies import Strategy
     from .world import World
 
     factories: dict[str, ObjectFactory] = {
@@ -32,6 +33,7 @@ def reconstruct_model_object(
         "generic": GenericObject.from_dict,
         "resource": Resource.from_dict,
         "space": Space.from_dict,
+        "strategy": Strategy.from_dict,
         "world": World.from_dict,
     }
     if object_factories:

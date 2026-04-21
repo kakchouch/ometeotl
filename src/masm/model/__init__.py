@@ -22,6 +22,24 @@ from .sensor import (
 )
 from .world import World
 from .actions import Action, ActionPrerequisite, ResourceEffect
+from .projection import (
+    ActionProjection,
+    ProjectionAssumption,
+    ProjectedPerceptionChange,
+    ProjectedPerceptionState,
+    ProjectionBatch,
+    ProjectionTool,
+    DefaultProjectionTool,
+    project_actions,
+)
+from .strategies import (
+    Strategy,
+    StrategyNode,
+    StrategyOutcomeBranch,
+    StrategyBuildStep,
+    build_branching_strategy,
+    build_linear_strategy,
+)
 
 __all__ = [
     "ModelObject",
@@ -47,4 +65,18 @@ __all__ = [
     "Action",
     "ActionPrerequisite",
     "ResourceEffect",
+    "ProjectionAssumption",
+    "ProjectedPerceptionChange",
+    "ProjectedPerceptionState",
+    "ActionProjection",
+    "ProjectionBatch",
+    "ProjectionTool",
+    "DefaultProjectionTool",
+    "project_actions",
+    "Strategy",
+    "StrategyNode",
+    "StrategyOutcomeBranch",
+    "StrategyBuildStep",
+    "build_branching_strategy",
+    "build_linear_strategy",
 ]
