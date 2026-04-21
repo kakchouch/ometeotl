@@ -36,6 +36,8 @@ from .strategies import (
     Strategy,
     StrategyNode,
     StrategyOutcomeBranch,
+    StrategyBuildStep,
+    build_branching_strategy,
     build_linear_strategy,
 )
 
@@ -74,5 +76,7 @@ __all__ = [
     "Strategy",
     "StrategyNode",
     "StrategyOutcomeBranch",
+    "StrategyBuildStep",
+    "build_branching_strategy",
     "build_linear_strategy",
 ]

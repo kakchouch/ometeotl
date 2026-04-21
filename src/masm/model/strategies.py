@@ -9,6 +9,13 @@ A strategy is represented as:
 
 This module intentionally contains only declarative model objects. Projection,
 execution, and utility ranking remain out of scope for this iteration.
+
+TODO:
+Support one-action-to-many-outcomes branching without changing the current
+single-successor node model yet. The preferred future direction is Option A:
+branch-specific projected outcomes should live on StrategyOutcomeBranch rather
+than on StrategyNode, so each branch can carry its own successor perceived
+state.
 """
 
 from __future__ import annotations
@@ -45,8 +52,35 @@ def _canonical_json(value: Any) -> str:
 
 
 @dataclass
+class StrategyBuildStep:
+    """Recursive specification used by the minimal strategy builders."""
+
+    action: Action
+    children: list["StrategyBuildStep"] = field(default_factory=list)
+    branch_label: str = "success"
+    branch_probability: Optional[float] = None
+    branch_condition: JsonMap = field(default_factory=dict)
+    branch_metadata: JsonMap = field(default_factory=dict)
+    metadata: JsonMap = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.action.id:
+            raise ValueError("StrategyBuildStep action id cannot be empty")
+        if self.branch_probability is not None:
+            if not 0.0 <= float(self.branch_probability) <= 1.0:
+                raise ValueError(
+                    "StrategyBuildStep branch_probability must be in [0, 1]"
+                )
+            self.branch_probability = float(self.branch_probability)
+
+
+@dataclass
 class StrategyOutcomeBranch:
     """Represents one projected outcome branch from a strategy node."""
+
+    # TODO: Preferred future direction for multi-outcome projection (Option A):
+    # move branch-specific projected successor state onto this branch model so
+    # one action node can emit several alternative projected outcomes.
 
     branch_id: str
     label: str = "success"
@@ -95,6 +129,12 @@ class StrategyOutcomeBranch:
 @dataclass
 class StrategyNode:
     """A strategy node binding one action to one or more projected outcomes."""
+
+    # Current architecture: one node stores one projected successor state for
+    # the action-perception pair it represents. Keep this model for now.
+    # TODO: If one action later supports many projected outcomes, keep the node
+    # as the action anchor and move alternative successor states to
+    # StrategyOutcomeBranch rather than duplicating them here.
 
     node_id: ObjectId
     action_id: ObjectId
@@ -290,6 +330,120 @@ def _default_strategy_node_id(index: int, action: Action) -> ObjectId:
     return f"node-{index:04d}-{action.id}"
 
 
+def _default_branching_strategy_node_id(
+    path: tuple[int, ...], action: Action
+) -> ObjectId:
+    encoded_path = "-".join(f"{segment:04d}" for segment in path)
+    return f"node-{encoded_path}-{action.id}"
+
+
+def _project_strategy_action(
+    action: Action,
+    perception: Perception,
+    projection_tool: ProjectionTool,
+    resources: list[Resource],
+    *,
+    builder_name: str,
+) -> tuple[ProjectedPerceptionState, JsonMap, str]:
+    projection = projection_tool.project_action(
+        action,
+        perception,
+        resources=resources,
+    )
+    projected_state = projection.projected_state
+    if projected_state is None:
+        raise ValueError(
+            f"{builder_name} cannot continue without a projected successor perception"
+        )
+    return (
+        projected_state,
+        {"projection_basis": projection.metadata.get("projection_basis")},
+        projection.status,
+    )
+
+
+def _build_branching_nodes_from_step(
+    step: StrategyBuildStep,
+    perception: Perception,
+    path: tuple[int, ...],
+    projection_tool: ProjectionTool,
+    resources: list[Resource],
+) -> tuple[StrategyNode, list[StrategyNode]]:
+    node_id = _default_branching_strategy_node_id(path, step.action)
+    projected_state, projection_metadata, projection_status = _project_strategy_action(
+        step.action,
+        perception,
+        projection_tool,
+        resources,
+        builder_name="build_branching_strategy",
+    )
+
+    child_nodes: list[StrategyNode] = []
+    outcome_branches: list[StrategyOutcomeBranch] = []
+    for child_index, child_step in enumerate(step.children, start=1):
+        child_node, descendant_nodes = _build_branching_nodes_from_step(
+            child_step,
+            projected_state.perception,
+            path + (child_index,),
+            projection_tool,
+            resources,
+        )
+        child_nodes.extend(descendant_nodes)
+        outcome_branches.append(
+            StrategyOutcomeBranch(
+                branch_id=f"{node_id}:branch-{child_index:04d}",
+                label=child_step.branch_label,
+                child_node_id=child_node.node_id,
+                probability=child_step.branch_probability,
+                condition=_canonical_json_map(child_step.branch_condition),
+                metadata=_canonical_json_map(child_step.branch_metadata),
+            )
+        )
+
+    node_metadata = dict(step.metadata)
+    node_metadata.update(projection_metadata)
+    node_metadata["projection_status"] = projection_status
+    node = StrategyNode(
+        node_id=node_id,
+        action_id=step.action.id,
+        source_perception_id=perception.id,
+        projected_state=projected_state,
+        outcome_branches=outcome_branches,
+        metadata=node_metadata,
+    )
+    return node, [node, *child_nodes]
+
+
+def build_branching_strategy(
+    strategy_id: ObjectId,
+    initial_perception: Perception,
+    root_step: StrategyBuildStep,
+    *,
+    resources: Iterable[Resource] = (),
+    projection_tool: Optional[ProjectionTool] = None,
+    projection_policy: str = "perception_first",
+) -> Strategy:
+    """Build a minimal strategy tree from a recursive step specification."""
+    resolved_projection_tool = projection_tool or DefaultProjectionTool()
+    resource_list = list(resources)
+    root_node, nodes = _build_branching_nodes_from_step(
+        root_step,
+        initial_perception,
+        (1,),
+        resolved_projection_tool,
+        resource_list,
+    )
+    strategy = Strategy(
+        id=strategy_id,
+        actor_id=initial_perception.actor_id,
+        root_node_id=root_node.node_id,
+        nodes=nodes,
+        projection_policy=projection_policy,
+    )
+    strategy.validate_tree()
+    return strategy
+
+
 def build_linear_strategy(
     strategy_id: ObjectId,
     initial_perception: Perception,
@@ -319,16 +473,15 @@ def build_linear_strategy(
     ]
 
     for index, action in enumerate(ordered_actions):
-        projection = resolved_projection_tool.project_action(
-            action,
-            current_perception,
-            resources=resource_list,
-        )
-        projected_state = projection.projected_state
-        if projected_state is None:
-            raise ValueError(
-                "build_linear_strategy cannot continue without a projected successor perception"
+        projected_state, projection_metadata, projection_status = (
+            _project_strategy_action(
+                action,
+                current_perception,
+                resolved_projection_tool,
+                resource_list,
+                builder_name="build_linear_strategy",
             )
+        )
 
         next_node_id = (
             planned_node_ids[index + 1] if index + 1 < len(planned_node_ids) else None
@@ -340,10 +493,12 @@ def build_linear_strategy(
                     branch_id=f"{planned_node_ids[index]}:success",
                     label="success",
                     child_node_id=next_node_id,
-                    metadata={"projection_status": projection.status},
+                    metadata={"projection_status": projection_status},
                 )
             )
 
+        node_metadata = dict(projection_metadata)
+        node_metadata["projection_status"] = projection_status
         nodes.append(
             StrategyNode(
                 node_id=planned_node_ids[index],
@@ -351,10 +506,7 @@ def build_linear_strategy(
                 source_perception_id=current_perception.id,
                 projected_state=projected_state,
                 outcome_branches=outcome_branches,
-                metadata={
-                    "projection_status": projection.status,
-                    "projection_basis": projection.metadata.get("projection_basis"),
-                },
+                metadata=node_metadata,
             )
         )
         current_perception = projected_state.perception

@@ -44,8 +44,10 @@ from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
 from masm.model.projection import DefaultProjectionTool
 from masm.model.strategies import (
     Strategy,
+    StrategyBuildStep,
     StrategyNode,
     StrategyOutcomeBranch,
+    build_branching_strategy,
     build_linear_strategy,
 )
 
@@ -1239,6 +1241,109 @@ def test_build_linear_strategy_rejects_blocked_projection_chain():
                     action_type="move",
                 )
             ],
+        )
+
+
+def test_build_branching_strategy_creates_tree_from_recursive_steps():
+    """The branching builder creates sibling children from one projected parent state."""
+    strategy = build_branching_strategy(
+        "strategy-branch-1",
+        Perception(
+            id="perception-branch-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        StrategyBuildStep(
+            action=Action(
+                id="action-root-branch",
+                actor_id="actor-1",
+                world_id="world-1",
+                space_id="space-1",
+                action_type="plan",
+                state_changes={"context_updates": {"phase": "root"}},
+            ),
+            children=[
+                StrategyBuildStep(
+                    action=Action(
+                        id="action-left-branch",
+                        actor_id="actor-1",
+                        world_id="world-1",
+                        space_id="space-1",
+                        action_type="explore",
+                        state_changes={"context_updates": {"phase": "left"}},
+                    ),
+                    branch_label="left",
+                    branch_probability=0.4,
+                    branch_condition={"signal": "weak"},
+                ),
+                StrategyBuildStep(
+                    action=Action(
+                        id="action-right-branch",
+                        actor_id="actor-1",
+                        world_id="world-1",
+                        space_id="space-1",
+                        action_type="secure",
+                        state_changes={"context_updates": {"phase": "right"}},
+                    ),
+                    branch_label="right",
+                    branch_probability=0.6,
+                    branch_condition={"signal": "strong"},
+                ),
+            ],
+        ),
+    )
+
+    root_node = strategy.get_node("node-0001-action-root-branch")
+    left_node = strategy.get_node("node-0001-0001-action-left-branch")
+    right_node = strategy.get_node("node-0001-0002-action-right-branch")
+
+    assert root_node is not None
+    assert left_node is not None
+    assert right_node is not None
+    assert len(root_node.outcome_branches) == 2
+    assert [branch.label for branch in root_node.outcome_branches] == ["left", "right"]
+    assert left_node.source_perception_id == root_node.successor_perception_id
+    assert right_node.source_perception_id == root_node.successor_perception_id
+    assert left_node.projected_state is not None
+    assert right_node.projected_state is not None
+    assert left_node.projected_state.perception.context["phase"] == "left"
+    assert right_node.projected_state.perception.context["phase"] == "right"
+
+
+def test_build_branching_strategy_rejects_blocked_child_step():
+    """The branching builder fails when any child step cannot project a successor."""
+    with pytest.raises(
+        ValueError,
+        match="build_branching_strategy cannot continue without a projected successor perception",
+    ):
+        build_branching_strategy(
+            "strategy-branch-blocked",
+            Perception(
+                id="perception-branch-blocked",
+                actor_id="actor-1",
+                source_id="world-1",
+            ),
+            StrategyBuildStep(
+                action=Action(
+                    id="action-branch-root-ok",
+                    actor_id="actor-1",
+                    world_id="world-1",
+                    space_id="space-1",
+                    action_type="plan",
+                ),
+                children=[
+                    StrategyBuildStep(
+                        action=Action(
+                            id="action-branch-child-blocked",
+                            actor_id="actor-2",
+                            world_id="world-1",
+                            space_id="space-1",
+                            action_type="move",
+                        ),
+                        branch_label="blocked-child",
+                    )
+                ],
+            ),
         )
 
 
