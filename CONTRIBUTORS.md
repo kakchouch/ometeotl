@@ -5,10 +5,11 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 24
+- **Merged PRs:** 25
 
 #### Merged Pull Requests
 
+- [#64 added first strategy layer](https://github.com/kakchouch/ometeotl/pull/64)
 - [#63 First_strategy_layer](https://github.com/kakchouch/ometeotl/pull/63)
 - [#59 code review run](https://github.com/kakchouch/ometeotl/pull/59)
 - [#38 added authority boundary layer for future client-server locking featu…](https://github.com/kakchouch/ometeotl/pull/38)
