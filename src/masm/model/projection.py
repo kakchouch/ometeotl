@@ -85,6 +85,7 @@ def _evaluate_projection_requirements(
             resource_in_space = any(
                 pm.membership.object_id == effect.resource_id
                 and pm.membership.space_id == required_space_id
+                and pm.membership.role == "occupies"
                 for pm in perception.perceived_memberships
             )
             if not resource_in_space:
@@ -456,12 +457,11 @@ def _build_projected_perception_state(
 
     _resource_index: Mapping[str, Resource] = resource_index or {}
 
-    for effect in action.resource_effects:
+    for idx, effect in enumerate(action.resource_effects):
         resource_obj = _resource_index.get(effect.resource_id)
         is_stock = (
             resource_obj is not None
             and resource_obj.resource_mode == "stock"
-            and effect.quantity != 1.0
         )
 
         if effect.effect_type == "consume":
@@ -575,9 +575,13 @@ def _build_projected_perception_state(
                 stock_deltas = dict(
                     projected_perception.context.get("projected_stock_deltas") or {}
                 )
-                stock_deltas[effect.resource_id] = (
-                    float(stock_deltas.get(effect.resource_id) or 0) - effect.quantity
-                )
+                current_delta = float(stock_deltas.get(effect.resource_id) or 0)
+                new_delta = current_delta
+                if source_space_id is not None:
+                    new_delta -= effect.quantity
+                if target_space_id is not None:
+                    new_delta += effect.quantity
+                stock_deltas[effect.resource_id] = new_delta
                 projected_perception.context["projected_stock_deltas"] = (
                     _canonical_json_map(stock_deltas)
                 )
