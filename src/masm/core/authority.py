@@ -20,7 +20,7 @@ from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
 from masm.validation import (
-    PROFILE_SOFT_GATE,
+    PROFILE_OBSERVE_ONLY,
     LEVEL_RECOMMENDED,
     MODE_WARN_ONLY,
     CompletenessValidator,
@@ -119,6 +119,16 @@ class AuthorityCommandHandler:
     The handler enforces minimal structural checks and an allowlist of command
     types. Domain admissibility validation (resources, advanced prerequisites,
     conflict resolution) is intentionally deferred to later validation layers.
+
+        Validation policy options:
+        - ``validation_policy_profile`` controls default stage strictness.
+            ``observe_only`` is non-blocking by default,
+            ``enforce_structure`` hardens schema-oriented stages, and
+            ``enforce_domain`` hardens both schema and domain stages.
+        - ``validation_stage_mode_overrides`` can override individual stage modes
+            (``strict``, ``lenient``, ``warn_only``).
+        - ``validation_block_on_error`` rejects commands when effective validation
+            result is invalid.
     """
 
     SYSTEM_ACTOR_ID = "system"
@@ -134,7 +144,7 @@ class AuthorityCommandHandler:
         sequence_tracker_max_actors: Optional[int] = 1000,
         sequence_history_max_actors: Optional[int] = None,
         validation_soft_gate: bool = True,
-        validation_policy_profile: str = PROFILE_SOFT_GATE,
+        validation_policy_profile: str = PROFILE_OBSERVE_ONLY,
         validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
         validation_block_on_error: bool = False,
         validation_completeness_level: str = LEVEL_RECOMMENDED,

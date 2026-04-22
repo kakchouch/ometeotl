@@ -7,7 +7,7 @@ from masm.model.actors import Actor
 from masm.model.resources import Resource
 from masm.model.spaces import Space
 from masm.model.world import World
-from masm.validation import LEVEL_FULL, PROFILE_HARDEN_STRUCTURAL
+from masm.validation import LEVEL_FULL, PROFILE_ENFORCE_STRUCTURE
 
 
 def test_world_authority_mode_blocks_direct_mutations():
@@ -104,7 +104,7 @@ def test_authority_handler_hardening_profile_can_reject_on_validation_error():
     world = World(id="world-cmd-hard-1")
     handler = AuthorityCommandHandler(
         world,
-        validation_policy_profile=PROFILE_HARDEN_STRUCTURAL,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
         validation_block_on_error=True,
         validation_completeness_level=LEVEL_FULL,
     )

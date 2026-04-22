@@ -1,4 +1,13 @@
-"""Validation policy profiles for progressive hardening rollout."""
+"""Validation policy profiles for progressive hardening rollout.
+
+Policy profiles:
+- ``observe_only``: run validators in warn-only mode unless explicitly
+    overridden per stage.
+- ``enforce_structure``: enforce syntactic, structural, and completeness
+    stages as strict errors.
+- ``enforce_domain``: enforce both structure and domain semantics
+    (temporal/spatial/admissibility/epistemic) as strict errors.
+"""
 
 from __future__ import annotations
 
@@ -6,21 +15,44 @@ from typing import Mapping
 
 from .pipeline import MODE_STRICT, MODE_WARN_ONLY, VALID_PIPELINE_MODES
 
-PROFILE_SOFT_GATE = "soft_gate"
-PROFILE_HARDEN_STRUCTURAL = "harden_structural"
-PROFILE_HARDEN_CORE = "harden_core"
+PROFILE_OBSERVE_ONLY = "observe_only"
+PROFILE_ENFORCE_STRUCTURE = "enforce_structure"
+PROFILE_ENFORCE_DOMAIN = "enforce_domain"
+
+# Backward-compatible aliases for previous naming.
+PROFILE_SOFT_GATE = PROFILE_OBSERVE_ONLY
+PROFILE_HARDEN_STRUCTURAL = PROFILE_ENFORCE_STRUCTURE
+PROFILE_HARDEN_CORE = PROFILE_ENFORCE_DOMAIN
+
+_LEGACY_PROFILE_ALIASES: dict[str, str] = {
+    "soft_gate": PROFILE_OBSERVE_ONLY,
+    "harden_structural": PROFILE_ENFORCE_STRUCTURE,
+    "harden_core": PROFILE_ENFORCE_DOMAIN,
+}
 
 VALID_POLICY_PROFILES: frozenset[str] = frozenset(
-    {PROFILE_SOFT_GATE, PROFILE_HARDEN_STRUCTURAL, PROFILE_HARDEN_CORE}
+    {PROFILE_OBSERVE_ONLY, PROFILE_ENFORCE_STRUCTURE, PROFILE_ENFORCE_DOMAIN}
 )
 
 
 def build_stage_modes(
     *,
-    policy_profile: str = PROFILE_SOFT_GATE,
+    policy_profile: str = PROFILE_OBSERVE_ONLY,
     stage_mode_overrides: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
-    """Return stage-mode mapping for the chosen profile and explicit overrides."""
+    """Return stage-mode mapping for the chosen profile and explicit overrides.
+
+    Args:
+        policy_profile: Validation hardening profile name.
+            - ``observe_only`` keeps non-blocking defaults.
+            - ``enforce_structure`` promotes core schema checks to strict.
+            - ``enforce_domain`` additionally promotes domain checks to strict.
+            Legacy values (``soft_gate``, ``harden_structural``,
+            ``harden_core``) are accepted and normalized.
+        stage_mode_overrides: Per-stage mode overrides, where values must be
+            one of ``strict``, ``lenient``, or ``warn_only``.
+    """
+    policy_profile = _LEGACY_PROFILE_ALIASES.get(policy_profile, policy_profile)
     if policy_profile not in VALID_POLICY_PROFILES:
         raise ValueError(
             f"Unsupported validation policy profile: {policy_profile}. "
@@ -28,7 +60,7 @@ def build_stage_modes(
         )
 
     stage_modes: dict[str, str] = {}
-    if policy_profile == PROFILE_HARDEN_STRUCTURAL:
+    if policy_profile == PROFILE_ENFORCE_STRUCTURE:
         stage_modes.update(
             {
                 "syntactic": MODE_STRICT,
@@ -36,7 +68,7 @@ def build_stage_modes(
                 "completeness": MODE_STRICT,
             }
         )
-    elif policy_profile == PROFILE_HARDEN_CORE:
+    elif policy_profile == PROFILE_ENFORCE_DOMAIN:
         stage_modes.update(
             {
                 "syntactic": MODE_STRICT,

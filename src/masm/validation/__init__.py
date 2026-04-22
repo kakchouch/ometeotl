@@ -20,8 +20,11 @@ from .pipeline import (
     ValidationPipeline,
 )
 from .policy import (
+    PROFILE_ENFORCE_DOMAIN,
+    PROFILE_ENFORCE_STRUCTURE,
     PROFILE_HARDEN_CORE,
     PROFILE_HARDEN_STRUCTURAL,
+    PROFILE_OBSERVE_ONLY,
     PROFILE_SOFT_GATE,
     VALID_POLICY_PROFILES,
     build_stage_modes,
@@ -56,6 +59,9 @@ __all__ = [
     "MODE_WARN_ONLY",
     "VALID_PIPELINE_MODES",
     "ValidationPipeline",
+    "PROFILE_OBSERVE_ONLY",
+    "PROFILE_ENFORCE_STRUCTURE",
+    "PROFILE_ENFORCE_DOMAIN",
     "PROFILE_SOFT_GATE",
     "PROFILE_HARDEN_STRUCTURAL",
     "PROFILE_HARDEN_CORE",
