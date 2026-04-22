@@ -46,6 +46,7 @@ from .goals import (
     GoalBuildStep,
     build_goal_hierarchy,
 )
+from .utility import UtilityFunction, UtilityFrame
 
 __all__ = [
     "ModelObject",
@@ -89,4 +90,6 @@ __all__ = [
     "GoalDecompositionTree",
     "GoalBuildStep",
     "build_goal_hierarchy",
+    "UtilityFunction",
+    "UtilityFrame",
 ]
