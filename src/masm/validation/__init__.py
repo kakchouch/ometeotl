@@ -19,6 +19,8 @@ from .pipeline import (
     VALID_PIPELINE_MODES,
     ValidationPipeline,
 )
+from .syntactic import SyntacticValidator
+from .structural import StructuralValidator
 
 __all__ = [
     "SEVERITY_ERROR",
@@ -36,4 +38,6 @@ __all__ = [
     "MODE_WARN_ONLY",
     "VALID_PIPELINE_MODES",
     "ValidationPipeline",
+    "SyntacticValidator",
+    "StructuralValidator",
 ]
