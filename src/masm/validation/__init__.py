@@ -31,6 +31,7 @@ from .completeness import (
     LEVEL_RECOMMENDED,
     CompletenessValidator,
 )
+from .diagnostic import DiagnosticBuilder, DiagnosticEntry, DiagnosticReport
 
 __all__ = [
     "SEVERITY_ERROR",
@@ -58,4 +59,7 @@ __all__ = [
     "LEVEL_MINIMAL",
     "LEVEL_RECOMMENDED",
     "LEVEL_FULL",
+    "DiagnosticBuilder",
+    "DiagnosticEntry",
+    "DiagnosticReport",
 ]
