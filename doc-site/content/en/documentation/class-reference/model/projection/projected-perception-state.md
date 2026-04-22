@@ -15,11 +15,15 @@ Inheritance:
 - dataclass
 
 Parameters and fields:
-- source_perception_id: str
-- generating_action_id: str
-- perception: [Perception](/ometeotl/documentation/class-reference/model/perception/perception/)
-- changes: list[[ProjectedPerceptionChange](/ometeotl/documentation/class-reference/model/projection/projected-perception-change/)]
-- metadata: dict
+- `source_perception_id: str`
+- `generating_action_id: str`
+- `perception: Perception` — deep copy of the source perception, marked `epistemic_status="projected"` on all nested objects
+- `changes: list[ProjectedPerceptionChange]` — sorted by `change_id` on serialization
+- `metadata: dict`
+
+Context keys written into `perception.context`:
+- `projected_state_changes` — map of action-id to state-change payloads from `action.state_changes`
+- `projected_stock_deltas` — map of `resource_id` to cumulative quantity delta for stock resources (mode `"stock"` with `quantity != 1.0`); consume subtracts, produce adds, transfer subtracts from source
 
 Methods:
 - `to_dict() -> dict`

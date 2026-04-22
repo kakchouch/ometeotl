@@ -180,16 +180,20 @@ def test_action_to_dict_roundtrip():
     assert restored.state_changes == original.state_changes
 
 
-def test_action_missing_actor_id_raises():
-    """Action must be bound to a performer actor."""
-    with pytest.raises(ValueError):
-        Action(
-            id="action-missing-actor",
-            actor_id="",
-            world_id="world-1",
-            space_id="space-1",
-            action_type="move",
-        )
+def test_action_required_fields_cannot_be_empty():
+    """Verify that all required fields in Action are validated (F-10)."""
+    base_args = {
+        "id": "act-1",
+        "actor_id": "a1",
+        "world_id": "w1",
+        "space_id": "s1",
+        "action_type": "move",
+    }
+    for field_name in ["id", "actor_id", "world_id", "space_id", "action_type"]:
+        args = base_args.copy()
+        args[field_name] = ""
+        with pytest.raises(ValueError):
+            Action(**args)
 
 
 def test_action_deterministic_serialization():

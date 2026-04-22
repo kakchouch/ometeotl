@@ -21,13 +21,13 @@ state.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import json
 from typing import Any, Iterable, List, Mapping, Optional
 
 from .base import (
     JsonMap,
     ModelObject,
     ObjectId,
+    _canonical_json,
     _canonical_json_map,
     _require_non_null_string,
 )
@@ -39,16 +39,6 @@ from .projection import (
     ProjectionTool,
 )
 from .resources import Resource
-
-
-def _canonical_json(value: Any) -> str:
-    """Return deterministic JSON for sorting and validation."""
-    try:
-        return json.dumps(value, sort_keys=True, separators=(",", ":"))
-    except (TypeError, ValueError) as exc:
-        raise ValueError(
-            "Strategy metadata and conditions must be JSON-serializable"
-        ) from exc
 
 
 @dataclass

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import bisect
 import copy
+import json
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Mapping, SupportsIndex
 
@@ -67,6 +69,16 @@ def _deep_plain_copy(value: Any) -> Any:
 def _canonical_json_map(mapping: Mapping[str, Any] | None) -> JsonMap:
     """Return a deterministically ordered plain dict."""
     return dict(sorted(dict(mapping or {}).items()))
+
+
+def _canonical_json(value: Any) -> str:
+    """Return deterministic JSON string for a value (for sorting and hashing)."""
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "Value must be JSON-serializable for deterministic serialization"
+        ) from exc
 
 
 class GuardedJsonDict(dict[str, Any]):
@@ -294,9 +306,9 @@ class ModelObject:
 
         rel_list: List[ObjectId] = self.relations[rel_name]
         if add:
-            if target_id not in rel_list:
-                rel_list.append(target_id)
-                rel_list.sort()  # Keep sorted for determinism
+            pos = bisect.bisect_left(rel_list, target_id)
+            if pos >= len(rel_list) or rel_list[pos] != target_id:
+                bisect.insort(rel_list, target_id)
         else:
             if target_id in rel_list:
                 rel_list.remove(target_id)
