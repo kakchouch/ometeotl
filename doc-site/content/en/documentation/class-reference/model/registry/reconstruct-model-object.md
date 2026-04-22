@@ -28,6 +28,7 @@ Default factory table (`object_type` → class):
 |---|---|
 | `"action"` | [Action](/ometeotl/documentation/class-reference/model/actions/action/) |
 | `"actor"` | [Actor](/ometeotl/documentation/class-reference/model/actors/actor/) |
+| `"goal"` | [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) |
 | `"generic"` | [GenericObject](/ometeotl/documentation/class-reference/model/objects/generic-object/) |
 | `"resource"` | [Resource](/ometeotl/documentation/class-reference/model/resources/resource/) |
 | `"space"` | [Space](/ometeotl/documentation/class-reference/model/spaces/space/) |

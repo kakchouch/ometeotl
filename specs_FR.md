@@ -110,7 +110,7 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 
 ## État actuel du dépôt (avril 2026)
 
-Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, ainsi que la frontière d'autorité/runtime.
+Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, la téléologie/utilité, le ranking game, ainsi que la frontière d'autorité/runtime.
 
 ### Implémenté et testé aujourd'hui
 
@@ -143,13 +143,20 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
 7. Couche stratégie :
     - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
     - Builders linéaires et branchants pilotés par les perceptions projetées successives.
-8. Infrastructure runtime dans `src/masm/core/` :
+8. Couches téléologie et utilité :
+    - `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
+    - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
+    - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
+    - `UtilityFunction`, `UtilityFrame`.
+9. Couche utilité/ranking game dans `src/masm/game/` :
+    - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
+10. Infrastructure runtime dans `src/masm/core/` :
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
     - Mode autoritaire optionnel pour les mutations possédées par le serveur.
-9. Contrôle qualité :
-    - Tests automatisés dans `tests/model/` et `tests/core/`.
-    - Base actuelle : `188` tests collectés.
+11. Contrôle qualité :
+    - Tests automatisés dans `tests/model/`, `tests/core/` et `tests/game/`.
+    - Base actuelle : `259` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
@@ -158,7 +165,7 @@ Les couches suivantes restent incomplètes au regard de l'architecture cible et 
 - `src/masm/validation/` pour les pipelines explicites de validation.
 - `src/masm/io/` pour les workflows dédiés d'import/export.
 - `src/masm/generation/` pour la construction contextuelle ou assistée par LLM.
-- `src/masm/game/` pour la couche théorie des jeux complète au-delà des fondations actuelles.
+- `src/masm/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
 - `src/masm/examples/` pour les mondes de référence et démonstrations de bout en bout.
 
 ### Arborescence source actuelle
@@ -172,13 +179,16 @@ ometeotl/
 │       │   └── runtime.py
 │       ├── io/                 # prévu / scaffold partiel
 │       ├── generation/         # prévu / scaffold partiel
-│       ├── game/               # prévu / scaffold partiel
+│       ├── game/
+│       │   └── utility.py
 │       ├── validation/         # prévu / scaffold partiel
 │       ├── examples/           # prévu / scaffold partiel
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
 │           ├── base.py
+│           ├── goals.py
+│           ├── goal_tools.py
 │           ├── objects.py
 │           ├── perception.py
 │           ├── projection.py
@@ -188,22 +198,24 @@ ometeotl/
 │           ├── space_relations.py
 │           ├── spaces.py
 │           ├── strategies.py
+│           ├── utility.py
 │           └── world.py
 └── tests/
     ├── core/
+    ├── game/
     └── model/
 ```
 
 ### Lecture pratique de la V1
 
-La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques et runtime/autorité déjà implémentées. Les couches validation, génération, IO dédiées et théorie des jeux complète restent au roadmap.
+La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques, téléologie/utilité, ranking game, et runtime/autorité déjà implémentées. Les couches validation, génération, IO dédiées et des modules game orientés solveurs plus riches restent au roadmap.
 
 ### Priorités TODO actuelles
 
 1. Implémenter la couche explicite de validation requise par F-9 à F-15.
 2. Implémenter des workflows IO dédiés au-dessus de la sérialisation canonique des objets.
 3. Implémenter la génération contextuelle et les workflows de réparation.
-4. Implémenter la couche game au-delà des fondations actuelles de stratégie et projection.
+4. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
 5. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
 6. Ajouter des exemples de référence et des démos complètes de bout en bout.
 

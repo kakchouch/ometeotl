@@ -109,7 +109,7 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 ## Current repository state (April 2026)
 
-The project is no longer limited to a model/perception/sensor skeleton. It now contains a broader functional V1-incremental core with tested model, projection, strategy, and authority/runtime boundaries.
+The project is no longer limited to a model/perception/sensor skeleton. It now contains a broader functional V1-incremental core with tested model, projection, strategy, teleology/utility, game-layer ranking, and authority/runtime boundaries.
 
 ### Implemented and tested now
 
@@ -142,13 +142,20 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 7. Strategy layer:
     - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
     - Linear and branching builders driven by projected successor perceptions.
-8. Core runtime infrastructure in `src/masm/core/`:
+8. Teleology and utility layers:
+    - `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
+    - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
+    - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
+    - `UtilityFunction`, `UtilityFrame`.
+9. Game utility/ranking layer in `src/masm/game/`:
+    - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
+10. Core runtime infrastructure in `src/masm/core/`:
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` and `build_runtime(...)`.
     - Optional authority mode for server-owned mutation boundaries.
-9. Quality gate:
-    - Automated tests in `tests/model/` and `tests/core/`.
-    - Current baseline: `188` collected tests.
+11. Quality gate:
+    - Automated tests in `tests/model/`, `tests/core/`, and `tests/game/`.
+    - Current baseline: `259` collected tests.
 
 ### Present but still incomplete or scaffolded
 
@@ -157,7 +164,7 @@ The following layers remain incomplete relative to the target architecture and r
 - `src/masm/validation/` for explicit validation pipelines.
 - `src/masm/io/` for dedicated import/export workflows.
 - `src/masm/generation/` for contextual or LLM-assisted construction.
-- `src/masm/game/` for full game-theory projection and solver-facing structures.
+- `src/masm/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
 - `src/masm/examples/` for reference worlds and end-to-end demonstrations.
 
 ### Current source layout
@@ -171,13 +178,16 @@ ometeotl/
 │       │   └── runtime.py
 │       ├── io/                 # planned / partial scaffold
 │       ├── generation/         # planned / partial scaffold
-│       ├── game/               # planned / partial scaffold
+│       ├── game/
+│       │   └── utility.py
 │       ├── validation/         # planned / partial scaffold
 │       ├── examples/           # planned / partial scaffold
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
 │           ├── base.py
+│           ├── goals.py
+│           ├── goal_tools.py
 │           ├── objects.py
 │           ├── perception.py
 │           ├── projection.py
@@ -187,22 +197,24 @@ ometeotl/
 │           ├── space_relations.py
 │           ├── spaces.py
 │           ├── strategies.py
+│           ├── utility.py
 │           └── world.py
 └── tests/
     ├── core/
+    ├── game/
     └── model/
 ```
 
 ### Practical V1 interpretation
 
-V1 is currently validated on the implemented ontology, perception, projection, strategy, and authority/runtime seams. Dedicated validation, generation, IO, and higher-level game modules remain on the roadmap.
+V1 is currently validated on the implemented ontology, perception, projection, strategy, teleology/utility, game ranking, and authority/runtime seams. Dedicated validation, generation, IO, and richer solver-facing game modules remain on the roadmap.
 
 ### Current TODO priorities
 
 1. Implement the explicit validation layer required by F-9 to F-15.
 2. Implement dedicated IO workflows on top of canonical object serialization.
 3. Implement contextual generation and repair workflows.
-4. Implement the game layer beyond current strategy and projection foundations.
+4. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
 5. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
 6. Add reference examples and complete end-to-end demos.
 

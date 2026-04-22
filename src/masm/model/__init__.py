@@ -40,6 +40,20 @@ from .strategies import (
     build_branching_strategy,
     build_linear_strategy,
 )
+from .goals import (
+    Goal,
+    GoalDecompositionTree,
+    GoalBuildStep,
+    build_goal_hierarchy,
+)
+from .goal_tools import (
+    GoalFeasibilityResult,
+    GoalFeasibilityTool,
+    DefaultGoalFeasibilityTool,
+    GoalAdmissibilityResult,
+    GoalAdmissibilityChecker,
+)
+from .utility import UtilityFunction, UtilityFrame
 
 __all__ = [
     "ModelObject",
@@ -79,4 +93,15 @@ __all__ = [
     "StrategyBuildStep",
     "build_branching_strategy",
     "build_linear_strategy",
+    "Goal",
+    "GoalDecompositionTree",
+    "GoalBuildStep",
+    "build_goal_hierarchy",
+    "GoalFeasibilityResult",
+    "GoalFeasibilityTool",
+    "DefaultGoalFeasibilityTool",
+    "GoalAdmissibilityResult",
+    "GoalAdmissibilityChecker",
+    "UtilityFunction",
+    "UtilityFrame",
 ]
