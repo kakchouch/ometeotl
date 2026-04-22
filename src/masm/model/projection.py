@@ -482,7 +482,7 @@ def _build_projected_perception_state(
                 )
                 changes.append(
                     ProjectedPerceptionChange(
-                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:consume",
+                        change_id=f"{action.id}:resource_effect:{idx}:{effect.resource_id}:consume",
                         change_type="resource_consume",
                         subject_id=effect.resource_id,
                         space_id=source_space_id,
