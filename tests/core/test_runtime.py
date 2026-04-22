@@ -7,6 +7,7 @@ from masm.core.runtime import build_runtime
 from masm.model.actors import Actor
 from masm.model.spaces import Space
 from masm.model.world import World
+from masm.validation import LEVEL_FULL, PROFILE_ENFORCE_STRUCTURE
 
 
 def test_build_runtime_local_mode_keeps_world_unlocked():
@@ -111,3 +112,69 @@ def test_build_runtime_passes_extensibility_hooks():
     }
     assert register_result.accepted is True
     assert isinstance(custom_obj, Actor)
+
+
+def test_build_runtime_passes_validation_hardening_options():
+    """Runtime builder wires validation hardening controls to authority mode."""
+    world = World(id="world-runtime-hard-1")
+
+    with build_runtime(
+        world,
+        server_authoritative=True,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    ) as runtime:
+        assert runtime.authority_handler is not None
+        result = runtime.authority_handler.submit(
+            CommandEnvelope(
+                command_id="rt-hard-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-runtime-hard-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+
+    assert result.accepted is False
+    assert result.reason == "Validation policy rejected command"
+    assert result.validation["summary"]["error"] >= 1
+    assert world.model_registry.get("actor-runtime-hard-1") is None
+
+
+def test_build_runtime_soft_gate_off_skips_validation_blocking():
+    """Soft-gate off should bypass validation blocking in runtime authority mode."""
+    world = World(id="world-runtime-soft-off-1")
+
+    with build_runtime(
+        world,
+        server_authoritative=True,
+        validation_soft_gate=False,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    ) as runtime:
+        assert runtime.authority_handler is not None
+        result = runtime.authority_handler.submit(
+            CommandEnvelope(
+                command_id="rt-soft-off-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-runtime-soft-off-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+
+    assert result.accepted is True
+    assert result.validation["summary"]["total"] == 0
+    assert world.model_registry.get("actor-runtime-soft-off-1") is not None

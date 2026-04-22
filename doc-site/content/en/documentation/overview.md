@@ -69,10 +69,11 @@ The implemented pipeline follows this flow:
 7. Generate actor-relative snapshots via [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/) into [Perception](/ometeotl/documentation/class-reference/model/perception/perception/).
 8. Derive first-order projection assumptions and projected successor perceived states from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
 9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py).
-10. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
-11. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
-12. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
-13. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
+10. Validate payloads/objects with the staged validation pipeline in `masm.validation` (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), using policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`) when needed.
+11. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+12. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
+13. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
+14. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -88,6 +89,8 @@ The test suite follows the same layer separation as the source tree:
 
 - `tests/model/`: tests for `masm.model.*`
 - `tests/core/`: tests for `masm.core.*`
+- `tests/validation/`: tests for `masm.validation.*`
+- `tests/game/`: tests for `masm.game.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 
@@ -130,6 +133,8 @@ When authority mode is enabled in [World](/ometeotl/documentation/class-referenc
 - strictly increasing sequence checks per actor
 - bounded in-memory tracking for processed ids and sequence history
 - immutable audit traces with [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/)
+- staged validation with configurable hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`)
+- structured validation summaries attached to command results and audit entries
 
 ### 4. Extensibility seam
 
@@ -145,6 +150,8 @@ Primary extension seams are intentionally abstract and composable:
 
 - local mode: direct world mutation APIs
 - server-authoritative mode: command-gated mutation via [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
+
+When server-authoritative mode is enabled, runtime also wires validation policy options (`validation_soft_gate`, `validation_policy_profile`, `validation_stage_mode_overrides`, `validation_block_on_error`, `validation_completeness_level`) through to the authority boundary.
 
 This keeps local testing ergonomics while preserving an enforceable server boundary for multi-client systems.
 

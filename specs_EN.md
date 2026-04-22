@@ -153,15 +153,21 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` and `build_runtime(...)`.
     - Optional authority mode for server-owned mutation boundaries.
-11. Quality gate:
-    - Automated tests in `tests/model/`, `tests/core/`, and `tests/game/`.
-    - Current baseline: `259` collected tests.
+11. Validation layer in `src/masm/validation/`:
+    - Validation contracts (`ValidationIssue`, `ValidationContext`, `ValidationResult`, `ValidationException`) and staged `ValidationPipeline`.
+    - Validator families: syntactic, structural, temporal, spatial, admissibility, epistemic, completeness.
+    - Policy hardening profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
+    - Diagnostic and repair suggestions through `DiagnosticBuilder`.
+12. Minimum interfaces in `src/masm/model/interfaces.py`:
+    - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
+13. Quality gate:
+    - Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
+    - Current baseline: `307` collected tests.
 
 ### Present but still incomplete or scaffolded
 
 The following layers remain incomplete relative to the target architecture and roadmap:
 
-- `src/masm/validation/` for explicit validation pipelines.
 - `src/masm/io/` for dedicated import/export workflows.
 - `src/masm/generation/` for contextual or LLM-assisted construction.
 - `src/masm/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
@@ -180,7 +186,18 @@ ometeotl/
 │       ├── generation/         # planned / partial scaffold
 │       ├── game/
 │       │   └── utility.py
-│       ├── validation/         # planned / partial scaffold
+│       ├── validation/
+│       │   ├── base.py
+│       │   ├── pipeline.py
+│       │   ├── policy.py
+│       │   ├── syntactic.py
+│       │   ├── structural.py
+│       │   ├── temporal.py
+│       │   ├── spatial.py
+│       │   ├── admissibility.py
+│       │   ├── epistemic.py
+│       │   ├── completeness.py
+│       │   └── diagnostic.py
 │       ├── examples/           # planned / partial scaffold
 │       └── model/
 │           ├── actions.py
@@ -207,16 +224,15 @@ ometeotl/
 
 ### Practical V1 interpretation
 
-V1 is currently validated on the implemented ontology, perception, projection, strategy, teleology/utility, game ranking, and authority/runtime seams. Dedicated validation, generation, IO, and richer solver-facing game modules remain on the roadmap.
+V1 is currently validated on the implemented ontology, perception, projection, strategy, teleology/utility, game ranking, authority/runtime seams, and the dedicated validation layer. Generation, IO, richer solver-facing game modules, and reference examples remain on the roadmap.
 
 ### Current TODO priorities
 
-1. Implement the explicit validation layer required by F-9 to F-15.
-2. Implement dedicated IO workflows on top of canonical object serialization.
-3. Implement contextual generation and repair workflows.
-4. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
-5. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
-6. Add reference examples and complete end-to-end demos.
+1. Implement dedicated IO workflows on top of canonical object serialization.
+2. Implement contextual generation and repair workflows.
+3. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
+4. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
+5. Add reference examples and complete end-to-end demos.
 
 
 ## Status

@@ -27,5 +27,12 @@ Methods:
 Related function:
 - `build_runtime(...)` in [src/masm/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/core/runtime.py)
 
+Runtime policy options passed through `build_runtime(...)`:
+- `validation_soft_gate`
+- `validation_policy_profile` (`observe_only`, `enforce_structure`, `enforce_domain`)
+- `validation_stage_mode_overrides`
+- `validation_block_on_error`
+- `validation_completeness_level`
+
 See also:
 - [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/)

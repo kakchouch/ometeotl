@@ -140,13 +140,17 @@ The repository now contains a broader functional V1-incremental core spanning mo
 8. Core runtime infrastructure:
 	- `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
 	- `RuntimeContext` and `build_runtime(...)`.
-9. Quality gate:
-	- Automated tests in `tests/model/` and `tests/core/`.
-	- Current baseline: `259` collected tests.
+9. Validation layer in `src/masm/validation/`:
+	- Validation contracts and staged pipeline.
+	- Validator families: syntactic, structural, temporal, spatial, admissibility, epistemic, completeness.
+	- Policy profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
+	- Diagnostics and repair suggestions.
+10. Quality gate:
+	- Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
+	- Current baseline: `307` collected tests.
 
 ### Still incomplete or planned
 
-- `src/masm/validation/` for explicit validation pipelines.
 - `src/masm/io/` for dedicated import/export workflows.
 - `src/masm/generation/` for contextual construction and repair.
 - `src/masm/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
@@ -154,10 +158,9 @@ The repository now contains a broader functional V1-incremental core spanning mo
 
 ### Current TODO priorities
 
-1. Implement the dedicated validation layer.
-2. Implement dedicated IO workflows.
-3. Implement contextual generation and repair.
-4. Implement the game layer.
-5. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
-6. Add examples and end-to-end demonstrations.
+1. Implement dedicated IO workflows.
+2. Implement contextual generation and repair.
+3. Implement the game layer.
+4. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
+5. Add examples and end-to-end demonstrations.
 - `src/masm/examples/`

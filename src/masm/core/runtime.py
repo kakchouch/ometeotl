@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Optional, Sequence, Type
 
 from masm.model.world import World
+from masm.validation import LEVEL_RECOMMENDED, PROFILE_OBSERVE_ONLY
 
 from .authority import AuthorityCommandHandler, CommandEnvelope
 
@@ -49,6 +50,11 @@ def build_runtime(
     world: World,
     *,
     server_authoritative: bool = False,
+    validation_soft_gate: bool = True,
+    validation_policy_profile: str = PROFILE_OBSERVE_ONLY,
+    validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
+    validation_block_on_error: bool = False,
+    validation_completeness_level: str = LEVEL_RECOMMENDED,
     allowed_command_types: Optional[Sequence[str]] = None,
     custom_command_handlers: Optional[
         Mapping[str, Callable[[CommandEnvelope, World, str], dict[str, Any]]]
@@ -62,6 +68,12 @@ def build_runtime(
     """Build a runtime context without changing local defaults.
 
     Authority mode is opt-in only through ``server_authoritative=True``.
+
+        Validation policy options are forwarded to ``AuthorityCommandHandler``:
+        - ``validation_policy_profile`` chooses default hardening level
+            (``observe_only``, ``enforce_structure``, ``enforce_domain``).
+        - ``validation_stage_mode_overrides`` sets per-stage mode overrides.
+        - ``validation_block_on_error`` enables rejection on validation errors.
     """
     if not server_authoritative:
         return RuntimeContext(world=world, authority_handler=None)
@@ -70,6 +82,11 @@ def build_runtime(
         world=world,
         authority_handler=AuthorityCommandHandler(
             world,
+            validation_soft_gate=validation_soft_gate,
+            validation_policy_profile=validation_policy_profile,
+            validation_stage_mode_overrides=validation_stage_mode_overrides,
+            validation_block_on_error=validation_block_on_error,
+            validation_completeness_level=validation_completeness_level,
             allowed_command_types=allowed_command_types,
             custom_command_handlers=custom_command_handlers,
             object_factories=object_factories,

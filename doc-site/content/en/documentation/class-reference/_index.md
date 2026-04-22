@@ -4,7 +4,7 @@ description: "One class per page reference for Ometeotl/MASM"
 ---
 
 This section contains one page per implemented class.
-The filetree mirrors the repository architecture in `src/masm/core`, `src/masm/model`, and `src/masm/game`.
+The filetree mirrors the repository architecture in `src/masm/core`, `src/masm/model`, `src/masm/game`, and `src/masm/validation`.
 
 Repository source:
 - [GitHub repository](https://github.com/kakchouch/ometeotl)
@@ -16,6 +16,16 @@ Repository source:
 - [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/)
 - [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
 - [RuntimeContext](/ometeotl/documentation/class-reference/core/runtime-context/)
+
+## Validation
+- [Validation index](/ometeotl/documentation/class-reference/validation/)
+- [ValidationIssue](/ometeotl/documentation/class-reference/validation/validation-issue/)
+- [ValidationContext](/ometeotl/documentation/class-reference/validation/validation-context/)
+- [ValidationResult](/ometeotl/documentation/class-reference/validation/validation-result/)
+- [ValidationPipeline](/ometeotl/documentation/class-reference/validation/validation-pipeline/)
+- [Validation policy profiles](/ometeotl/documentation/class-reference/validation/validation-policy/)
+- [DiagnosticBuilder](/ometeotl/documentation/class-reference/validation/diagnostic-builder/)
+- [Validators overview](/ometeotl/documentation/class-reference/validation/validators-overview/)
 
 ## Model/base.py
 - [GuardedJsonDict](/ometeotl/documentation/class-reference/model/base/guarded-json-dict/)

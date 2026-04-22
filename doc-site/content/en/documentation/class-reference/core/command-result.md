@@ -18,6 +18,7 @@ Parameters and fields:
 - `accepted: bool`
 - `reason: str`
 - `applied: Optional[JsonMap]`
+- `validation: JsonMap`
 
 Methods:
 - no custom methods
