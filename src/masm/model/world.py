@@ -148,6 +148,15 @@ class World(Space):
         self._assert_mutation_allowed(authority_token)
         self.model_registry.unregister(obj_id, authority_token=authority_token)
 
+    def is_space_abstract(self, space_id: SpaceId) -> bool:
+        """Check whether a sub-space is marked as abstract.
+
+        Returns True if the space exists and has ``is_abstract == True``,
+        False otherwise.
+        """
+        space = self.get_space(space_id)
+        return space.is_abstract if space is not None else False
+
     # --- Serialization ------------------------------------------------------
 
     def to_dict(self) -> JsonMap:

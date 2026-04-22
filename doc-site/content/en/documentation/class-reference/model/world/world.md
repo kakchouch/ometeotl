@@ -26,8 +26,12 @@ Parameters and fields:
 Methods:
 - authority mode: `enable_authority_mode`, `disable_authority_mode`
 - topology operations: `add_space`, `add_space_relation`, `place_object`, `get_space`
+- abstract-space helper: `is_space_abstract`
 - registry operations: `register_object`, `unregister_object`
 - serialization: `to_dict`, `from_dict`
+
+Notes:
+- `is_space_abstract(space_id)` is a convenience query over registered spaces and returns `False` for unknown space ids.
 
 See also:
 - [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/)

@@ -147,6 +147,46 @@ class PerceivedRelation:
         )
 
 
+@dataclass
+class PerceivedComponentLink:
+    """A perceived composition relation linking a composite actor to a component.
+
+    This represents a perceived link in the ontological composite actor hierarchy.
+    The epistemic status reflects how certain the perceiving actor is about
+    the composition relation itself.
+    """
+
+    link_id: str
+    composite_id: ObjectId
+    component_id: ObjectId
+    epistemic_status: str = "certain"
+    noise_metadata: JsonMap = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        _validate_epistemic_status(self.epistemic_status)
+
+    def to_dict(self) -> JsonMap:
+        """Canonical serialization of the perceived component link."""
+        return {
+            "link_id": self.link_id,
+            "composite_id": self.composite_id,
+            "component_id": self.component_id,
+            "epistemic_status": self.epistemic_status,
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedComponentLink":
+        """Reconstruct a PerceivedComponentLink from its canonical representation."""
+        return cls(
+            link_id=_require_non_null_string(data, "link_id"),
+            composite_id=_require_non_null_string(data, "composite_id"),
+            component_id=_require_non_null_string(data, "component_id"),
+            epistemic_status=str(data.get("epistemic_status") or "certain"),
+            noise_metadata=dict(data.get("noise_metadata") or {}),
+        )
+
+
 # ---------------------------------------------------------------------------
 # Perception
 # ---------------------------------------------------------------------------
@@ -174,6 +214,9 @@ class Perception:
     perceived_spaces: Dict[SpaceId, PerceivedSpace] = field(default_factory=dict)
     perceived_memberships: List[PerceivedMembership] = field(default_factory=list)
     perceived_relations: List[PerceivedRelation] = field(default_factory=list)
+    perceived_component_links: List[PerceivedComponentLink] = field(
+        default_factory=list
+    )
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
 
@@ -218,6 +261,26 @@ class Perception:
             )
         ]
 
+    def component_links_for_composite(
+        self, composite_id: ObjectId
+    ) -> List[PerceivedComponentLink]:
+        """Return all perceived component links originating from a composite actor."""
+        return [
+            pcl
+            for pcl in self.perceived_component_links
+            if pcl.composite_id == composite_id
+        ]
+
+    def composite_for_component(
+        self, component_id: ObjectId
+    ) -> List[PerceivedComponentLink]:
+        """Return all perceived component links where a component is linked."""
+        return [
+            pcl
+            for pcl in self.perceived_component_links
+            if pcl.component_id == component_id
+        ]
+
     # --- Serialization ------------------------------------------------------
 
     def to_dict(self) -> JsonMap:
@@ -255,6 +318,13 @@ class Perception:
                     ),
                 )
             ],
+            "perceived_component_links": [
+                pcl.to_dict()
+                for pcl in sorted(
+                    self.perceived_component_links,
+                    key=lambda x: (x.composite_id, x.component_id, x.link_id),
+                )
+            ],
             "context": _canonical_json_map(self.context),
             "provenance": _canonical_json_map(self.provenance),
         }
@@ -279,6 +349,10 @@ class Perception:
             perceived_relations=[
                 PerceivedRelation.from_dict(pr_data)
                 for pr_data in (data.get("perceived_relations") or [])
+            ],
+            perceived_component_links=[
+                PerceivedComponentLink.from_dict(pcl_data)
+                for pcl_data in (data.get("perceived_component_links") or [])
             ],
             context=dict(data.get("context") or {}),
             provenance=dict(data.get("provenance") or {}),

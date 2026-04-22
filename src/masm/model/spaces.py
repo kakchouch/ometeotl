@@ -53,6 +53,7 @@ class Space(GenericObject):
         self.attributes.setdefault("tags", [])
         self.attributes.setdefault("dimensions", {})
         self.attributes.setdefault("validity", {})
+        self.attributes.setdefault("is_abstract", False)
 
     @property
     def kind(self) -> str:
@@ -105,6 +106,23 @@ class Space(GenericObject):
         if end is not None:
             validity["end"] = end
         self.attributes["validity"] = validity
+
+    @property
+    def is_abstract(self) -> bool:
+        """Return whether this space is abstract (non-canonical).
+
+        Abstract spaces represent conceptual groupings, strategic partitions,
+        or analytical views rather than entities in the ontological world.
+        They commonly host abstract composite actors that aggregate
+        real-world actors.
+        """
+        value = self.attributes.get("is_abstract", False)
+        return bool(value)
+
+    @is_abstract.setter
+    def is_abstract(self, value: bool) -> None:
+        """Set whether this space is abstract."""
+        self.attributes["is_abstract"] = bool(value)
 
     def add_member(self, object_id: ObjectId) -> None:
         """DEPRECATED: Add a member to the space."""

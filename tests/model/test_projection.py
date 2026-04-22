@@ -3,7 +3,11 @@
 import pytest
 
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
-from masm.model.perception import PerceivedMembership, Perception
+from masm.model.perception import (
+    PerceivedComponentLink,
+    PerceivedMembership,
+    Perception,
+)
 from masm.model.projection import (
     ActionProjection,
     DefaultProjectionTool,
@@ -206,3 +210,120 @@ def test_projection_assumption_from_dict_rejects_non_boolean_satisfied():
                 "satisfied": "false",
             }
         )
+
+
+# ---------------------------------------------------------------------------
+# Phase C: Projected component links (Phase C)
+# ---------------------------------------------------------------------------
+
+
+def test_projection_appends_component_link_as_projected():
+    """Component links appended to a projection are marked as projected."""
+    from masm.model.projection import _append_projected_component_link
+
+    perception = Perception(id="perc-1", actor_id="actor-1", source_id="world-1")
+    action = _build_projection_action()
+
+    added = _append_projected_component_link(
+        perception,
+        composite_id="a-1",
+        component_id="a-2",
+        generating_action_id=action.id,
+    )
+
+    assert added is True
+    assert len(perception.perceived_component_links) == 1
+    link = perception.perceived_component_links[0]
+    assert link.composite_id == "a-1"
+    assert link.component_id == "a-2"
+    assert link.epistemic_status == "projected"
+    assert link.noise_metadata["projection_action_id"] == action.id
+
+
+def test_projection_removes_component_link():
+    """Component links can be removed from a projection."""
+    from masm.model.projection import (
+        _append_projected_component_link,
+        _remove_projected_component_link,
+    )
+
+    perception = Perception(id="perc-1", actor_id="actor-1", source_id="world-1")
+    action = _build_projection_action()
+
+    _append_projected_component_link(
+        perception,
+        composite_id="a-1",
+        component_id="a-2",
+        generating_action_id=action.id,
+    )
+    _append_projected_component_link(
+        perception,
+        composite_id="a-1",
+        component_id="a-3",
+        generating_action_id=action.id,
+    )
+
+    removed = _remove_projected_component_link(
+        perception, composite_id="a-1", component_id="a-2"
+    )
+
+    assert removed == 1
+    assert len(perception.perceived_component_links) == 1
+    assert perception.perceived_component_links[0].component_id == "a-3"
+
+
+def test_projected_component_link_has_projected_epistemic_status():
+    """Projected component links maintain epistemic_status = 'projected'."""
+    from masm.model.projection import _mark_perception_as_projected
+
+    perception = Perception(id="perc-1", actor_id="actor-1", source_id="world-1")
+    action = _build_projection_action()
+
+    # Add a component link with initial status
+    perception.perceived_component_links.append(
+        PerceivedComponentLink(
+            link_id="link-1",
+            composite_id="a-1",
+            component_id="a-2",
+            epistemic_status="certain",
+        )
+    )
+
+    _mark_perception_as_projected(perception)
+
+    assert perception.perceived_component_links[0].epistemic_status == "projected"
+
+
+def test_projected_perception_state_round_trip_with_component_links():
+    """Projected perception state serializes and reconstructs with component links."""
+    perception = Perception(id="perc-1", actor_id="actor-1", source_id="world-1")
+    perception.perceived_component_links.append(
+        PerceivedComponentLink(
+            link_id="link-1",
+            composite_id="a-1",
+            component_id="a-2",
+            epistemic_status="projected",
+        )
+    )
+    action = _build_projection_action()
+
+    state = ProjectedPerceptionState(
+        source_perception_id=perception.id,
+        generating_action_id=action.id,
+        perception=perception,
+        changes=[
+            ProjectedPerceptionChange(
+                change_id="action-1:component_added",
+                change_type="component_added",
+                subject_id="a-1",
+                metadata={"component_id": "a-2"},
+            )
+        ],
+    )
+
+    payload = state.to_dict()
+    restored = ProjectedPerceptionState.from_dict(payload)
+
+    assert len(restored.perception.perceived_component_links) == 1
+    assert restored.perception.perceived_component_links[0].composite_id == "a-1"
+    assert restored.perception.perceived_component_links[0].component_id == "a-2"
