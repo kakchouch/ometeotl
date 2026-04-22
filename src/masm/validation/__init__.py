@@ -21,6 +21,16 @@ from .pipeline import (
 )
 from .syntactic import SyntacticValidator
 from .structural import StructuralValidator
+from .temporal import TemporalValidator
+from .spatial import SpatialValidator
+from .admissibility import AdmissibilityValidator
+from .epistemic import EpistemicValidator
+from .completeness import (
+    LEVEL_FULL,
+    LEVEL_MINIMAL,
+    LEVEL_RECOMMENDED,
+    CompletenessValidator,
+)
 
 __all__ = [
     "SEVERITY_ERROR",
@@ -40,4 +50,12 @@ __all__ = [
     "ValidationPipeline",
     "SyntacticValidator",
     "StructuralValidator",
+    "TemporalValidator",
+    "SpatialValidator",
+    "AdmissibilityValidator",
+    "EpistemicValidator",
+    "CompletenessValidator",
+    "LEVEL_MINIMAL",
+    "LEVEL_RECOMMENDED",
+    "LEVEL_FULL",
 ]
