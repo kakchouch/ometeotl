@@ -27,11 +27,15 @@ relations, and modeling conventions to be introduced progressively.
 """
 
 from __future__ import annotations
+from collections import deque
 from dataclasses import dataclass
-from typing import Any, List, Mapping
+from typing import TYPE_CHECKING, Any, List, Mapping
 
-from .base import ModelObject, relation_methods
+from .base import ModelObject, ObjectId, relation_methods
 from .objects import GenericObject
+
+if TYPE_CHECKING:
+    from .registry import WorldModelRegistry
 
 
 @relation_methods("action", "action")
@@ -39,7 +43,6 @@ from .objects import GenericObject
 @relation_methods("value", "value")
 @relation_methods("goal", "goal")
 @relation_methods("constraint", "constraint")
-@relation_methods("component", "component")
 @relation_methods("membership", "membership")
 @relation_methods("dependency", "dependency")
 @relation_methods("cooperation", "cooperation")
@@ -150,6 +153,53 @@ class Actor(GenericObject):
             raise ValueError("Composition mode cannot be empty")
         self.attributes["composition_mode"] = value
 
+    @property
+    def is_composite(self) -> bool:
+        """Return True if this actor is explicitly composed of sub-actors.
+
+        Only ``"composite"`` mode actors may carry ``component`` relations.
+        """
+        return self.composition_mode == "composite"
+
+    @property
+    def is_collective(self) -> bool:
+        """Return True if this actor is a loosely defined collective.
+
+        Collective actors represent a perceived coherent whole without
+        explicit component links.
+        """
+        return self.composition_mode == "collective"
+
+    def get_components(self) -> List[str]:
+        """Return the list of component actor IDs linked to this actor.
+
+        Returns an empty list if the actor is not in ``"composite"`` mode.
+        """
+        return list(self.relations.get("component", []))
+
+    def add_component(self, target_id: str) -> None:
+        """Add a component actor relation.
+
+        Requires ``composition_mode == "composite"``.
+        Does not perform cycle detection automatically; call
+        ``detect_composition_cycle`` with a registry before invoking this
+        method when cycle safety is required.
+
+        Raises:
+            ValueError: if the actor is not in ``"composite"`` mode.
+        """
+        if self.composition_mode != "composite":
+            raise ValueError(
+                f"Cannot add component to actor '{self.id}': "
+                f"composition_mode is '{self.composition_mode}', "
+                "expected 'composite'."
+            )
+        self._manage_relation("component", target_id, add=True)
+
+    def remove_component(self, target_id: str) -> None:
+        """Remove a component actor relation."""
+        self._manage_relation("component", target_id, add=False)
+
     # ------------------------------------------------------------------
     # Domain relations
     # ------------------------------------------------------------------
@@ -168,3 +218,106 @@ class Actor(GenericObject):
         payload["object_type"] = payload.get("object_type") or "actor"
         base_obj = ModelObject.from_dict(payload)
         return cls(**base_obj._base_kwargs())
+
+
+# ---------------------------------------------------------------------------
+# Module-level traversal and integrity utilities
+# ---------------------------------------------------------------------------
+
+
+def detect_composition_cycle(
+    actor_id: ObjectId,
+    candidate_id: ObjectId,
+    registry: "WorldModelRegistry",
+) -> bool:
+    """Return True if adding *candidate_id* as a component of *actor_id* would
+    create a cycle in the component graph.
+
+    Uses BFS over the candidate's component subtree. If *actor_id* is
+    reachable from *candidate_id*, a cycle would result.
+
+    Args:
+        actor_id: The actor that would receive the new component.
+        candidate_id: The actor that would become the component.
+        registry: A ``WorldModelRegistry`` used to look up component lists.
+
+    Returns:
+        True if a cycle would be introduced, False otherwise.
+    """
+    visited: set[ObjectId] = set()
+    queue: deque[ObjectId] = deque([candidate_id])
+    while queue:
+        current_id = queue.popleft()
+        if current_id == actor_id:
+            return True
+        if current_id in visited:
+            continue
+        visited.add(current_id)
+        obj = registry.get(current_id)
+        if obj is None:
+            continue
+        for child_id in obj.relations.get("component", []):
+            if child_id not in visited:
+                queue.append(child_id)
+    return False
+
+
+def resolve_component_tree(
+    actor_id: ObjectId,
+    registry: "WorldModelRegistry",
+) -> dict:
+    """Return the component hierarchy rooted at *actor_id* as a nested dict.
+
+    Structure: ``{actor_id: {component_id: {...}, ...}}``
+
+    The traversal is cycle-safe: a visited set prevents infinite loops.
+    Objects absent from the registry are represented as empty dicts.
+
+    Args:
+        actor_id: Root of the hierarchy to resolve.
+        registry: A ``WorldModelRegistry`` used to look up component lists.
+
+    Returns:
+        A nested dict representing the component tree.
+    """
+    visited: set[ObjectId] = set()
+
+    def _build(node_id: ObjectId) -> dict:
+        if node_id in visited:
+            return {}
+        visited.add(node_id)
+        obj = registry.get(node_id)
+        if obj is None:
+            return {}
+        return {
+            child_id: _build(child_id)
+            for child_id in obj.relations.get("component", [])
+        }
+
+    return {actor_id: _build(actor_id)}
+
+
+def find_parent_composites(
+    actor_id: ObjectId,
+    registry: "WorldModelRegistry",
+) -> List[ObjectId]:
+    """Return all object IDs whose ``component`` list includes *actor_id*.
+
+    This performs an O(n) scan over all objects in the registry and is not
+    intended for use with large registries.
+
+    Args:
+        actor_id: The actor whose parents are sought.
+        registry: A ``WorldModelRegistry`` to scan.
+
+    Returns:
+        Sorted list of parent actor IDs.
+    """
+    parents: List[ObjectId] = []
+    for oid in registry.all_ids():
+        obj = registry.get(oid)
+        if obj is None:
+            continue
+        if actor_id in obj.relations.get("component", []):
+            parents.append(oid)
+    return sorted(parents)
