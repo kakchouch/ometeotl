@@ -7,6 +7,11 @@ from masm.model.actors import Actor
 from masm.model.resources import Resource
 from masm.model.spaces import Space
 from masm.model.world import World
+from masm.validation import (
+    LEVEL_FULL,
+    PROFILE_ENFORCE_DOMAIN,
+    PROFILE_ENFORCE_STRUCTURE,
+)
 
 
 def test_world_authority_mode_blocks_direct_mutations():
@@ -52,6 +57,7 @@ def test_authority_handler_applies_allowlisted_commands():
             )
         )
         assert add_space_result.accepted is True
+        assert add_space_result.validation["summary"]["warning"] >= 0
 
         place_result = handler.submit(
             CommandEnvelope(
@@ -63,10 +69,159 @@ def test_authority_handler_applies_allowlisted_commands():
             )
         )
         assert place_result.accepted is True
+        assert place_result.validation["summary"]["warning"] >= 1
     finally:
         handler.close()
 
     assert "actor-42" in world.space_object_graph.list_objects_in_space("zone-1")
+
+
+def test_authority_handler_soft_gate_reports_validation_without_rejecting():
+    """Soft-gate validation warnings do not reject otherwise valid commands."""
+    world = World(id="world-cmd-soft-1")
+    handler = AuthorityCommandHandler(world)
+    try:
+        register = handler.submit(
+            CommandEnvelope(
+                command_id="soft-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-soft-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert register.accepted is True
+    assert register.validation["summary"]["warning"] >= 0
+    assert register.validation["summary"]["total"] >= 1
+
+
+def test_authority_handler_hardening_profile_can_reject_on_validation_error():
+    """Hardened profile blocks commands when strict stages report errors."""
+    world = World(id="world-cmd-hard-1")
+    handler = AuthorityCommandHandler(
+        world,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="hard-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-hard-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is False
+    assert result.reason == "Validation policy rejected command"
+    assert result.validation["summary"]["error"] >= 1
+    assert world.model_registry.get("actor-hard-1") is None
+
+
+def test_authority_handler_enforce_domain_rejects_spatially_invalid_place_object():
+    """Domain hardening should reject place_object when referenced space is invalid."""
+    world = World(id="world-cmd-domain-1")
+    world.register_object(Actor(id="actor-domain-1"))
+    world.add_space(Space(id="zone-domain-1"))
+    handler = AuthorityCommandHandler(
+        world,
+        validation_policy_profile=PROFILE_ENFORCE_DOMAIN,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="domain-1",
+                actor_id="system",
+                command_type="place_object",
+                sequence=1,
+                payload={
+                    "object_id": "actor-domain-1",
+                    "space_id": "zone-missing-domain",
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is False
+    assert result.reason == "Validation policy rejected command"
+    assert result.validation["summary"]["error"] >= 1
+
+
+def test_authority_handler_soft_gate_off_skips_validation_blocking():
+    """Disabling soft gate should keep command flow non-blocking."""
+    world = World(id="world-cmd-soft-off-1")
+    handler = AuthorityCommandHandler(
+        world,
+        validation_soft_gate=False,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="soft-off-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-soft-off-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is True
+    assert result.validation["summary"]["total"] == 0
+    assert world.model_registry.get("actor-soft-off-1") is not None
+
+
+def test_authority_handler_audit_includes_validation_summary():
+    """Accepted audit entries should include soft-gate validation summaries."""
+    world = World(id="world-cmd-soft-2")
+    handler = AuthorityCommandHandler(world)
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="soft-2",
+                actor_id="system",
+                command_type="add_space",
+                sequence=1,
+                payload={"space": Space(id="zone-soft-1").to_dict()},
+            )
+        )
+        audit = handler.audit_log
+    finally:
+        handler.close()
+
+    assert result.accepted is True
+    assert len(audit) == 1
+    assert audit[0].validation_summary["total"] >= 1
 
 
 def test_authority_handler_rejects_unknown_actor():

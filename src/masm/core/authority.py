@@ -14,11 +14,28 @@ import threading
 from typing import Any, Callable, Mapping, Optional, Sequence
 from uuid import uuid4
 
-from masm.model.base import JsonMap, ModelObject, ObjectId
+from masm.model.base import JsonMap, ModelObject, ObjectId, _require_non_empty
 from masm.model.registry import reconstruct_model_object
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
+from masm.validation import (
+    PROFILE_OBSERVE_ONLY,
+    LEVEL_RECOMMENDED,
+    MODE_WARN_ONLY,
+    AdmissibilityValidator,
+    CompletenessValidator,
+    EpistemicValidator,
+    SpatialValidator,
+    StructuralValidator,
+    SyntacticValidator,
+    TemporalValidator,
+    ValidationContext,
+    ValidationIssue,
+    ValidationPipeline,
+    ValidationResult,
+    build_stage_modes,
+)
 
 ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
 CommandHandler = Callable[["CommandEnvelope", World, str], JsonMap]
@@ -56,12 +73,9 @@ class CommandEnvelope:
         command_id = str(data.get("command_id") or "")
         actor_id = str(data.get("actor_id") or "")
         command_type = str(data.get("command_type") or "")
-        if not command_id:
-            raise ValueError("Command id cannot be empty")
-        if not actor_id:
-            raise ValueError("Actor id cannot be empty")
-        if not command_type:
-            raise ValueError("Command type cannot be empty")
+        _require_non_empty(command_id, "Command id cannot be empty")
+        _require_non_empty(actor_id, "Actor id cannot be empty")
+        _require_non_empty(command_type, "Command type cannot be empty")
         sequence_raw = data.get("sequence", 0)
         try:
             sequence = int(sequence_raw) if sequence_raw is not None else 0
@@ -86,6 +100,7 @@ class CommandResult:
     accepted: bool
     reason: str = ""
     applied: Optional[JsonMap] = None
+    validation: JsonMap = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -98,6 +113,7 @@ class AuditEntry:
     sequence: int
     accepted: bool
     reason: str
+    validation_summary: JsonMap = field(default_factory=dict)
     logged_at: str = field(default_factory=_utc_now_iso)
 
 
@@ -107,6 +123,16 @@ class AuthorityCommandHandler:
     The handler enforces minimal structural checks and an allowlist of command
     types. Domain admissibility validation (resources, advanced prerequisites,
     conflict resolution) is intentionally deferred to later validation layers.
+
+        Validation policy options:
+        - ``validation_policy_profile`` controls default stage strictness.
+            ``observe_only`` is non-blocking by default,
+            ``enforce_structure`` hardens schema-oriented stages, and
+            ``enforce_domain`` hardens both schema and domain stages.
+        - ``validation_stage_mode_overrides`` can override individual stage modes
+            (``strict``, ``lenient``, ``warn_only``).
+        - ``validation_block_on_error`` rejects commands when effective validation
+            result is invalid.
     """
 
     SYSTEM_ACTOR_ID = "system"
@@ -121,6 +147,11 @@ class AuthorityCommandHandler:
         processed_ids_maxlen: int = 10000,
         sequence_tracker_max_actors: Optional[int] = 1000,
         sequence_history_max_actors: Optional[int] = None,
+        validation_soft_gate: bool = True,
+        validation_policy_profile: str = PROFILE_OBSERVE_ONLY,
+        validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
+        validation_block_on_error: bool = False,
+        validation_completeness_level: str = LEVEL_RECOMMENDED,
     ) -> None:
         if audit_log_maxlen <= 0:
             raise ValueError("audit_log_maxlen must be greater than 0")
@@ -187,6 +218,28 @@ class AuthorityCommandHandler:
         self._active_tracked_actor_ids: set[ObjectId] = set()
         self._lock = threading.Lock()
         self._closed = False
+        self._validation_soft_gate = bool(validation_soft_gate)
+        self._validation_stage_modes = build_stage_modes(
+            policy_profile=validation_policy_profile,
+            stage_mode_overrides=validation_stage_mode_overrides,
+        )
+        self._validation_block_on_error = bool(validation_block_on_error)
+        self._validation_completeness_level = str(
+            validation_completeness_level or LEVEL_RECOMMENDED
+        )
+        self._validation_pipeline: Optional[ValidationPipeline] = None
+        if self._validation_soft_gate:
+            self._validation_pipeline = ValidationPipeline(
+                validators=[
+                    SyntacticValidator(),
+                    StructuralValidator(),
+                    CompletenessValidator(),
+                    TemporalValidator(),
+                    SpatialValidator(),
+                    AdmissibilityValidator(),
+                    EpistemicValidator(),
+                ]
+            )
         # Lock activation is the final init step to avoid partial-init lock side effects.
         self.world.enable_authority_mode(self._authority_token)
 
@@ -235,6 +288,16 @@ class AuthorityCommandHandler:
                     "Sequence tracker capacity reached for new actor",
                 )
 
+            validation_payload = self._validation_payload_for_command(command)
+            validation_result = self._run_soft_validation(command, validation_payload)
+            validation_export = self._serialize_validation_result(validation_result)
+            if self._validation_block_on_error and not validation_result.valid:
+                return self._reject(
+                    command,
+                    "Validation policy rejected command",
+                    validation_summary=validation_export["summary"],
+                )
+
             try:
                 applied = self._apply_command(command)
             except (KeyError, TypeError, ValueError) as exc:
@@ -250,11 +313,21 @@ class AuthorityCommandHandler:
                     sequence=command.sequence,
                     accepted=True,
                     reason="accepted",
+                    validation_summary=validation_export["summary"],
                 )
             )
-            return CommandResult(accepted=True, applied=applied)
+            return CommandResult(
+                accepted=True,
+                applied=applied,
+                validation=validation_export,
+            )
 
-    def _reject(self, command: CommandEnvelope, reason: str) -> CommandResult:
+    def _reject(
+        self,
+        command: CommandEnvelope,
+        reason: str,
+        validation_summary: Optional[JsonMap] = None,
+    ) -> CommandResult:
         self._append_audit(
             AuditEntry(
                 command_id=command.command_id,
@@ -263,9 +336,98 @@ class AuthorityCommandHandler:
                 sequence=command.sequence,
                 accepted=False,
                 reason=reason,
+                validation_summary=dict(validation_summary or {}),
             )
         )
-        return CommandResult(accepted=False, reason=reason)
+        validation_payload: JsonMap = {}
+        if validation_summary:
+            validation_payload = {"summary": dict(validation_summary)}
+        return CommandResult(
+            accepted=False,
+            reason=reason,
+            validation=validation_payload,
+        )
+
+    def _validation_payload_for_command(self, command: CommandEnvelope) -> Any:
+        payload = command.payload
+        if command.command_type == "add_space":
+            return payload.get("space")
+        if command.command_type == "register_object":
+            return payload.get("object")
+        if command.command_type == "place_object":
+            return {
+                "actor_id": str(payload.get("object_id") or ""),
+                "space_id": str(payload.get("space_id") or ""),
+            }
+        return None
+
+    def _run_soft_validation(
+        self,
+        command: CommandEnvelope,
+        payload: Any,
+    ) -> ValidationResult:
+        if not self._validation_soft_gate or self._validation_pipeline is None:
+            return ValidationResult(
+                stage="authority.soft_gate", policy_mode=MODE_WARN_ONLY
+            )
+
+        if payload is None:
+            return ValidationResult(
+                issues=[
+                    ValidationIssue(
+                        code="VAL-NO-TARGET",
+                        severity="warning",
+                        message=(
+                            "No validation payload target for this command type; "
+                            "soft-gate checks skipped"
+                        ),
+                        object_id=command.command_id,
+                        context={"command_type": command.command_type},
+                    )
+                ],
+                stage="authority.soft_gate",
+                policy_mode=MODE_WARN_ONLY,
+            )
+
+        validation_context = ValidationContext(
+            stage="authority.soft_gate",
+            policy_mode=MODE_WARN_ONLY,
+            actor_id=command.actor_id,
+            world_id=self.world.id,
+            metadata={
+                "world": self.world,
+                "interaction_time": command.issued_at,
+                "format": "auto",
+                "completeness_level": self._validation_completeness_level,
+            },
+        )
+        return self._validation_pipeline.validate(
+            payload,
+            mode=MODE_WARN_ONLY,
+            context=validation_context,
+            stage_modes=self._validation_stage_modes,
+            raise_on_error=False,
+        )
+
+    def _serialize_validation_result(self, result: ValidationResult) -> JsonMap:
+        serialized_issues = [
+            {
+                "code": issue.code,
+                "severity": issue.severity,
+                "message": issue.message,
+                "object_id": issue.object_id,
+                "path": issue.path,
+                "suggestion": issue.suggestion,
+                "context": dict(issue.context),
+            }
+            for issue in result.issues
+        ]
+        return {
+            "stage": result.stage,
+            "policy_mode": result.policy_mode,
+            "summary": result.summary,
+            "issues": serialized_issues,
+        }
 
     def _actor_exists(self, actor_id: ObjectId) -> bool:
         if actor_id == self.SYSTEM_ACTOR_ID:

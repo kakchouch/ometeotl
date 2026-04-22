@@ -15,7 +15,13 @@ from typing import Any, Iterable, Mapping, Optional
 
 from .actions import Action
 from .resources import Resource
-from .base import JsonMap, ObjectId, _canonical_json_map, _require_non_null_string
+from .base import (
+    JsonMap,
+    ObjectId,
+    _canonical_json_map,
+    _require_non_empty,
+    _require_non_null_string,
+)
 from .perception import (
     Perception,
     PerceivedComponentLink,
@@ -342,12 +348,18 @@ class ProjectionAssumption:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.assumption_id:
-            raise ValueError("ProjectionAssumption assumption_id cannot be empty")
-        if not self.assumption_type:
-            raise ValueError("ProjectionAssumption assumption_type cannot be empty")
-        if not self.description:
-            raise ValueError("ProjectionAssumption description cannot be empty")
+        _require_non_empty(
+            self.assumption_id,
+            "ProjectionAssumption assumption_id cannot be empty",
+        )
+        _require_non_empty(
+            self.assumption_type,
+            "ProjectionAssumption assumption_type cannot be empty",
+        )
+        _require_non_empty(
+            self.description,
+            "ProjectionAssumption description cannot be empty",
+        )
         _validate_epistemic_status(self.epistemic_status)
 
     def to_dict(self) -> JsonMap:
@@ -393,10 +405,14 @@ class ProjectedPerceptionChange:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.change_id:
-            raise ValueError("ProjectedPerceptionChange change_id cannot be empty")
-        if not self.change_type:
-            raise ValueError("ProjectedPerceptionChange change_type cannot be empty")
+        _require_non_empty(
+            self.change_id,
+            "ProjectedPerceptionChange change_id cannot be empty",
+        )
+        _require_non_empty(
+            self.change_type,
+            "ProjectedPerceptionChange change_type cannot be empty",
+        )
 
     def to_dict(self) -> JsonMap:
         return {
@@ -434,16 +450,18 @@ class ProjectedPerceptionState:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.source_perception_id:
-            raise ValueError(
-                "ProjectedPerceptionState source_perception_id cannot be empty"
-            )
-        if not self.generating_action_id:
-            raise ValueError(
-                "ProjectedPerceptionState generating_action_id cannot be empty"
-            )
-        if not self.perception.actor_id:
-            raise ValueError("ProjectedPerceptionState perception actor_id is invalid")
+        _require_non_empty(
+            self.source_perception_id,
+            "ProjectedPerceptionState source_perception_id cannot be empty",
+        )
+        _require_non_empty(
+            self.generating_action_id,
+            "ProjectedPerceptionState generating_action_id cannot be empty",
+        )
+        _require_non_empty(
+            self.perception.actor_id,
+            "ProjectedPerceptionState perception actor_id is invalid",
+        )
 
     def to_dict(self) -> JsonMap:
         return {
@@ -716,14 +734,13 @@ class ActionProjection:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.action_id:
-            raise ValueError("ActionProjection action_id cannot be empty")
-        if not self.actor_id:
-            raise ValueError("ActionProjection actor_id cannot be empty")
-        if not self.source_perception_id:
-            raise ValueError("ActionProjection source_perception_id cannot be empty")
-        if not self.source_id:
-            raise ValueError("ActionProjection source_id cannot be empty")
+        _require_non_empty(self.action_id, "ActionProjection action_id cannot be empty")
+        _require_non_empty(self.actor_id, "ActionProjection actor_id cannot be empty")
+        _require_non_empty(
+            self.source_perception_id,
+            "ActionProjection source_perception_id cannot be empty",
+        )
+        _require_non_empty(self.source_id, "ActionProjection source_id cannot be empty")
         _validate_action_projection_status(self.status)
 
     def to_dict(self) -> JsonMap:
@@ -784,12 +801,12 @@ class ProjectionBatch:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.actor_id:
-            raise ValueError("ProjectionBatch actor_id cannot be empty")
-        if not self.source_perception_id:
-            raise ValueError("ProjectionBatch source_perception_id cannot be empty")
-        if not self.source_id:
-            raise ValueError("ProjectionBatch source_id cannot be empty")
+        _require_non_empty(self.actor_id, "ProjectionBatch actor_id cannot be empty")
+        _require_non_empty(
+            self.source_perception_id,
+            "ProjectionBatch source_perception_id cannot be empty",
+        )
+        _require_non_empty(self.source_id, "ProjectionBatch source_id cannot be empty")
 
     def to_dict(self) -> JsonMap:
         """Serialize the batch in canonical form."""

@@ -24,7 +24,7 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, and server-authoritative runtime boundaries, while validation, generation, IO packaging, and higher-level examples remain incomplete.
+This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, server-authoritative runtime boundaries, and a dedicated validation layer. Generation, IO packaging, and higher-level examples remain incomplete.
 
 ## Current Implementation Status
 
@@ -40,7 +40,8 @@ As of April 2026, the repository includes:
 - A utility stack with the abstract `UtilityFunction` interface and concrete game-layer combinators/rankers (`WeightedSumUtility`, `LexicographicUtility`, `StrategyRanker`).
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
-- A test suite currently collecting `259` tests across `tests/model/`, `tests/core/`, and `tests/game/`.
+- A dedicated validation layer with syntactic, structural, temporal, spatial, admissibility, epistemic, and completeness validators, plus policy-based hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`) and diagnostics.
+- A test suite currently collecting `307` tests across `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
 
 ## Current Architecture
 
@@ -57,7 +58,6 @@ The implemented architecture follows the separation defined in `specs_EN.md`:
 
 ## Near-Term TODOs
 
-- Implement the dedicated `validation/` layer for structural, temporal, spatial, admissibility, and epistemic validation.
 - Implement the `io/` layer for explicit import/export workflows beyond object-local serialization helpers.
 - Implement the `generation/` layer and `from_context`-style construction pipeline.
 - Extend the `game/` layer beyond current utility/ranking primitives with richer solver-facing abstractions.

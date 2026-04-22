@@ -18,11 +18,13 @@ from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
 from .base import (
+    _base_kwargs_from_typed_payload,
     ModelObject,
     ObjectId,
     JsonMap,
     _canonical_json,
     _canonical_json_map,
+    _require_non_empty,
     _require_non_null_string,
 )
 
@@ -136,16 +138,11 @@ class Action(ModelObject):
     def __post_init__(self) -> None:
         if self.object_type != "action":
             self.object_type = "action"
-        if not self.id:
-            raise ValueError("Action id cannot be empty")
-        if not self.actor_id:
-            raise ValueError("Action actor_id cannot be empty")
-        if not self.world_id:
-            raise ValueError("Action world_id cannot be empty")
-        if not self.space_id:
-            raise ValueError("Action space_id cannot be empty")
-        if not self.action_type:
-            raise ValueError("Action type cannot be empty")
+        _require_non_empty(self.id, "Action id cannot be empty")
+        _require_non_empty(self.actor_id, "Action actor_id cannot be empty")
+        _require_non_empty(self.world_id, "Action world_id cannot be empty")
+        _require_non_empty(self.space_id, "Action space_id cannot be empty")
+        _require_non_empty(self.action_type, "Action type cannot be empty")
 
     def to_dict(self) -> JsonMap:
         """Canonical serialization of the action."""
@@ -191,9 +188,8 @@ class Action(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Action":
         """Reconstruct an action from its canonical representation."""
-        base_obj = ModelObject.from_dict(data)
         return cls(
-            **base_obj._base_kwargs(),
+            **_base_kwargs_from_typed_payload(data, "action"),
             actor_id=_require_non_null_string(data, "actor_id"),
             world_id=_require_non_null_string(data, "world_id"),
             space_id=_require_non_null_string(data, "space_id"),
@@ -220,6 +216,5 @@ class Action(ModelObject):
 
     def set_state_change(self, key: str, value: Any) -> None:
         """Set a state change for this action."""
-        if not key:
-            raise ValueError("State change key cannot be empty")
+        _require_non_empty(key, "State change key cannot be empty")
         self.state_changes[key] = value
