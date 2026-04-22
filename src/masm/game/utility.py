@@ -82,23 +82,30 @@ def _branch_weight_map(node: StrategyNode) -> dict[ObjectId, float]:
     if not child_branches:
         return {}
 
-    if all(branch.probability is not None for branch in child_branches):
-        total_probability = sum(
-            float(branch.probability or 0.0) for branch in child_branches
-        )
-        if total_probability > 0.0:
-            return {
-                str(branch.child_node_id): float(branch.probability or 0.0)
-                / total_probability
-                for branch in child_branches
-                if branch.child_node_id is not None
-            }
+    raw_weight_by_child: dict[str, float] = {}
 
-    equal_weight = 1.0 / float(len(child_branches))
+    if all(branch.probability is not None for branch in child_branches):
+        for branch in child_branches:
+            child_id = str(branch.child_node_id)
+            raw_weight_by_child[child_id] = raw_weight_by_child.get(
+                child_id, 0.0
+            ) + float(branch.probability or 0.0)
+    else:
+        # When probabilities are absent, each branch contributes one unit.
+        for branch in child_branches:
+            child_id = str(branch.child_node_id)
+            raw_weight_by_child[child_id] = raw_weight_by_child.get(child_id, 0.0) + 1.0
+
+    total_raw = sum(raw_weight_by_child.values())
+    if total_raw <= 0.0:
+        equal_weight = 1.0 / float(len(raw_weight_by_child))
+        return {
+            child_id: equal_weight for child_id in sorted(raw_weight_by_child.keys())
+        }
+
     return {
-        str(branch.child_node_id): equal_weight
-        for branch in child_branches
-        if branch.child_node_id is not None
+        child_id: raw_weight / total_raw
+        for child_id, raw_weight in sorted(raw_weight_by_child.items())
     }
 
 
@@ -257,8 +264,8 @@ class StrategyRanker:
         if strategy.root_node_id not in node_index:
             raise ValueError("Strategy root_node_id must reference an existing node")
 
-        terminal_nodes: list[StrategyNode] = []
-        terminal_probabilities: dict[str, float] = {}
+        terminal_node_index: dict[str, StrategyNode] = {}
+        terminal_probability_by_node: dict[str, float] = {}
         stack: list[tuple[StrategyNode, float, tuple[ObjectId, ...]]] = [
             (node_index[strategy.root_node_id], 1.0, tuple())
         ]
@@ -274,8 +281,11 @@ class StrategyRanker:
                     raise ValueError(
                         "StrategyRanker requires terminal strategy nodes to carry a projected_state"
                     )
-                terminal_nodes.append(node)
-                terminal_probabilities[node.node_id] = path_probability
+                terminal_node_index[node.node_id] = node
+                terminal_probability_by_node[node.node_id] = (
+                    terminal_probability_by_node.get(node.node_id, 0.0)
+                    + path_probability
+                )
                 continue
 
             next_path = (*path, node.node_id)
@@ -287,11 +297,14 @@ class StrategyRanker:
                     )
                 stack.append((child_node, path_probability * branch_weight, next_path))
 
-        if not terminal_nodes:
+        if not terminal_node_index:
             raise ValueError("StrategyRanker could not resolve any terminal nodes")
 
+        terminal_node_ids = sorted(terminal_node_index.keys())
+        terminal_nodes = [terminal_node_index[node_id] for node_id in terminal_node_ids]
+
         normalized_probabilities = _normalize_weights(
-            [terminal_probabilities[node.node_id] for node in terminal_nodes]
+            [terminal_probability_by_node[node_id] for node_id in terminal_node_ids]
         )
 
         frames: list[UtilityFrame] = []
@@ -318,12 +331,12 @@ class StrategyRanker:
         aggregated_metadata: JsonMap = {
             "strategy_id": strategy.id,
             "aggregation_mode": "probability_weighted_terminal_mean",
-            "evaluated_terminal_node_ids": [node.node_id for node in terminal_nodes],
+            "evaluated_terminal_node_ids": list(terminal_node_ids),
             "terminal_probabilities": _canonical_json_map(
                 {
-                    node.node_id: probability
-                    for node, probability in zip(
-                        terminal_nodes,
+                    node_id: probability
+                    for node_id, probability in zip(
+                        terminal_node_ids,
                         normalized_probabilities,
                         strict=False,
                     )
@@ -378,12 +391,12 @@ class StrategyRanker:
             strategy=strategy,
             utility_frame=aggregated_frame,
             rank_key=tuple(float(value) for value in comparison_values),
-            terminal_node_ids=[node.node_id for node in terminal_nodes],
+            terminal_node_ids=list(terminal_node_ids),
             terminal_probabilities=_canonical_json_map(
                 {
-                    node.node_id: probability
-                    for node, probability in zip(
-                        terminal_nodes,
+                    node_id: probability
+                    for node_id, probability in zip(
+                        terminal_node_ids,
                         normalized_probabilities,
                         strict=False,
                     )

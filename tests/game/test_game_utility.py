@@ -343,3 +343,172 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
         "left-node": 0.5,
         "right-node": 0.5,
     }
+
+
+def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
+    actor = Actor(id="actor-1")
+    utility = WeightedSumUtility("expected-gain", {"gain": 1.0})
+    ranker = StrategyRanker(utility)
+
+    root_action = _make_action("action-root")
+    left_action = _make_action("action-left")
+    right_action = _make_action("action-right")
+
+    root_state = _make_projected_state(
+        source_perception_id="p-source",
+        generating_action_id=root_action.id,
+        perception_id="p-root-successor",
+    )
+    strategy = Strategy(
+        id="strategy-duplicate-child",
+        actor_id=actor.id,
+        root_node_id="root-node",
+        nodes=[
+            StrategyNode(
+                node_id="root-node",
+                action_id=root_action.id,
+                projected_state=root_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="left-a",
+                        child_node_id="left-node",
+                        probability=0.2,
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="left-b",
+                        child_node_id="left-node",
+                        probability=0.3,
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="right",
+                        child_node_id="right-node",
+                        probability=0.5,
+                    ),
+                ],
+            ),
+            StrategyNode(
+                node_id="left-node",
+                action_id=left_action.id,
+                source_perception_id=root_state.perception.id,
+                projected_state=_make_projected_state(
+                    source_perception_id=root_state.perception.id,
+                    generating_action_id=left_action.id,
+                    perception_id="p-left",
+                    gain=2.0,
+                ),
+            ),
+            StrategyNode(
+                node_id="right-node",
+                action_id=right_action.id,
+                source_perception_id=root_state.perception.id,
+                projected_state=_make_projected_state(
+                    source_perception_id=root_state.perception.id,
+                    generating_action_id=right_action.id,
+                    perception_id="p-right",
+                    gain=0.0,
+                ),
+            ),
+        ],
+    )
+
+    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
+
+    assert ranked_strategy.terminal_probabilities == {
+        "left-node": 0.5,
+        "right-node": 0.5,
+    }
+    assert ranked_strategy.utility_frame.value == 1.0
+
+
+def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
+    actor = Actor(id="actor-1")
+    utility = WeightedSumUtility("expected-gain", {"gain": 1.0})
+    ranker = StrategyRanker(utility)
+
+    root_action = _make_action("action-root")
+    left_action = _make_action("action-left")
+    right_action = _make_action("action-right")
+    terminal_action = _make_action("action-terminal")
+
+    root_state = _make_projected_state(
+        source_perception_id="p-source",
+        generating_action_id=root_action.id,
+        perception_id="p-root-successor",
+    )
+    shared_state = _make_projected_state(
+        source_perception_id=root_state.perception.id,
+        generating_action_id=left_action.id,
+        perception_id="p-shared-successor",
+    )
+
+    strategy = Strategy(
+        id="strategy-dag-duplicate-terminal",
+        actor_id=actor.id,
+        root_node_id="root-node",
+        nodes=[
+            StrategyNode(
+                node_id="root-node",
+                action_id=root_action.id,
+                projected_state=root_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="to-left",
+                        child_node_id="left-node",
+                        probability=0.4,
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="to-right",
+                        child_node_id="right-node",
+                        probability=0.6,
+                    ),
+                ],
+            ),
+            StrategyNode(
+                node_id="left-node",
+                action_id=left_action.id,
+                source_perception_id=root_state.perception.id,
+                projected_state=shared_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="left-to-terminal",
+                        child_node_id="terminal-node",
+                        probability=1.0,
+                    )
+                ],
+            ),
+            StrategyNode(
+                node_id="right-node",
+                action_id=right_action.id,
+                source_perception_id=root_state.perception.id,
+                projected_state=_make_projected_state(
+                    source_perception_id=root_state.perception.id,
+                    generating_action_id=right_action.id,
+                    perception_id="p-shared-successor",
+                ),
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="right-to-terminal",
+                        child_node_id="terminal-node",
+                        probability=1.0,
+                    )
+                ],
+            ),
+            StrategyNode(
+                node_id="terminal-node",
+                action_id=terminal_action.id,
+                source_perception_id="p-shared-successor",
+                projected_state=_make_projected_state(
+                    source_perception_id="p-shared-successor",
+                    generating_action_id=terminal_action.id,
+                    perception_id="p-terminal",
+                    gain=5.0,
+                ),
+            ),
+        ],
+    )
+
+    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
+
+    assert ranked_strategy.terminal_node_ids == ["terminal-node"]
+    assert ranked_strategy.terminal_probabilities == {"terminal-node": 1.0}
+    assert ranked_strategy.utility_frame.value == 5.0
