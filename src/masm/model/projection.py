@@ -14,13 +14,14 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Optional
 
 from .actions import Action
+from .resources import Resource
 from .base import JsonMap, ObjectId, _canonical_json_map, _require_non_null_string
 from .perception import (
     Perception,
     PerceivedMembership,
     VALID_EPISTEMIC_STATUSES,
+    _validate_epistemic_status,
 )
-from .resources import Resource
 from .spaces import SpaceObjectMembership
 
 VALID_ACTION_PROJECTION_STATUSES: frozenset[str] = frozenset(
@@ -76,15 +77,25 @@ def _evaluate_projection_requirements(
     ]
 
     missing_required_resources = False
-    for effect in action.resource_effects:
+    for idx, effect in enumerate(action.resource_effects):
         effect_requires_resource = effect.effect_type in {"consume", "transfer"}
         resource_available = effect.resource_id in resource_id_set
+        if effect_requires_resource and resource_available:
+            required_space_id = effect.source_id or action.space_id
+            resource_in_space = any(
+                pm.membership.object_id == effect.resource_id
+                and pm.membership.space_id == required_space_id
+                and pm.membership.role == "occupies"
+                for pm in perception.perceived_memberships
+            )
+            if not resource_in_space:
+                resource_available = False
         if effect_requires_resource and not resource_available:
             missing_required_resources = True
         assumption_payloads.append(
             {
                 "assumption_id": (
-                    f"{action.id}:effect:{effect.resource_id}:{effect.effect_type}"
+                    f"{action.id}:effect:{idx}:{effect.resource_id}:{effect.effect_type}"
                 ),
                 "assumption_type": "resource_effect",
                 "description": (
@@ -114,11 +125,11 @@ def _evaluate_projection_requirements(
             }
         )
 
-    for prerequisite in action.prerequisites:
+    for idx, prerequisite in enumerate(action.prerequisites):
         assumption_payloads.append(
             {
                 "assumption_id": (
-                    f"{action.id}:prerequisite:{prerequisite.prerequisite_type}:"
+                    f"{action.id}:prerequisite:{idx}:{prerequisite.prerequisite_type}:"
                     f"{prerequisite.field_name}"
                 ),
                 "assumption_type": "prerequisite",
@@ -151,14 +162,6 @@ def _validate_action_projection_status(status: str) -> None:
         raise ValueError(
             f"Invalid action projection status: '{status}'. "
             f"Must be one of {sorted(VALID_ACTION_PROJECTION_STATUSES)}."
-        )
-
-
-def _validate_epistemic_status(status: str) -> None:
-    if status not in VALID_EPISTEMIC_STATUSES:
-        raise ValueError(
-            f"Invalid epistemic status: '{status}'. "
-            f"Must be one of {sorted(VALID_EPISTEMIC_STATUSES)}."
         )
 
 
@@ -197,6 +200,7 @@ def _remove_perceived_memberships(
     *,
     object_id: ObjectId,
     space_id: ObjectId,
+    role: str = "occupies",
 ) -> int:
     original_count = len(perception.perceived_memberships)
     perception.perceived_memberships = [
@@ -205,6 +209,7 @@ def _remove_perceived_memberships(
         if not (
             perceived_membership.membership.object_id == object_id
             and perceived_membership.membership.space_id == space_id
+            and perceived_membership.membership.role == role
         )
     ]
     return original_count - len(perception.perceived_memberships)
@@ -409,6 +414,7 @@ class ProjectedPerceptionState:
 def _build_projected_perception_state(
     action: Action,
     perception: Perception,
+    resource_index: Optional[Mapping[str, "Resource"]] = None,
 ) -> ProjectedPerceptionState:
     projected_perception = copy.deepcopy(perception)
     projected_perception.id = _projected_perception_id(perception, action)
@@ -449,35 +455,62 @@ def _build_projected_perception_state(
             )
         )
 
-    for effect in action.resource_effects:
+    _resource_index: Mapping[str, Resource] = resource_index or {}
+
+    for idx, effect in enumerate(action.resource_effects):
+        resource_obj = _resource_index.get(effect.resource_id)
+        is_stock = (
+            resource_obj is not None
+            and resource_obj.resource_mode == "stock"
+        )
+
         if effect.effect_type == "consume":
             source_space_id = _resolve_known_space_id(
                 projected_perception,
                 effect.source_id,
                 fallback_space_id=action.space_id,
             )
-            removed_count = 0
-            if source_space_id is not None:
-                removed_count = _remove_perceived_memberships(
-                    projected_perception,
-                    object_id=effect.resource_id,
-                    space_id=source_space_id,
+            if is_stock:
+                stock_deltas = dict(
+                    projected_perception.context.get("projected_stock_deltas") or {}
                 )
-            changes.append(
-                ProjectedPerceptionChange(
-                    change_id=(
-                        f"{action.id}:resource_effect:{effect.resource_id}:consume"
-                    ),
-                    change_type="resource_consume",
-                    subject_id=effect.resource_id,
-                    space_id=source_space_id,
-                    applied=removed_count > 0,
-                    metadata={
-                        "quantity": effect.quantity,
-                        "removed_membership_count": removed_count,
-                    },
+                stock_deltas[effect.resource_id] = (
+                    float(stock_deltas.get(effect.resource_id) or 0) - effect.quantity
                 )
-            )
+                projected_perception.context["projected_stock_deltas"] = (
+                    _canonical_json_map(stock_deltas)
+                )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{idx}:{effect.resource_id}:consume",
+                        change_type="resource_consume",
+                        subject_id=effect.resource_id,
+                        space_id=source_space_id,
+                        applied=True,
+                        metadata={"quantity": effect.quantity, "method": "stock_delta"},
+                    )
+                )
+            else:
+                removed_count = 0
+                if source_space_id is not None:
+                    removed_count = _remove_perceived_memberships(
+                        projected_perception,
+                        object_id=effect.resource_id,
+                        space_id=source_space_id,
+                    )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:consume",
+                        change_type="resource_consume",
+                        subject_id=effect.resource_id,
+                        space_id=source_space_id,
+                        applied=removed_count > 0,
+                        metadata={
+                            "quantity": effect.quantity,
+                            "removed_membership_count": removed_count,
+                        },
+                    )
+                )
             continue
 
         if effect.effect_type == "produce":
@@ -486,26 +519,45 @@ def _build_projected_perception_state(
                 effect.target_id,
                 fallback_space_id=action.space_id,
             )
-            produced = False
-            if target_space_id is not None:
-                produced = _append_projected_membership(
-                    projected_perception,
-                    object_id=effect.resource_id,
-                    space_id=target_space_id,
-                    generating_action_id=action.id,
+            if is_stock:
+                stock_deltas = dict(
+                    projected_perception.context.get("projected_stock_deltas") or {}
                 )
-            changes.append(
-                ProjectedPerceptionChange(
-                    change_id=(
-                        f"{action.id}:resource_effect:{effect.resource_id}:produce"
-                    ),
-                    change_type="resource_produce",
-                    subject_id=effect.resource_id,
-                    space_id=target_space_id,
-                    applied=produced,
-                    metadata={"quantity": effect.quantity},
+                stock_deltas[effect.resource_id] = (
+                    float(stock_deltas.get(effect.resource_id) or 0) + effect.quantity
                 )
-            )
+                projected_perception.context["projected_stock_deltas"] = (
+                    _canonical_json_map(stock_deltas)
+                )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:produce",
+                        change_type="resource_produce",
+                        subject_id=effect.resource_id,
+                        space_id=target_space_id,
+                        applied=True,
+                        metadata={"quantity": effect.quantity, "method": "stock_delta"},
+                    )
+                )
+            else:
+                produced = False
+                if target_space_id is not None:
+                    produced = _append_projected_membership(
+                        projected_perception,
+                        object_id=effect.resource_id,
+                        space_id=target_space_id,
+                        generating_action_id=action.id,
+                    )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:produce",
+                        change_type="resource_produce",
+                        subject_id=effect.resource_id,
+                        space_id=target_space_id,
+                        applied=produced,
+                        metadata={"quantity": effect.quantity},
+                    )
+                )
             continue
 
         if effect.effect_type == "transfer":
@@ -519,38 +571,66 @@ def _build_projected_perception_state(
                 effect.target_id,
                 fallback_space_id=action.space_id,
             )
-            removed_count = 0
-            added = False
-            if source_space_id is not None and target_space_id is not None:
-                removed_count = _remove_perceived_memberships(
-                    projected_perception,
-                    object_id=effect.resource_id,
-                    space_id=source_space_id,
+            if is_stock:
+                stock_deltas = dict(
+                    projected_perception.context.get("projected_stock_deltas") or {}
                 )
-                if removed_count > 0:
-                    added = _append_projected_membership(
+                current_delta = float(stock_deltas.get(effect.resource_id) or 0)
+                new_delta = current_delta
+                if source_space_id is not None:
+                    new_delta -= effect.quantity
+                if target_space_id is not None:
+                    new_delta += effect.quantity
+                stock_deltas[effect.resource_id] = new_delta
+                projected_perception.context["projected_stock_deltas"] = (
+                    _canonical_json_map(stock_deltas)
+                )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:transfer",
+                        change_type="resource_transfer",
+                        subject_id=effect.resource_id,
+                        space_id=target_space_id,
+                        applied=True,
+                        metadata={
+                            "quantity": effect.quantity,
+                            "method": "stock_delta",
+                            "source_space_id": source_space_id,
+                            "target_space_id": target_space_id,
+                        },
+                    )
+                )
+            else:
+                removed_count = 0
+                added = False
+                if source_space_id is not None and target_space_id is not None:
+                    removed_count = _remove_perceived_memberships(
                         projected_perception,
                         object_id=effect.resource_id,
-                        space_id=target_space_id,
-                        generating_action_id=action.id,
+                        space_id=source_space_id,
                     )
-            changes.append(
-                ProjectedPerceptionChange(
-                    change_id=(
-                        f"{action.id}:resource_effect:{effect.resource_id}:transfer"
-                    ),
-                    change_type="resource_transfer",
-                    subject_id=effect.resource_id,
-                    space_id=target_space_id,
-                    applied=removed_count > 0 and added,
-                    metadata={
-                        "quantity": effect.quantity,
-                        "source_space_id": source_space_id,
-                        "target_space_id": target_space_id,
-                        "removed_membership_count": removed_count,
-                    },
+                    if removed_count > 0:
+                        added = _append_projected_membership(
+                            projected_perception,
+                            object_id=effect.resource_id,
+                            space_id=target_space_id,
+                            generating_action_id=action.id,
+                        )
+                changes.append(
+                    ProjectedPerceptionChange(
+                        change_id=f"{action.id}:resource_effect:{effect.resource_id}:transfer",
+                        change_type="resource_transfer",
+                        subject_id=effect.resource_id,
+                        space_id=target_space_id,
+                        applied=removed_count > 0 and added,
+                        metadata={
+                            "quantity": effect.quantity,
+                            "source_space_id": source_space_id,
+                            "target_space_id": target_space_id,
+                            "removed_membership_count": removed_count,
+                        },
+                    )
                 )
-            )
 
     return ProjectedPerceptionState(
         source_perception_id=perception.id,
@@ -751,7 +831,9 @@ class DefaultProjectionTool(ProjectionTool):
 
         projected_state = None
         if evaluation["actor_match"]:
-            projected_state = _build_projected_perception_state(action, perception)
+            projected_state = _build_projected_perception_state(
+                action, perception, resource_index
+            )
 
         return ActionProjection(
             action_id=action.id,

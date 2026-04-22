@@ -3,7 +3,7 @@
 import pytest
 
 from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
-from masm.model.perception import Perception
+from masm.model.perception import PerceivedMembership, Perception
 from masm.model.projection import (
     ActionProjection,
     DefaultProjectionTool,
@@ -15,7 +15,7 @@ from masm.model.projection import (
 )
 from masm.model.resources import Resource
 from masm.model.sensor import Sensor
-from masm.model.spaces import Space
+from masm.model.spaces import Space, SpaceObjectMembership
 from masm.model.world import World
 
 
@@ -31,7 +31,7 @@ def _build_projection_action() -> Action:
                 resource_id="energy-1",
                 effect_type="consume",
                 quantity=2.0,
-                source_id="actor-1",
+                source_id="space-1",
             )
         ],
         prerequisites=[
@@ -52,6 +52,15 @@ def test_projection_builds_assumptions_from_action_perception_and_resources():
         actor_id="actor-1",
         source_id="world-1",
     )
+    perception.perceived_memberships.append(
+        PerceivedMembership(
+            membership=SpaceObjectMembership(
+                object_id="energy-1",
+                space_id="space-1",
+                role="occupies",
+            )
+        )
+    )
     resource = Resource(id="energy-1")
 
     projection = DefaultProjectionTool().project_action(
@@ -70,8 +79,8 @@ def test_projection_builds_assumptions_from_action_perception_and_resources():
     assert projection.projected_state.generating_action_id == action.id
     assert f"{action.id}:actor_binding" in assumption_ids
     assert f"{action.id}:source_context" in assumption_ids
-    assert f"{action.id}:effect:energy-1:consume" in assumption_ids
-    assert f"{action.id}:prerequisite:capability:can_consume" in assumption_ids
+    assert f"{action.id}:effect:0:energy-1:consume" in assumption_ids
+    assert f"{action.id}:prerequisite:0:capability:can_consume" in assumption_ids
 
 
 def test_projection_blocks_on_actor_mismatch():
@@ -147,7 +156,7 @@ def test_projection_builds_successor_perceived_state_from_previous_perception():
     projection = DefaultProjectionTool().project_action(
         action,
         perception,
-        resources=[Resource(id="energy-1")],
+        resources=[Resource(id="energy-1", attributes={"resource_mode": "discrete"})],
     )
 
     assert projection.projected_state is not None

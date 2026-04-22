@@ -16,6 +16,7 @@ Space-to-space relations are managed separately through the space_relations modu
 
 from __future__ import annotations
 
+import bisect
 import copy
 import dataclasses
 from dataclasses import dataclass, field
@@ -258,11 +259,12 @@ class SpaceObjectGraph:
         if membership_key in self._membership_keys:
             return
 
-        self.object_memberships.append(object_membership)
-        self._membership_keys.add(membership_key)
-        self.object_memberships.sort(
-            key=lambda item: (item.space_id, item.object_id, item.role)
+        bisect.insort(
+            self.object_memberships,
+            object_membership,
+            key=lambda item: (item.space_id, item.object_id, item.role),
         )
+        self._membership_keys.add(membership_key)
 
     def remove_object_membership(
         self, object_membership: SpaceObjectMembership

@@ -19,10 +19,15 @@ Parameters and fields:
 - optional mutation guard callback
 
 Methods:
-- mutation: `register`, `unregister`, `clear`
-- lookup: `exists`, `get`, `all_ids`
-- serialization: `to_dict`, `from_dict`
-- guard wiring: `set_mutation_guard`
+- mutation: `register(obj, authority_token=None)`, `unregister(obj_id, authority_token=None)`, `clear(authority_token=None)`
+- lookup: `exists(obj_id) -> bool`, `get(obj_id) -> Optional[ModelObject]`, `all_ids() -> list[ObjectId]`
+- serialization: `to_dict() -> JsonMap`, `from_dict(data) -> WorldModelRegistry`
+- guard wiring: `set_mutation_guard(guard)`
+
+Notes:
+- `authority_token` is forwarded to the mutation guard callback when set.
+  Re-registering the exact same object instance is a no-op.
+  Duplicate IDs from different object instances raise `ValueError`.
 
 See also:
 - [MinimalModelRegistry](/ometeotl/documentation/class-reference/model/registry/minimal-model-registry/)

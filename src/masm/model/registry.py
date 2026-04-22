@@ -13,36 +13,48 @@ from .base import JsonMap, ModelObject, ObjectId
 
 ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
 
+_DEFAULT_FACTORIES: Optional[Dict[str, ObjectFactory]] = None
+
+
+def _get_default_factories() -> Dict[str, ObjectFactory]:
+    """Return the default object factories, initializing them once."""
+    global _DEFAULT_FACTORIES
+    if _DEFAULT_FACTORIES is None:
+        from .actions import Action
+        from .actors import Actor
+        from .objects import GenericObject
+        from .resources import Resource
+        from .spaces import Space
+        from .strategies import Strategy
+        from .world import World
+
+        _DEFAULT_FACTORIES = {
+            "action": Action.from_dict,
+            "actor": Actor.from_dict,
+            "generic": GenericObject.from_dict,
+            "resource": Resource.from_dict,
+            "space": Space.from_dict,
+            "strategy": Strategy.from_dict,
+            "world": World.from_dict,
+        }
+    return _DEFAULT_FACTORIES
+
 
 def reconstruct_model_object(
     raw_object: Mapping[str, Any],
     object_factories: Optional[Mapping[str, ObjectFactory]] = None,
 ) -> ModelObject:
     """Reconstruct a model object from its canonical serialized form."""
-    from .actions import Action
-    from .actors import Actor
-    from .objects import GenericObject
-    from .resources import Resource
-    from .spaces import Space
-    from .strategies import Strategy
-    from .world import World
-
-    factories: dict[str, ObjectFactory] = {
-        "action": Action.from_dict,
-        "actor": Actor.from_dict,
-        "generic": GenericObject.from_dict,
-        "resource": Resource.from_dict,
-        "space": Space.from_dict,
-        "strategy": Strategy.from_dict,
-        "world": World.from_dict,
-    }
     if object_factories:
+        factories: Dict[str, ObjectFactory] = dict(_get_default_factories())
         factories.update(
             {
                 str(type_name).lower(): factory
                 for type_name, factory in object_factories.items()
             }
         )
+    else:
+        factories = _get_default_factories()
 
     object_payload = dict(raw_object)
     object_type = str(object_payload.get("object_type") or "").lower()
@@ -153,7 +165,7 @@ class MinimalModelRegistry:
         """
         existing = cls._instances.get(obj.id)
         if existing is not None and existing is not obj:
-            raise ValueError("Duplicate model" f"object id : {obj.id}")
+            raise ValueError(f"Duplicate model object id: {obj.id}")
         cls._instances[obj.id] = obj
 
     @classmethod
