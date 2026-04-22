@@ -278,3 +278,346 @@ def test_utility_frame_metadata_preservation():
     frame_dict = frame.to_dict()
     recovered_frame = UtilityFrame.from_dict(frame_dict)
     assert recovered_frame.metadata == original_metadata
+
+
+def test_utility_function_resolve_numeric_metrics_default_zero_policy():
+    """Default-neutral stance uses 0.0 fallback and exposes policy metadata."""
+
+    class MetricResolverUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "resolver-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["known", "missing", "override", "bad"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(
+                value=(
+                    values["known"]
+                    + values["missing"]
+                    + values["override"]
+                    + values["bad"]
+                ),
+                metadata=trace,
+            )
+
+    utility = MetricResolverUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-metrics",
+            actor_id="actor-1",
+            source_id="world-1",
+            context={"known": 2.5, "bad": "not-a-number"},
+        ),
+        actor=Actor(id="actor-1"),
+        context={
+            "metric_overrides": {"override": 3.0},
+        },
+    )
+
+    assert frame.value == 5.5
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
+    assert frame.metadata["missing_metric_default"] == 0.0
+    assert frame.metadata["missing_metric_strict_invalid"] is False
+    assert frame.metadata["missing_metrics"] == ["bad", "missing"]
+    assert frame.metadata["fallback_applied_count"] == 2
+    assert frame.metadata["total_metrics"] == 4
+    assert frame.metadata["fallback_ratio"] == 0.5
+    assert frame.metadata["fallback_dominance_threshold"] == 0.5
+    assert frame.metadata["fallback_dominates"] is False
+    assert frame.metadata["metric_sources"]["known"] == "perception.context"
+    assert frame.metadata["metric_sources"]["override"] == "context.metric_overrides"
+    assert frame.metadata["metric_sources"]["missing"] == "default_missing"
+    assert frame.metadata["metric_sources"]["bad"] == "default_invalid"
+
+
+def test_utility_function_resolve_numeric_metrics_default_pessimistic_policy():
+    """Default-pessimistic stance uses a negative fallback by default."""
+
+    class FearPolicyUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "fear-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["known", "missing", "invalid"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(
+                value=values["known"] + values["missing"] + values["invalid"],
+                metadata=trace,
+            )
+
+    utility = FearPolicyUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-fear",
+            actor_id="actor-1",
+            source_id="world-1",
+            context={"known": 4.0, "invalid": "bad"},
+        ),
+        actor=Actor(id="actor-1"),
+        context={"missing_metric_policy": "default_pessimistic"},
+    )
+
+    assert frame.value == 2.0  # 4.0 + (-1.0) + (-1.0)
+    assert frame.metadata["missing_metric_policy"] == "default_pessimistic"
+    assert frame.metadata["missing_metric_default"] == -1.0
+    assert frame.metadata["missing_metrics"] == ["invalid", "missing"]
+    assert frame.metadata["metric_sources"]["missing"] == "default_missing"
+    assert frame.metadata["metric_sources"]["invalid"] == "default_invalid"
+
+
+def test_utility_function_resolve_numeric_metrics_policy_is_easily_overridable():
+    """Context can override fallback value while keeping default-neutral as preferred stance."""
+
+    class OverridePolicyUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "override-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["m1", "m2"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(
+                value=values["m1"] + values["m2"], metadata=trace
+            )
+
+    utility = OverridePolicyUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-override",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        actor=Actor(id="actor-1"),
+        context={
+            "missing_metric_policy": "default_neutral",
+            "missing_metric_default": -0.25,
+        },
+    )
+
+    assert frame.value == -0.5
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
+    assert frame.metadata["missing_metric_default"] == -0.25
+
+
+def test_utility_function_resolve_numeric_metrics_invalid_policy_falls_back_to_default_neutral():
+    """Unknown policy names must safely fall back to the default-neutral stance."""
+
+    class InvalidPolicyUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "invalid-policy-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["missing_metric"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(
+                value=values["missing_metric"], metadata=trace
+            )
+
+    utility = InvalidPolicyUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-invalid-policy",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        actor=Actor(id="actor-1"),
+        context={"missing_metric_policy": "aggressive_unknown_mode"},
+    )
+
+    assert frame.value == 0.0
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
+    assert frame.metadata["missing_metric_default"] == 0.0
+    assert frame.metadata["missing_metrics"] == ["missing_metric"]
+
+
+def test_utility_function_resolve_numeric_metrics_pessimistic_policy_custom_default_override():
+    """Default-pessimistic stance supports explicit custom negative fallback."""
+
+    class FearOverrideUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "fear-override-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["known", "unknown"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(
+                value=values["known"] + values["unknown"],
+                metadata=trace,
+            )
+
+    utility = FearOverrideUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-fear-override",
+            actor_id="actor-1",
+            source_id="world-1",
+            context={"known": 2.0},
+        ),
+        actor=Actor(id="actor-1"),
+        context={
+            "missing_metric_policy": "default_pessimistic",
+            "missing_metric_default": -3.5,
+        },
+    )
+
+    assert frame.value == -1.5
+    assert frame.metadata["missing_metric_policy"] == "default_pessimistic"
+    assert frame.metadata["missing_metric_default"] == -3.5
+    assert frame.metadata["missing_metrics"] == ["unknown"]
+    assert frame.metadata["metric_sources"]["unknown"] == "default_missing"
+
+
+def test_utility_function_resolve_numeric_metrics_strict_invalid_raises():
+    """Strict invalid mode raises instead of silently applying fallback."""
+
+    class StrictPolicyUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "strict-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["known", "bad"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(value=values["known"], metadata=trace)
+
+    utility = StrictPolicyUtility()
+    with pytest.raises(ValueError, match="non-numeric value"):
+        utility.evaluate(
+            perception=Perception(
+                id="perception-strict-invalid",
+                actor_id="actor-1",
+                source_id="world-1",
+                context={"known": 1.0, "bad": "not-numeric"},
+            ),
+            actor=Actor(id="actor-1"),
+            context={"missing_metric_strict_invalid": True},
+        )
+
+
+def test_utility_function_resolve_numeric_metrics_exposes_fallback_dominance_flag():
+    """Metadata flags when fallback usage dominates under configured threshold."""
+
+    class DominanceUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "dominance-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return False
+
+        def evaluate(self, perception, actor, context):
+            del actor
+            values, trace = self.resolve_numeric_metrics(
+                ["k1", "k2", "k3", "k4"],
+                perception=perception,
+                context=context,
+            )
+            return self.build_utility_frame(value=sum(values.values()), metadata=trace)
+
+    utility = DominanceUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-dominance",
+            actor_id="actor-1",
+            source_id="world-1",
+            context={"k1": 1.0},
+        ),
+        actor=Actor(id="actor-1"),
+        context={"fallback_dominance_threshold": 0.49},
+    )
+
+    assert frame.metadata["fallback_applied_count"] == 3
+    assert frame.metadata["total_metrics"] == 4
+    assert frame.metadata["fallback_ratio"] == 0.75
+    assert frame.metadata["fallback_dominance_threshold"] == 0.49
+    assert frame.metadata["fallback_dominates"] is True
+
+
+def test_utility_function_build_utility_frame_adds_standard_metadata():
+    """Utility frame helper always injects framework and utility shape metadata."""
+
+    class BuilderUtility(UtilityFunction):
+        @property
+        def framework_id(self) -> str:
+            return "builder-framework"
+
+        @property
+        def is_multi_criteria(self) -> bool:
+            return True
+
+        def evaluate(self, perception, actor, context):
+            del perception, actor, context
+            return self.build_utility_frame(
+                value=[1.0, 2.0],
+                criteria_labels=["a", "b"],
+                metadata={"note": "custom"},
+            )
+
+    utility = BuilderUtility()
+    frame = utility.evaluate(
+        perception=Perception(
+            id="perception-builder",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        actor=Actor(id="actor-1"),
+        context={},
+    )
+
+    assert frame.framework_id == "builder-framework"
+    assert frame.metadata["framework_id"] == "builder-framework"
+    assert frame.metadata["utility_shape"] == "vector"
+    assert frame.metadata["note"] == "custom"

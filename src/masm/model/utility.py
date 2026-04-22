@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Optional, Union
 
-from .base import JsonMap, ObjectId
 from .actors import Actor
+from .base import JsonMap, _canonical_json_map
 from .perception import Perception
 
 
@@ -99,48 +99,30 @@ class UtilityFunction(ABC):
 
     Core specs addressed: A-22 (interpretive framework), G-6 (multi-criteria utility).
 
-    Subclasses must implement:
-    - `evaluate(perception, actor, context)` — return a UtilityFrame
-    - `is_multi_criteria` property — True for vector-valued utilities
-
-    Example:
-        class MaxResourceUtility(UtilityFunction):
-            def __init__(self, framework_id: str):
-                self.framework_id = framework_id
-
-            @property
-            def is_multi_criteria(self) -> bool:
-                return False
-
-            def evaluate(
-                self,
-                perception: Perception,
-                actor: Actor,
-                context: JsonMap,
-            ) -> UtilityFrame:
-                # Count resources in perceived state
-                resource_count = len(perception.perceived_spaces)
-                return UtilityFrame(
-                    value=float(resource_count),
-                    framework_id=self.framework_id,
-                )
+    Policy contract for ``resolve_numeric_metrics``:
+    - supported policy names (stable enum):
+      - ``default_neutral``: missing metrics fall back to ``0.0``
+      - ``default_pessimistic``: missing metrics fall back to a negative value
+    - fallback precedence and resolution order are deterministic and documented
+      in the helper docstring.
     """
+
+    MISSING_METRIC_POLICY_DEFAULT_NEUTRAL = "default_neutral"
+    MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC = "default_pessimistic"
+    SUPPORTED_MISSING_METRIC_POLICIES = {
+        MISSING_METRIC_POLICY_DEFAULT_NEUTRAL,
+        MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC,
+    }
 
     @property
     @abstractmethod
     def framework_id(self) -> str:
-        """Identifier of the interpretive framework this utility function uses.
-
-        The framework_id ties the utility evaluation to a domain-specific
-        context (A-22) without imposing it on the core architecture.
-        """
-        pass
+        """Identifier of the interpretive framework this utility function uses."""
 
     @property
     @abstractmethod
     def is_multi_criteria(self) -> bool:
         """Return True if this function produces vector-valued utilities (G-6)."""
-        pass
 
     @abstractmethod
     def evaluate(
@@ -149,18 +131,168 @@ class UtilityFunction(ABC):
         actor: Actor,
         context: JsonMap,
     ) -> UtilityFrame:
-        """Evaluate utility of a perceived state for an actor.
+        """Evaluate utility of a perceived state for an actor."""
 
-        Args:
-            perception: The actor's current or projected perception.
-            actor: The actor evaluating utility.
-            context: Domain-specific context (e.g., constraints, preferences).
+    def resolve_numeric_metrics(
+        self,
+        metric_keys: list[str],
+        *,
+        perception: Perception,
+        context: JsonMap,
+    ) -> tuple[dict[str, float], JsonMap]:
+        """Resolve numeric metrics with a deterministic fallback policy.
+
+        Policy configuration keys in ``context``:
+        - ``missing_metric_policy``:
+          - ``"default_neutral"`` (preferred default)
+          - ``"default_pessimistic"``
+        - ``missing_metric_default``: explicit numeric fallback override.
+        - ``missing_metric_strict_invalid``: when ``True``, invalid present values
+          raise ``ValueError`` instead of falling back.
+        - ``fallback_dominance_threshold``: ratio in ``[0, 1]`` used to flag when
+          fallback usage dominates a metric vector (default ``0.5``).
+
+        Resolution precedence per metric:
+        1. ``context["metric_overrides"][metric_key]``
+        2. ``context[metric_key]``
+        3. ``perception.context[metric_key]``
+        4. fallback default from selected policy/override
 
         Returns:
-            A UtilityFrame containing the scalar or vector utility value(s),
-            framework reference, and optional metadata.
-
-        Raises:
-            ValueError: If perception, actor, or context are invalid.
+            A tuple ``(values, trace_metadata)`` where:
+            - ``values`` maps each metric key to a float
+            - ``trace_metadata`` documents policy, source and fallback diagnostics
         """
-        pass
+        metric_overrides_raw = context.get("metric_overrides")
+        metric_overrides = (
+            dict(metric_overrides_raw)
+            if isinstance(metric_overrides_raw, Mapping)
+            else {}
+        )
+
+        requested_policy = str(
+            context.get("missing_metric_policy")
+            or self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+        )
+        if requested_policy not in self.SUPPORTED_MISSING_METRIC_POLICIES:
+            requested_policy = self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+
+        default_for_missing = 0.0
+        if requested_policy == self.MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC:
+            default_for_missing = -1.0
+
+        explicit_default_raw = context.get("missing_metric_default")
+        if explicit_default_raw is not None:
+            try:
+                default_for_missing = float(explicit_default_raw)
+            except (TypeError, ValueError):
+                default_for_missing = (
+                    0.0
+                    if requested_policy == self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+                    else -1.0
+                )
+
+        strict_invalid = bool(context.get("missing_metric_strict_invalid", False))
+
+        fallback_dominance_threshold_raw = context.get("fallback_dominance_threshold")
+        try:
+            fallback_dominance_threshold = (
+                float(fallback_dominance_threshold_raw)
+                if fallback_dominance_threshold_raw is not None
+                else 0.5
+            )
+        except (TypeError, ValueError):
+            fallback_dominance_threshold = 0.5
+        fallback_dominance_threshold = max(0.0, min(1.0, fallback_dominance_threshold))
+
+        resolved: dict[str, float] = {}
+        missing_metrics: list[str] = []
+        source_by_metric: dict[str, str] = {}
+        fallback_applied_count = 0
+
+        for metric_key in metric_keys:
+            if metric_key in metric_overrides:
+                raw = metric_overrides.get(metric_key)
+                source_by_metric[metric_key] = "context.metric_overrides"
+            elif metric_key in context:
+                raw = context.get(metric_key)
+                source_by_metric[metric_key] = "context"
+            elif metric_key in perception.context:
+                raw = perception.context.get(metric_key)
+                source_by_metric[metric_key] = "perception.context"
+            else:
+                raw = default_for_missing
+                missing_metrics.append(metric_key)
+                source_by_metric[metric_key] = "default_missing"
+                fallback_applied_count += 1
+
+            if raw is None:
+                if strict_invalid and source_by_metric[metric_key] != "default_missing":
+                    raise ValueError(
+                        f"Metric '{metric_key}' has invalid value None under strict mode"
+                    )
+                resolved[metric_key] = default_for_missing
+                if metric_key not in missing_metrics:
+                    missing_metrics.append(metric_key)
+                source_by_metric[metric_key] = "default_invalid"
+                fallback_applied_count += 1
+                continue
+
+            try:
+                resolved[metric_key] = float(raw)
+            except (TypeError, ValueError):
+                if strict_invalid:
+                    raise ValueError(
+                        f"Metric '{metric_key}' has non-numeric value under strict mode"
+                    )
+                resolved[metric_key] = default_for_missing
+                if metric_key not in missing_metrics:
+                    missing_metrics.append(metric_key)
+                source_by_metric[metric_key] = "default_invalid"
+                fallback_applied_count += 1
+
+        total_metrics = len(metric_keys)
+        fallback_ratio = (
+            float(fallback_applied_count) / float(total_metrics)
+            if total_metrics > 0
+            else 0.0
+        )
+
+        trace_metadata: JsonMap = {
+            "missing_metric_policy": requested_policy,
+            "missing_metric_default": float(default_for_missing),
+            "missing_metric_strict_invalid": strict_invalid,
+            "missing_metrics": sorted(missing_metrics),
+            "fallback_applied_count": fallback_applied_count,
+            "total_metrics": total_metrics,
+            "fallback_ratio": fallback_ratio,
+            "fallback_dominance_threshold": fallback_dominance_threshold,
+            "fallback_dominates": fallback_ratio > fallback_dominance_threshold,
+            "metric_sources": _canonical_json_map(source_by_metric),
+        }
+        return resolved, trace_metadata
+
+    def build_utility_frame(
+        self,
+        *,
+        value: Union[float, list[float]],
+        criteria_labels: Optional[list[str]] = None,
+        metadata: Optional[JsonMap] = None,
+    ) -> UtilityFrame:
+        """Build a UtilityFrame with standardized, explicit metadata.
+
+        Metadata added automatically (unless already present):
+        - ``framework_id``
+        - ``utility_shape``: ``"scalar"`` or ``"vector"``
+        """
+        resolved_metadata = dict(metadata or {})
+        resolved_metadata.setdefault("framework_id", self.framework_id)
+        resolved_metadata.setdefault(
+            "utility_shape", "vector" if isinstance(value, list) else "scalar"
+        )
+        return UtilityFrame(
+            value=value,
+            framework_id=self.framework_id,
+            criteria_labels=list(criteria_labels or []),
+            metadata=resolved_metadata,
+        )
