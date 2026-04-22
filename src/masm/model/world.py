@@ -14,7 +14,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
-from .base import ModelObject, ObjectId, JsonMap
+from .base import (
+    JsonMap,
+    ObjectId,
+    _base_kwargs_from_typed_payload,
+    _require_non_empty,
+)
 from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
 from .space_relations import SpaceRelation, SpaceRelationGraph
 from .registry import WorldModelRegistry
@@ -70,8 +75,7 @@ class World(Space):
         boundary while keeping backward compatibility for local/in-process use
         when authority mode is disabled.
         """
-        if not token:
-            raise ValueError("Authority token cannot be empty")
+        _require_non_empty(token, "Authority token cannot be empty")
         if self._authority_mode_enabled:
             raise RuntimeError("Authority mode is already enabled for this world")
         self._authority_mode_enabled = True
@@ -174,13 +178,11 @@ class World(Space):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "World":
         """Reconstruct a World from its canonical dictionary representation."""
-        payload = dict(data)
-        payload["object_type"] = payload.get("object_type") or "world"
-        base_obj = ModelObject.from_dict(payload)
-        attributes = base_obj.attributes
+        base_kwargs = _base_kwargs_from_typed_payload(data, "world")
+        attributes = dict(base_kwargs.get("attributes") or {})
         is_root_world = bool(attributes.get("is_root_world", True))
         return cls(
-            **base_obj._base_kwargs(),
+            **base_kwargs,
             is_root_world=is_root_world,
             space_object_graph=SpaceObjectGraph.from_dict(
                 data.get("space_object_graph") or {}

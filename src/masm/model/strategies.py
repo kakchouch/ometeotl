@@ -29,7 +29,9 @@ from .base import (
     ObjectId,
     _canonical_json,
     _canonical_json_map,
+    _require_non_empty,
     _require_non_null_string,
+    _validated_unit_interval,
 )
 from .actions import Action
 from .perception import Perception
@@ -54,14 +56,14 @@ class StrategyBuildStep:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.action.id:
-            raise ValueError("StrategyBuildStep action id cannot be empty")
+        _require_non_empty(
+            self.action.id, "StrategyBuildStep action id cannot be empty"
+        )
         if self.branch_probability is not None:
-            if not 0.0 <= float(self.branch_probability) <= 1.0:
-                raise ValueError(
-                    "StrategyBuildStep branch_probability must be in [0, 1]"
-                )
-            self.branch_probability = float(self.branch_probability)
+            self.branch_probability = _validated_unit_interval(
+                self.branch_probability,
+                "StrategyBuildStep branch_probability must be in [0, 1]",
+            )
 
 
 @dataclass
@@ -80,12 +82,15 @@ class StrategyOutcomeBranch:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.branch_id:
-            raise ValueError("StrategyOutcomeBranch branch_id cannot be empty")
+        _require_non_empty(
+            self.branch_id,
+            "StrategyOutcomeBranch branch_id cannot be empty",
+        )
         if self.probability is not None:
-            if not 0.0 <= float(self.probability) <= 1.0:
-                raise ValueError("StrategyOutcomeBranch probability must be in [0, 1]")
-            self.probability = float(self.probability)
+            self.probability = _validated_unit_interval(
+                self.probability,
+                "StrategyOutcomeBranch probability must be in [0, 1]",
+            )
 
     def to_dict(self) -> JsonMap:
         """Serialize the branch in canonical form."""
@@ -134,10 +139,8 @@ class StrategyNode:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.node_id:
-            raise ValueError("StrategyNode node_id cannot be empty")
-        if not self.action_id:
-            raise ValueError("StrategyNode action_id cannot be empty")
+        _require_non_empty(self.node_id, "StrategyNode node_id cannot be empty")
+        _require_non_empty(self.action_id, "StrategyNode action_id cannot be empty")
         if self.source_perception_id is not None and not self.source_perception_id:
             raise ValueError("StrategyNode source_perception_id cannot be empty")
         if self.projected_state is not None:
@@ -225,14 +228,13 @@ class Strategy(ModelObject):
     def __post_init__(self) -> None:
         if self.object_type != "strategy":
             self.object_type = "strategy"
-        if not self.id:
-            raise ValueError("Strategy id cannot be empty")
-        if not self.actor_id:
-            raise ValueError("Strategy actor_id cannot be empty")
-        if not self.root_node_id:
-            raise ValueError("Strategy root_node_id cannot be empty")
-        if not self.projection_policy:
-            raise ValueError("Strategy projection_policy cannot be empty")
+        _require_non_empty(self.id, "Strategy id cannot be empty")
+        _require_non_empty(self.actor_id, "Strategy actor_id cannot be empty")
+        _require_non_empty(self.root_node_id, "Strategy root_node_id cannot be empty")
+        _require_non_empty(
+            self.projection_policy,
+            "Strategy projection_policy cannot be empty",
+        )
 
     def add_node(self, node: StrategyNode) -> None:
         """Add a node while preserving unique node IDs."""

@@ -250,6 +250,31 @@ def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
     return str(_require_non_null_value(data, key))
 
 
+def _require_non_empty(value: Any, error_message: str) -> None:
+    """Raise ValueError when a required value is empty/falsy."""
+    if not value:
+        raise ValueError(error_message)
+
+
+def _validated_unit_interval(value: Any, error_message: str) -> float:
+    """Validate and normalize a numeric value constrained to [0, 1]."""
+    numeric_value = float(value)
+    if not 0.0 <= numeric_value <= 1.0:
+        raise ValueError(error_message)
+    return numeric_value
+
+
+def _base_kwargs_from_typed_payload(
+    data: Mapping[str, Any],
+    default_object_type: str,
+) -> JsonMap:
+    """Build normalized base kwargs for a concrete ModelObject subtype."""
+    payload = dict(data)
+    payload["object_type"] = payload.get("object_type") or default_object_type
+    base_obj = ModelObject.from_dict(payload)
+    return base_obj._base_kwargs()
+
+
 @dataclass
 class ModelObject:
     """A base class for all objects in the model.

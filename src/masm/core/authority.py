@@ -14,7 +14,7 @@ import threading
 from typing import Any, Callable, Mapping, Optional, Sequence
 from uuid import uuid4
 
-from masm.model.base import JsonMap, ModelObject, ObjectId
+from masm.model.base import JsonMap, ModelObject, ObjectId, _require_non_empty
 from masm.model.registry import reconstruct_model_object
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
@@ -56,12 +56,9 @@ class CommandEnvelope:
         command_id = str(data.get("command_id") or "")
         actor_id = str(data.get("actor_id") or "")
         command_type = str(data.get("command_type") or "")
-        if not command_id:
-            raise ValueError("Command id cannot be empty")
-        if not actor_id:
-            raise ValueError("Actor id cannot be empty")
-        if not command_type:
-            raise ValueError("Command type cannot be empty")
+        _require_non_empty(command_id, "Command id cannot be empty")
+        _require_non_empty(actor_id, "Actor id cannot be empty")
+        _require_non_empty(command_type, "Command type cannot be empty")
         sequence_raw = data.get("sequence", 0)
         try:
             sequence = int(sequence_raw) if sequence_raw is not None else 0

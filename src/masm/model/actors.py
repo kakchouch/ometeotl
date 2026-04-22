@@ -31,7 +31,13 @@ from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping
 
-from .base import ModelObject, ObjectId, relation_methods
+from .base import (
+    ModelObject,
+    ObjectId,
+    _base_kwargs_from_typed_payload,
+    _require_non_empty,
+    relation_methods,
+)
 from .objects import GenericObject
 
 if TYPE_CHECKING:
@@ -92,8 +98,7 @@ class Actor(GenericObject):
     @kind.setter
     def kind(self, value: str) -> None:
         """Sets the actor's kind."""
-        if not value:
-            raise ValueError("Kind cannot be empty")
+        _require_non_empty(value, "Kind cannot be empty")
         self.attributes["kind"] = value
 
     @property
@@ -150,8 +155,7 @@ class Actor(GenericObject):
     @composition_mode.setter
     def composition_mode(self, value: str) -> None:
         """Sets the actor's composition mode."""
-        if not value:
-            raise ValueError("Composition mode cannot be empty")
+        _require_non_empty(value, "Composition mode cannot be empty")
         self.attributes["composition_mode"] = value
 
     @property
@@ -217,10 +221,7 @@ class Actor(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Actor":
         """Create an Actor instance from a dictionary representation."""
-        payload = dict(data)
-        payload["object_type"] = payload.get("object_type") or "actor"
-        base_obj = ModelObject.from_dict(payload)
-        return cls(**base_obj._base_kwargs())
+        return cls(**_base_kwargs_from_typed_payload(data, "actor"))
 
 
 # ---------------------------------------------------------------------------

@@ -22,7 +22,9 @@ from .base import (
     ModelObject,
     ObjectId,
     _canonical_json_map,
+    _require_non_empty,
     _require_non_null_string,
+    _validated_unit_interval,
 )
 
 
@@ -43,13 +45,13 @@ class GoalBuildStep:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.actor_id:
-            raise ValueError("GoalBuildStep actor_id cannot be empty")
+        _require_non_empty(self.actor_id, "GoalBuildStep actor_id cannot be empty")
         if self.kind not in ("final", "intermediate"):
             raise ValueError("GoalBuildStep kind must be 'final' or 'intermediate'")
-        if not 0.0 <= float(self.priority) <= 1.0:
-            raise ValueError("GoalBuildStep priority must be in [0, 1]")
-        self.priority = float(self.priority)
+        self.priority = _validated_unit_interval(
+            self.priority,
+            "GoalBuildStep priority must be in [0, 1]",
+        )
 
 
 @dataclass
@@ -80,15 +82,14 @@ class Goal(ModelObject):
     def __post_init__(self) -> None:
         if self.object_type != "goal":
             self.object_type = "goal"
-        if not self.id:
-            raise ValueError("Goal id cannot be empty")
-        if not self.actor_id:
-            raise ValueError("Goal actor_id cannot be empty")
+        _require_non_empty(self.id, "Goal id cannot be empty")
+        _require_non_empty(self.actor_id, "Goal actor_id cannot be empty")
         if self.kind not in ("final", "intermediate"):
             raise ValueError("Goal kind must be 'final' or 'intermediate'")
-        if not 0.0 <= float(self.priority) <= 1.0:
-            raise ValueError("Goal priority must be in [0, 1]")
-        self.priority = float(self.priority)
+        self.priority = _validated_unit_interval(
+            self.priority,
+            "Goal priority must be in [0, 1]",
+        )
         if self.status not in ("active", "achieved", "abandoned", "blocked"):
             raise ValueError(
                 "Goal status must be one of: active, achieved, abandoned, blocked"
@@ -96,8 +97,7 @@ class Goal(ModelObject):
 
     def add_child_goal(self, goal_id: ObjectId) -> None:
         """Register a child goal, maintaining sorted unique list."""
-        if not goal_id:
-            raise ValueError("goal_id cannot be empty")
+        _require_non_empty(goal_id, "goal_id cannot be empty")
         if goal_id not in self.child_goal_ids:
             self.child_goal_ids = sorted(list(set(self.child_goal_ids) | {goal_id}))
 
@@ -107,8 +107,7 @@ class Goal(ModelObject):
 
     def add_strategy(self, strategy_id: ObjectId) -> None:
         """Register a strategy aimed at this goal, maintaining sorted unique list."""
-        if not strategy_id:
-            raise ValueError("strategy_id cannot be empty")
+        _require_non_empty(strategy_id, "strategy_id cannot be empty")
         if strategy_id not in self.strategy_ids:
             self.strategy_ids = sorted(list(set(self.strategy_ids) | {strategy_id}))
 
@@ -172,8 +171,10 @@ class GoalDecompositionTree:
     goals: dict[ObjectId, Goal] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.root_goal_id:
-            raise ValueError("GoalDecompositionTree root_goal_id cannot be empty")
+        _require_non_empty(
+            self.root_goal_id,
+            "GoalDecompositionTree root_goal_id cannot be empty",
+        )
         if self.root_goal_id not in self.goals:
             raise ValueError(
                 f"GoalDecompositionTree root_goal_id '{self.root_goal_id}' "
