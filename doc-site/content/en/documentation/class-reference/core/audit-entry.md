@@ -21,6 +21,7 @@ Parameters and fields:
 - `sequence: int`
 - `accepted: bool`
 - `reason: str`
+- `validation_summary: JsonMap`
 - `logged_at: str`
 
 Methods:

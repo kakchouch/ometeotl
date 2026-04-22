@@ -154,15 +154,21 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
     - Mode autoritaire optionnel pour les mutations possédées par le serveur.
-11. Contrôle qualité :
-    - Tests automatisés dans `tests/model/`, `tests/core/` et `tests/game/`.
-    - Base actuelle : `259` tests collectés.
+11. Couche validation dans `src/masm/validation/` :
+    - Contrats de validation (`ValidationIssue`, `ValidationContext`, `ValidationResult`, `ValidationException`) et `ValidationPipeline` par étapes.
+    - Familles de validateurs : syntaxique, structurel, temporel, spatial, admissibilité, épistémique, complétude.
+    - Profils de durcissement : `observe_only`, `enforce_structure`, `enforce_domain`.
+    - Diagnostics et suggestions de réparation via `DiagnosticBuilder`.
+12. Interfaces minimales dans `src/masm/model/interfaces.py` :
+    - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
+13. Contrôle qualité :
+    - Tests automatisés dans `tests/model/`, `tests/core/`, `tests/game/` et `tests/validation/`.
+    - Base actuelle : `307` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/masm/validation/` pour les pipelines explicites de validation.
 - `src/masm/io/` pour les workflows dédiés d'import/export.
 - `src/masm/generation/` pour la construction contextuelle ou assistée par LLM.
 - `src/masm/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
@@ -181,7 +187,18 @@ ometeotl/
 │       ├── generation/         # prévu / scaffold partiel
 │       ├── game/
 │       │   └── utility.py
-│       ├── validation/         # prévu / scaffold partiel
+│       ├── validation/
+│       │   ├── base.py
+│       │   ├── pipeline.py
+│       │   ├── policy.py
+│       │   ├── syntactic.py
+│       │   ├── structural.py
+│       │   ├── temporal.py
+│       │   ├── spatial.py
+│       │   ├── admissibility.py
+│       │   ├── epistemic.py
+│       │   ├── completeness.py
+│       │   └── diagnostic.py
 │       ├── examples/           # prévu / scaffold partiel
 │       └── model/
 │           ├── actions.py
@@ -208,16 +225,15 @@ ometeotl/
 
 ### Lecture pratique de la V1
 
-La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques, téléologie/utilité, ranking game, et runtime/autorité déjà implémentées. Les couches validation, génération, IO dédiées et des modules game orientés solveurs plus riches restent au roadmap.
+La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques, téléologie/utilité, ranking game, runtime/autorité, et la couche validation dédiée. Les couches génération, IO dédiées, les modules game orientés solveurs plus riches, et les exemples de référence restent au roadmap.
 
 ### Priorités TODO actuelles
 
-1. Implémenter la couche explicite de validation requise par F-9 à F-15.
-2. Implémenter des workflows IO dédiés au-dessus de la sérialisation canonique des objets.
-3. Implémenter la génération contextuelle et les workflows de réparation.
-4. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
-5. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
-6. Ajouter des exemples de référence et des démos complètes de bout en bout.
+1. Implémenter des workflows IO dédiés au-dessus de la sérialisation canonique des objets.
+2. Implémenter la génération contextuelle et les workflows de réparation.
+3. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
+4. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
+5. Ajouter des exemples de référence et des démos complètes de bout en bout.
 
 
 ## Status
