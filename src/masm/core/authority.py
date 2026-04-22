@@ -20,6 +20,7 @@ from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
 from masm.validation import (
+    PROFILE_SOFT_GATE,
     LEVEL_RECOMMENDED,
     MODE_WARN_ONLY,
     CompletenessValidator,
@@ -29,6 +30,7 @@ from masm.validation import (
     ValidationIssue,
     ValidationPipeline,
     ValidationResult,
+    build_stage_modes,
 )
 
 ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
@@ -132,6 +134,10 @@ class AuthorityCommandHandler:
         sequence_tracker_max_actors: Optional[int] = 1000,
         sequence_history_max_actors: Optional[int] = None,
         validation_soft_gate: bool = True,
+        validation_policy_profile: str = PROFILE_SOFT_GATE,
+        validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
+        validation_block_on_error: bool = False,
+        validation_completeness_level: str = LEVEL_RECOMMENDED,
     ) -> None:
         if audit_log_maxlen <= 0:
             raise ValueError("audit_log_maxlen must be greater than 0")
@@ -199,6 +205,14 @@ class AuthorityCommandHandler:
         self._lock = threading.Lock()
         self._closed = False
         self._validation_soft_gate = bool(validation_soft_gate)
+        self._validation_stage_modes = build_stage_modes(
+            policy_profile=validation_policy_profile,
+            stage_mode_overrides=validation_stage_mode_overrides,
+        )
+        self._validation_block_on_error = bool(validation_block_on_error)
+        self._validation_completeness_level = str(
+            validation_completeness_level or LEVEL_RECOMMENDED
+        )
         self._validation_pipeline: Optional[ValidationPipeline] = None
         if self._validation_soft_gate:
             self._validation_pipeline = ValidationPipeline(
@@ -259,6 +273,12 @@ class AuthorityCommandHandler:
             validation_payload = self._validation_payload_for_command(command)
             validation_result = self._run_soft_validation(command, validation_payload)
             validation_export = self._serialize_validation_result(validation_result)
+            if self._validation_block_on_error and not validation_result.valid:
+                return self._reject(
+                    command,
+                    "Validation policy rejected command",
+                    validation_summary=validation_export["summary"],
+                )
 
             try:
                 applied = self._apply_command(command)
@@ -284,7 +304,12 @@ class AuthorityCommandHandler:
                 validation=validation_export,
             )
 
-    def _reject(self, command: CommandEnvelope, reason: str) -> CommandResult:
+    def _reject(
+        self,
+        command: CommandEnvelope,
+        reason: str,
+        validation_summary: Optional[JsonMap] = None,
+    ) -> CommandResult:
         self._append_audit(
             AuditEntry(
                 command_id=command.command_id,
@@ -293,10 +318,17 @@ class AuthorityCommandHandler:
                 sequence=command.sequence,
                 accepted=False,
                 reason=reason,
-                validation_summary={},
+                validation_summary=dict(validation_summary or {}),
             )
         )
-        return CommandResult(accepted=False, reason=reason)
+        validation_payload: JsonMap = {}
+        if validation_summary:
+            validation_payload = {"summary": dict(validation_summary)}
+        return CommandResult(
+            accepted=False,
+            reason=reason,
+            validation=validation_payload,
+        )
 
     def _validation_payload_for_command(self, command: CommandEnvelope) -> Any:
         payload = command.payload
@@ -343,13 +375,14 @@ class AuthorityCommandHandler:
                 "world": self.world,
                 "interaction_time": command.issued_at,
                 "format": "auto",
-                "completeness_level": LEVEL_RECOMMENDED,
+                "completeness_level": self._validation_completeness_level,
             },
         )
         return self._validation_pipeline.validate(
             payload,
             mode=MODE_WARN_ONLY,
             context=validation_context,
+            stage_modes=self._validation_stage_modes,
             raise_on_error=False,
         )
 

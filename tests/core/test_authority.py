@@ -7,6 +7,7 @@ from masm.model.actors import Actor
 from masm.model.resources import Resource
 from masm.model.spaces import Space
 from masm.model.world import World
+from masm.validation import LEVEL_FULL, PROFILE_HARDEN_STRUCTURAL
 
 
 def test_world_authority_mode_blocks_direct_mutations():
@@ -96,6 +97,39 @@ def test_authority_handler_soft_gate_reports_validation_without_rejecting():
     assert register.accepted is True
     assert register.validation["summary"]["warning"] >= 0
     assert register.validation["summary"]["total"] >= 1
+
+
+def test_authority_handler_hardening_profile_can_reject_on_validation_error():
+    """Hardened profile blocks commands when strict stages report errors."""
+    world = World(id="world-cmd-hard-1")
+    handler = AuthorityCommandHandler(
+        world,
+        validation_policy_profile=PROFILE_HARDEN_STRUCTURAL,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="hard-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-hard-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is False
+    assert result.reason == "Validation policy rejected command"
+    assert result.validation["summary"]["error"] >= 1
+    assert world.model_registry.get("actor-hard-1") is None
 
 
 def test_authority_handler_audit_includes_validation_summary():

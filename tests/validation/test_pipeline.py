@@ -77,3 +77,31 @@ def test_pipeline_reports_executed_validators_order():
     result = pipeline.validate({"id": "obj-3"})
 
     assert result.metadata["executed_validators"] == ["structural", "epistemic"]
+
+
+def test_pipeline_stage_mode_override_keeps_selected_stage_strict():
+    """Stage overrides can harden selected validators while global mode stays warn."""
+    pipeline = ValidationPipeline(validators=[_FailingValidator()])
+
+    result = pipeline.validate(
+        {"id": "obj-4"},
+        mode=MODE_WARN_ONLY,
+        stage_modes={"structural": MODE_STRICT},
+    )
+
+    assert result.valid is False
+    assert result.summary["error"] == 1
+    assert result.metadata["effective_stage_modes"]["structural"] == MODE_STRICT
+
+
+def test_pipeline_strict_stage_override_can_raise_in_warn_mode():
+    """Strict stage overrides can trigger raising even when global mode is warn."""
+    pipeline = ValidationPipeline(validators=[_FailingValidator()])
+
+    with pytest.raises(ValidationException):
+        pipeline.validate(
+            {"id": "obj-5"},
+            mode=MODE_WARN_ONLY,
+            stage_modes={"structural": MODE_STRICT},
+            raise_on_error=True,
+        )

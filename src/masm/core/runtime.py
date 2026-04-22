@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Optional, Sequence, Type
 
 from masm.model.world import World
+from masm.validation import LEVEL_RECOMMENDED, PROFILE_SOFT_GATE
 
 from .authority import AuthorityCommandHandler, CommandEnvelope
 
@@ -50,6 +51,10 @@ def build_runtime(
     *,
     server_authoritative: bool = False,
     validation_soft_gate: bool = True,
+    validation_policy_profile: str = PROFILE_SOFT_GATE,
+    validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
+    validation_block_on_error: bool = False,
+    validation_completeness_level: str = LEVEL_RECOMMENDED,
     allowed_command_types: Optional[Sequence[str]] = None,
     custom_command_handlers: Optional[
         Mapping[str, Callable[[CommandEnvelope, World, str], dict[str, Any]]]
@@ -72,6 +77,10 @@ def build_runtime(
         authority_handler=AuthorityCommandHandler(
             world,
             validation_soft_gate=validation_soft_gate,
+            validation_policy_profile=validation_policy_profile,
+            validation_stage_mode_overrides=validation_stage_mode_overrides,
+            validation_block_on_error=validation_block_on_error,
+            validation_completeness_level=validation_completeness_level,
             allowed_command_types=allowed_command_types,
             custom_command_handlers=custom_command_handlers,
             object_factories=object_factories,

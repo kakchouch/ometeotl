@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from .base import (
     SEVERITY_ERROR,
@@ -39,6 +39,7 @@ class ValidationPipeline:
         *,
         mode: str = MODE_LENIENT,
         context: ValidationContext | None = None,
+        stage_modes: Mapping[str, str] | None = None,
         raise_on_error: bool = False,
     ) -> ValidationResult:
         """Run all validators and return one merged ValidationResult.
@@ -49,18 +50,30 @@ class ValidationPipeline:
             raise ValueError(f"Unsupported validation mode: {mode}")
 
         base_context = context or ValidationContext()
+        normalized_stage_modes = {
+            str(stage_name): str(stage_mode)
+            for stage_name, stage_mode in dict(stage_modes or {}).items()
+        }
+        for stage_name, stage_mode in normalized_stage_modes.items():
+            if stage_mode not in VALID_PIPELINE_MODES:
+                raise ValueError(
+                    f"Unsupported mode '{stage_mode}' for stage '{stage_name}'"
+                )
+
         aggregate = ValidationResult(
             stage=base_context.stage,
             policy_mode=mode,
             metadata={
                 "executed_validators": [],
+                "effective_stage_modes": {},
             },
         )
 
         for validator in self._validators:
+            effective_mode = normalized_stage_modes.get(validator.name, mode)
             stage_context = ValidationContext(
                 stage=validator.name,
-                policy_mode=mode,
+                policy_mode=effective_mode,
                 actor_id=base_context.actor_id,
                 world_id=base_context.world_id,
                 metadata=dict(base_context.metadata),
@@ -68,13 +81,19 @@ class ValidationPipeline:
             current_result = validator.validate(obj, stage_context)
             normalized_result = self._normalize_result_for_mode(
                 current_result,
-                mode,
+                effective_mode,
             )
             aggregate = aggregate.merged_with(normalized_result)
             aggregate.metadata["executed_validators"].append(validator.name)
+            aggregate.metadata["effective_stage_modes"][validator.name] = effective_mode
 
-        if mode == MODE_STRICT and raise_on_error and not aggregate.valid:
-            raise ValidationException(aggregate)
+        if raise_on_error and not aggregate.valid:
+            has_strict_stage = (
+                mode == MODE_STRICT
+                or MODE_STRICT in aggregate.metadata["effective_stage_modes"].values()
+            )
+            if has_strict_stage:
+                raise ValidationException(aggregate)
 
         return aggregate
 

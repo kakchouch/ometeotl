@@ -19,6 +19,13 @@ from .pipeline import (
     VALID_PIPELINE_MODES,
     ValidationPipeline,
 )
+from .policy import (
+    PROFILE_HARDEN_CORE,
+    PROFILE_HARDEN_STRUCTURAL,
+    PROFILE_SOFT_GATE,
+    VALID_POLICY_PROFILES,
+    build_stage_modes,
+)
 from .syntactic import SyntacticValidator
 from .structural import StructuralValidator
 from .temporal import TemporalValidator
@@ -49,6 +56,11 @@ __all__ = [
     "MODE_WARN_ONLY",
     "VALID_PIPELINE_MODES",
     "ValidationPipeline",
+    "PROFILE_SOFT_GATE",
+    "PROFILE_HARDEN_STRUCTURAL",
+    "PROFILE_HARDEN_CORE",
+    "VALID_POLICY_PROFILES",
+    "build_stage_modes",
     "SyntacticValidator",
     "StructuralValidator",
     "TemporalValidator",
