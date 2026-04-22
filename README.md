@@ -24,7 +24,7 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, composite actors, and server-authoritative runtime boundaries, while validation, generation, IO packaging, and higher-level examples remain incomplete.
+This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, and server-authoritative runtime boundaries, while validation, generation, IO packaging, and higher-level examples remain incomplete.
 
 ## Current Implementation Status
 
@@ -36,9 +36,11 @@ As of April 2026, the repository includes:
 - A perception layer with `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, and `PerceivedComponentLink`.
 - A projection layer with `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`, and the default projection tool.
 - A strategy layer with strategy nodes, outcome branches, linear and branching builders, and perception-driven chaining.
+- A teleology layer with first-class `Goal` objects, decomposition trees, feasibility/admissibility tools, and goal-strategy linkage.
+- A utility stack with the abstract `UtilityFunction` interface and concrete game-layer combinators/rankers (`WeightedSumUtility`, `LexicographicUtility`, `StrategyRanker`).
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
-- A test suite currently collecting `188` tests across `tests/model/` and `tests/core/`.
+- A test suite currently collecting `259` tests across `tests/model/`, `tests/core/`, and `tests/game/`.
 
 ## Current Architecture
 
@@ -50,16 +52,18 @@ The implemented architecture follows the separation defined in `specs_EN.md`:
 - Epistemic state lives in `Perception` and its perceived wrappers.
 - Projection derives successor perceived states from actions without mutating ontological truth directly.
 - Strategy building consumes projected perceptions rather than bypassing the perception layer.
+- Goal feasibility/admissibility is model-level and actor-perception grounded, preserving teleological neutrality.
+- Game-layer utility/ranking consumes model abstractions without embedding domain constants in core layers.
 
 ## Near-Term TODOs
 
 - Implement the dedicated `validation/` layer for structural, temporal, spatial, admissibility, and epistemic validation.
 - Implement the `io/` layer for explicit import/export workflows beyond object-local serialization helpers.
 - Implement the `generation/` layer and `from_context`-style construction pipeline.
-- Implement the `game/` layer beyond the current projection and strategy foundations.
+- Extend the `game/` layer beyond current utility/ranking primitives with richer solver-facing abstractions.
 - Extend the strategy layer to support one action producing several alternative projected outcomes, with branch-specific successor perceived states carried by `StrategyOutcomeBranch` rather than duplicated on `StrategyNode`.
 - Add reference examples and end-to-end demo worlds in `examples/`.
-- Continue aligning public docs with the now-implemented projection, strategy, authority, and composite-actor capabilities.
+- Continue aligning public docs with the now-implemented projection, strategy, teleology, utility, authority, and composite-actor capabilities.
 
 ## Join the Journey
 
