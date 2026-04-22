@@ -54,6 +54,7 @@ def test_strategy_instantiation():
     assert strategy.id == "strategy-1"
     assert strategy.object_type == "strategy"
     assert strategy.actor_id == "actor-1"
+    assert strategy.goal_id is None
     assert strategy.root_node_id == "node-root"
     assert strategy.projection_policy == "perception_first"
     assert len(strategy.nodes) == 1
@@ -117,6 +118,7 @@ def test_strategy_serialization_is_deterministic():
     restored = Strategy.from_dict(payload)
 
     assert [node["node_id"] for node in payload["nodes"]] == ["node-a", "node-b"]
+    assert payload["goal_id"] is None
     assert payload["nodes"][0]["source_perception_id"] == "perception-chain-root"
     assert (
         payload["nodes"][0]["projected_state"]["perception"]["id"]
@@ -126,6 +128,58 @@ def test_strategy_serialization_is_deterministic():
         branch["branch_id"] for branch in payload["nodes"][1]["outcome_branches"]
     ] == ["a", "z"]
     assert restored.to_dict() == payload
+
+
+def test_strategy_serialization_supports_goal_linkage():
+    """A strategy may optionally reference a goal through goal_id."""
+    strategy = Strategy(
+        id="strategy-with-goal",
+        actor_id="actor-1",
+        goal_id="goal-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-1",
+            )
+        ],
+    )
+
+    payload = strategy.to_dict()
+    restored = Strategy.from_dict(payload)
+
+    assert payload["goal_id"] == "goal-1"
+    assert restored.goal_id == "goal-1"
+
+
+def test_strategy_from_dict_defaults_goal_id_to_none_when_missing():
+    """Backwards compatibility: strategies without goal_id deserialize with None."""
+    data = {
+        "id": "strategy-no-goal",
+        "object_type": "strategy",
+        "schema_version": "1.0",
+        "attributes": {},
+        "relations": {},
+        "state": {},
+        "context": {},
+        "provenance": {},
+        "actor_id": "actor-1",
+        "root_node_id": "node-root",
+        "nodes": [
+            {
+                "node_id": "node-root",
+                "action_id": "action-1",
+                "source_perception_id": None,
+                "projected_state": None,
+                "outcome_branches": [],
+                "metadata": {},
+            }
+        ],
+        "projection_policy": "perception_first",
+    }
+
+    strategy = Strategy.from_dict(data)
+    assert strategy.goal_id is None
 
 
 def test_strategy_validate_tree_rejects_unknown_child_node():
