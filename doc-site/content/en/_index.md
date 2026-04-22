@@ -32,7 +32,25 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**—a true work-in-progress. Current features include foundational axioms, basic serialization (JSON/YAML), and early game theory projections. Full validation pipelines, AI generation tools, and multi-agent simulations are planned for upcoming releases.
+This project is **actively under development**. The current repository already implements a functional core for modeling, perception, projection, composite and abstract actors, strategy building, and server-authoritative runtime control, while validation, generation, IO workflows, and end-to-end examples remain in progress.
+
+## Current Status
+
+- Functional model core with actors, resources, spaces, world, registry, and spatial graphs.
+- Composite actor hierarchies with explicit `component` links, traversal helpers, and abstract-space support.
+- Perception and sensor layers with epistemic statuses and perceived component links.
+- Projection and strategy layers with projected successor perceptions and perception-driven strategy chaining.
+- Authority/runtime boundary in `src/masm/core/` for server-owned world mutation flows.
+- Current automated baseline: `188` collected tests.
+
+## Near-Term TODOs
+
+- Implement the dedicated validation layer.
+- Implement dedicated IO workflows.
+- Implement contextual generation and repair.
+- Implement the full game layer beyond current projection and strategy foundations.
+- Extend the strategy layer to support one action emitting several alternative projected outcomes, with branch-specific successor perceived states on `StrategyOutcomeBranch`.
+- Add reference examples and end-to-end demo worlds.
 
 ## Join the Journey
 

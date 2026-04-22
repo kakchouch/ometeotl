@@ -1,4 +1,4 @@
-"""Tests for masm.model.spaces - Phase D abstract space tests."""
+"""Tests for abstract space behavior in masm.model.spaces."""
 
 import pytest
 

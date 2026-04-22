@@ -109,35 +109,51 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 ## Current repository state (April 2026)
 
-The repository currently validates the model/perception/sensor core and keeps other domains scaffolded for upcoming phases.
+The repository now contains a broader functional V1-incremental core spanning model, perception, projection, strategy, and authority/runtime boundaries.
 
 ### Implemented and tested now
 
 1. Core object model in `src/masm/model/`:
 	- `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+	- `WorldModelRegistry` and reconstruction helpers.
 2. Spatial structures:
 	- `SpaceObjectGraph` and `SpaceObjectMembership`.
-	- `SpaceRelation` and `SpaceRelationGraph` with canonicalization and relation constraints.
-3. Perception layer:
-	- `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
-	- Epistemic status validation (`certain`, `believed`, `hypothesis`, `projected`, `error`).
-	- Deterministic serialization order for perceived memberships and relations.
-4. Sensor pipeline:
+	- `SpaceRelation`, `SpaceRelationType`, and `SpaceRelationGraph` with canonicalization and relation constraints.
+3. Actor hierarchy and abstraction:
+	- Composition modes and explicit `component` relations on actors.
+	- Cycle detection, tree resolution, parent lookup, and abstract hierarchy helpers.
+	- Abstract spaces through `Space.is_abstract`.
+4. Perception layer:
+	- `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, `PerceivedComponentLink`.
+	- Epistemic status validation and deterministic serialization of perceived structures.
+5. Sensor pipeline:
 	- `CoverageRule` and `NoiseRule` abstractions.
 	- `TotalCoverageRule` and `IdentityNoiseRule` defaults.
-	- Snapshot timestamp support in `Sensor.sense(...)`.
-	- Deterministic perception IDs when timestamp is provided.
-	- Unique perception IDs when timestamp is omitted.
-5. Quality gate:
-	- Automated model tests in `tests/test_model.py` (45 tests passing).
+	- Timestamp-aware and deterministic perception id behavior.
+6. Projection and strategy layers:
+	- `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`.
+	- `DefaultProjectionTool`, `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
+7. Core runtime infrastructure:
+	- `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
+	- `RuntimeContext` and `build_runtime(...)`.
+8. Quality gate:
+	- Automated tests in `tests/model/` and `tests/core/`.
+	- Current baseline: `188` collected tests.
 
-### Scaffolded but not implemented yet
+### Still incomplete or planned
 
-The following packages currently contain bootstrap files only and are planned for later phases:
+- `src/masm/validation/` for explicit validation pipelines.
+- `src/masm/io/` for dedicated import/export workflows.
+- `src/masm/generation/` for contextual construction and repair.
+- `src/masm/game/` for the full game layer beyond current projection and strategy foundations.
+- `src/masm/examples/` for reference worlds and end-to-end demos.
 
-- `src/masm/core/`
-- `src/masm/io/`
-- `src/masm/generation/`
-- `src/masm/game/`
-- `src/masm/validation/`
+### Current TODO priorities
+
+1. Implement the dedicated validation layer.
+2. Implement dedicated IO workflows.
+3. Implement contextual generation and repair.
+4. Implement the game layer.
+5. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
+6. Add examples and end-to-end demonstrations.
 - `src/masm/examples/`

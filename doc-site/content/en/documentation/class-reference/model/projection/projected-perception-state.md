@@ -17,7 +17,7 @@ Inheritance:
 Parameters and fields:
 - `source_perception_id: str`
 - `generating_action_id: str`
-- `perception: Perception` — deep copy of the source perception, marked `epistemic_status="projected"` on all nested objects
+- `perception: Perception` — deep copy of the source perception, marked `epistemic_status="projected"` on perceived spaces, memberships, relations, and perceived component links
 - `changes: list[ProjectedPerceptionChange]` — sorted by `change_id` on serialization
 - `metadata: dict`
 
@@ -32,3 +32,4 @@ Methods:
 See also:
 - [ProjectedPerceptionChange](/ometeotl/documentation/class-reference/model/projection/projected-perception-change/)
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)
+- [Perception](/ometeotl/documentation/class-reference/model/perception/perception/)

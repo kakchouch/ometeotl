@@ -23,13 +23,19 @@ Parameters and fields:
 - perceived_spaces: Dict[SpaceId, [PerceivedSpace](/ometeotl/documentation/class-reference/model/perception/perceived-space/)]
 - perceived_memberships: List[[PerceivedMembership](/ometeotl/documentation/class-reference/model/perception/perceived-membership/)]
 - perceived_relations: List[[PerceivedRelation](/ometeotl/documentation/class-reference/model/perception/perceived-relation/)]
+- perceived_component_links: List[[PerceivedComponentLink](/ometeotl/documentation/class-reference/model/perception/perceived-component-link/)]
 - `context: JsonMap`
 - `provenance: JsonMap`
 
 Methods:
-- query helpers: `get_perceived_space`, `memberships_for_object`, `memberships_in_space`, `relations_for_space`
+- query helpers: `get_perceived_space`, `memberships_for_object`, `memberships_in_space`, `relations_for_space`, `component_links_for_composite`, `composite_for_component`
 - serialization: `to_dict`, `from_dict`
+
+Notes:
+- A perception can now carry perceived composition edges independently from space memberships and space-to-space relations.
+- Each perceived component link has its own epistemic status, allowing composition knowledge to remain uncertain, believed, projected, or erroneous without mutating ontological actor relations.
 
 See also:
 - [Actor](/ometeotl/documentation/class-reference/model/actors/actor/)
 - [World](/ometeotl/documentation/class-reference/model/world/world/)
+- [PerceivedComponentLink](/ometeotl/documentation/class-reference/model/perception/perceived-component-link/)

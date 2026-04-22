@@ -325,7 +325,7 @@ def find_parent_composites(
 
 
 # ---------------------------------------------------------------------------
-# Abstract actor utilities (Phase D)
+# Abstract actor utilities
 # ---------------------------------------------------------------------------
 
 
@@ -384,13 +384,13 @@ def get_abstract_components(
         Sorted list of component actor IDs that are not themselves abstract.
     """
     actor = registry.get(actor_id)
-    if actor is None or not actor.is_composite:
+    if not isinstance(actor, Actor) or not actor.is_composite:
         return []
 
     real_components: List[ObjectId] = []
     for component_id in actor.get_components():
         component = registry.get(component_id)
-        if component is None:
+        if not isinstance(component, Actor):
             continue
         # A real component is one that is not an abstract composite
         if not is_abstract_composite(component, registry, world):
@@ -426,7 +426,7 @@ def get_real_world_base(
             return
         visited.add(node_id)
         obj = registry.get(node_id)
-        if obj is None:
+        if not isinstance(obj, Actor):
             return
         if not obj.is_composite:
             # Leaf node that is not abstract = real-world actor

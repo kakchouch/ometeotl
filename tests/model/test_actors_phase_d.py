@@ -1,4 +1,4 @@
-"""Tests for masm.model.actors - Phase D abstract actor tests."""
+"""Tests for abstract actor behavior in masm.model.actors."""
 
 import pytest
 

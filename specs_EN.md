@@ -109,38 +109,56 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 ## Current repository state (April 2026)
 
-The project is in an early but functional core phase.
+The project is no longer limited to a model/perception/sensor skeleton. It now contains a broader functional V1-incremental core with tested model, projection, strategy, and authority/runtime boundaries.
 
 ### Implemented and tested now
 
 1. Core object model in `src/masm/model/`:
     - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+    - `WorldModelRegistry` and reconstruction helpers.
 2. Spatial structures:
     - `SpaceObjectGraph` and `SpaceObjectMembership`.
-    - `SpaceRelation` and `SpaceRelationGraph` with canonicalization and relation constraints.
-3. Perception layer:
-    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
+    - `SpaceRelation`, `SpaceRelationType`, and `SpaceRelationGraph` with canonicalization and relation constraints.
+3. Actor hierarchy and abstraction support:
+    - Composition modes on `Actor`.
+    - Explicit `component` relations for composite actors.
+    - Hierarchy helpers: cycle detection, tree resolution, parent lookup.
+    - Abstract-space support through `Space.is_abstract` and world helpers.
+    - Abstract hierarchy utilities for traversing back to real-world actor leaves.
+4. Perception layer:
+    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, `PerceivedComponentLink`.
     - Epistemic status validation (`certain`, `believed`, `hypothesis`, `projected`, `error`).
-    - Deterministic serialization order for perceived memberships and relations.
-4. Sensor pipeline:
+    - Deterministic serialization order for perceived memberships, relations, and perceived component links.
+5. Sensor pipeline:
     - `CoverageRule` and `NoiseRule` abstractions.
     - `TotalCoverageRule` and `IdentityNoiseRule` defaults.
     - Snapshot timestamp support in `Sensor.sense(...)`.
     - Deterministic perception IDs when timestamp is provided.
     - Unique perception IDs when timestamp is omitted.
-5. Quality gate:
-    - Automated model tests in `tests/test_model.py` (45 tests passing).
+6. Projection layer:
+    - `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`.
+    - `DefaultProjectionTool`.
+    - Projection support for perceived component links and projected composition changes.
+7. Strategy layer:
+    - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
+    - Linear and branching builders driven by projected successor perceptions.
+8. Core runtime infrastructure in `src/masm/core/`:
+    - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
+    - `RuntimeContext` and `build_runtime(...)`.
+    - Optional authority mode for server-owned mutation boundaries.
+9. Quality gate:
+    - Automated tests in `tests/model/` and `tests/core/`.
+    - Current baseline: `188` collected tests.
 
-### Scaffolded but not implemented yet
+### Present but still incomplete or scaffolded
 
-The following packages currently contain bootstrap files only and are planned for later phases:
+The following layers remain incomplete relative to the target architecture and roadmap:
 
-- `src/masm/core/`
-- `src/masm/io/`
-- `src/masm/generation/`
-- `src/masm/game/`
-- `src/masm/validation/`
-- `src/masm/examples/`
+- `src/masm/validation/` for explicit validation pipelines.
+- `src/masm/io/` for dedicated import/export workflows.
+- `src/masm/generation/` for contextual or LLM-assisted construction.
+- `src/masm/game/` for full game-theory projection and solver-facing structures.
+- `src/masm/examples/` for reference worlds and end-to-end demonstrations.
 
 ### Current source layout
 
@@ -148,30 +166,45 @@ The following packages currently contain bootstrap files only and are planned fo
 ometeotl/
 ├── src/
 │   └── masm/
-│       ├── core/               # scaffolded
-│       ├── io/                 # scaffolded
-│       ├── generation/         # scaffolded
-│       ├── game/               # scaffolded
-│       ├── validation/         # scaffolded
-│       ├── examples/           # scaffolded
-│       └── model/              # implemented in V1-incremental form
+│       ├── core/
+│       │   ├── authority.py
+│       │   └── runtime.py
+│       ├── io/                 # planned / partial scaffold
+│       ├── generation/         # planned / partial scaffold
+│       ├── game/               # planned / partial scaffold
+│       ├── validation/         # planned / partial scaffold
+│       ├── examples/           # planned / partial scaffold
+│       └── model/
+│           ├── actions.py
+│           ├── actors.py
 │           ├── base.py
 │           ├── objects.py
-│           ├── actors.py
-│           ├── resources.py
-│           ├── spaces.py
-│           ├── space_relations.py
 │           ├── perception.py
+│           ├── projection.py
+│           ├── registry.py
+│           ├── resources.py
 │           ├── sensor.py
-│           ├── world.py
-│           └── registry.py
+│           ├── space_relations.py
+│           ├── spaces.py
+│           ├── strategies.py
+│           └── world.py
 └── tests/
-     └── test_model.py
+    ├── core/
+    └── model/
 ```
 
 ### Practical V1 interpretation
 
-V1 is currently validated on the modeling/perception/sensor core. Full implementation of generation, game-theory projection, and validation/io pipelines remains on the roadmap.
+V1 is currently validated on the implemented ontology, perception, projection, strategy, and authority/runtime seams. Dedicated validation, generation, IO, and higher-level game modules remain on the roadmap.
+
+### Current TODO priorities
+
+1. Implement the explicit validation layer required by F-9 to F-15.
+2. Implement dedicated IO workflows on top of canonical object serialization.
+3. Implement contextual generation and repair workflows.
+4. Implement the game layer beyond current strategy and projection foundations.
+5. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
+6. Add reference examples and complete end-to-end demos.
 
 
 ## Status

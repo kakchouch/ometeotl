@@ -18,13 +18,30 @@ Inheritance:
 Parameters and fields:
 - `object_type: str = "actor"`
 - actor attributes: `kind`, `roles`, `emergent`, `composition_mode`
+- composition modes: `standalone`, `composite`, `collective`, `perceived`, `projected`
+- component relations are stored in `relations["component"]`
 
 Methods:
-- actor properties: `kind`, `roles`, `emergent`, `composition_mode`
+- actor properties: `kind`, `roles`, `emergent`, `composition_mode`, `is_composite`, `is_collective`
 - role methods: `add_role`, `remove_role`
+- component methods: `get_components`, `add_component`, `remove_component`
 - generated relation methods: `add_action/remove_action`, `add_resource/remove_resource`, `add_goal/remove_goal`, and related pairs
 - `from_dict(...)`
+
+Module-level helpers:
+- `detect_composition_cycle(...)` checks whether adding a component would create a cycle
+- `resolve_component_tree(...)` materializes a nested component hierarchy
+- `find_parent_composites(...)` finds reverse component links
+- `is_abstract_composite(...)` identifies a composite actor used as an abstraction node
+- `get_abstract_components(...)` returns direct non-abstract components
+- `get_real_world_base(...)` resolves the non-abstract leaves beneath an abstract hierarchy
+
+Notes:
+- Only actors in `composition_mode == "composite"` may carry explicit component links.
+- `collective` actors model a coherent whole without explicit component relations.
+- Composite actors support hierarchical nesting, while cycle creation is intentionally guarded by helper logic rather than being applied implicitly by `add_component(...)`.
 
 See also:
 - [Resource](/ometeotl/documentation/class-reference/model/resources/resource/)
 - [Perception](/ometeotl/documentation/class-reference/model/perception/perception/)
+- [Space](/ometeotl/documentation/class-reference/model/spaces/space/)

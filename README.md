@@ -24,7 +24,42 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**—a true work-in-progress. Current features include foundational axioms, basic serialization (JSON/YAML), and early game theory projections. Full validation pipelines, AI generation tools, and multi-agent simulations are planned for upcoming releases.
+This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, composite actors, and server-authoritative runtime boundaries, while validation, generation, IO packaging, and higher-level examples remain incomplete.
+
+## Current Implementation Status
+
+As of April 2026, the repository includes:
+
+- A full model core in `src/masm/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
+- Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
+- Composite and abstract actor support with explicit `component` links, composition modes, cycle detection, hierarchy traversal, and abstract-space helpers.
+- A perception layer with `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, and `PerceivedComponentLink`.
+- A projection layer with `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`, and the default projection tool.
+- A strategy layer with strategy nodes, outcome branches, linear and branching builders, and perception-driven chaining.
+- A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
+- A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
+- A test suite currently collecting `188` tests across `tests/model/` and `tests/core/`.
+
+## Current Architecture
+
+The implemented architecture follows the separation defined in `specs_EN.md`:
+
+- `src/masm/model/` contains domain behavior and the canonical object graph.
+- `src/masm/core/` contains runtime and authority infrastructure, not domain rules.
+- Ontological state lives in `World`, `WorldModelRegistry`, `SpaceObjectGraph`, and `SpaceRelationGraph`.
+- Epistemic state lives in `Perception` and its perceived wrappers.
+- Projection derives successor perceived states from actions without mutating ontological truth directly.
+- Strategy building consumes projected perceptions rather than bypassing the perception layer.
+
+## Near-Term TODOs
+
+- Implement the dedicated `validation/` layer for structural, temporal, spatial, admissibility, and epistemic validation.
+- Implement the `io/` layer for explicit import/export workflows beyond object-local serialization helpers.
+- Implement the `generation/` layer and `from_context`-style construction pipeline.
+- Implement the `game/` layer beyond the current projection and strategy foundations.
+- Extend the strategy layer to support one action producing several alternative projected outcomes, with branch-specific successor perceived states carried by `StrategyOutcomeBranch` rather than duplicated on `StrategyNode`.
+- Add reference examples and end-to-end demo worlds in `examples/`.
+- Continue aligning public docs with the now-implemented projection, strategy, authority, and composite-actor capabilities.
 
 ## Join the Journey
 
