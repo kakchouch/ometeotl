@@ -441,6 +441,7 @@ def test_build_goal_hierarchy_branching():
 
     assert len(tree.goals) == 3
     root_goal = tree.get_goal(tree.root_goal_id)
+    assert root_goal is not None
     assert len(root_goal.child_goal_ids) == 2
 
     children = tree.children_of(root_goal.id)
@@ -472,6 +473,7 @@ def test_build_goal_hierarchy_deep_nesting():
 
     assert len(tree.goals) == 3
     root_goal = tree.get_goal(tree.root_goal_id)
+    assert root_goal is not None
     assert root_goal.kind == "final"
 
     mid_goal = tree.children_of(root_goal.id)[0]

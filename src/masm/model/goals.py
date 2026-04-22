@@ -15,7 +15,7 @@ goal-satisfaction remain out of scope for this iteration.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 from .base import (
     JsonMap,
