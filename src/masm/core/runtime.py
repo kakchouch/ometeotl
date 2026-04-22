@@ -49,6 +49,7 @@ def build_runtime(
     world: World,
     *,
     server_authoritative: bool = False,
+    validation_soft_gate: bool = True,
     allowed_command_types: Optional[Sequence[str]] = None,
     custom_command_handlers: Optional[
         Mapping[str, Callable[[CommandEnvelope, World, str], dict[str, Any]]]
@@ -70,6 +71,7 @@ def build_runtime(
         world=world,
         authority_handler=AuthorityCommandHandler(
             world,
+            validation_soft_gate=validation_soft_gate,
             allowed_command_types=allowed_command_types,
             custom_command_handlers=custom_command_handlers,
             object_factories=object_factories,
