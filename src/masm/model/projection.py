@@ -18,6 +18,7 @@ from .resources import Resource
 from .base import JsonMap, ObjectId, _canonical_json_map, _require_non_null_string
 from .perception import (
     Perception,
+    PerceivedComponentLink,
     PerceivedMembership,
     VALID_EPISTEMIC_STATUSES,
     _validate_epistemic_status,
@@ -26,6 +27,18 @@ from .spaces import SpaceObjectMembership
 
 VALID_ACTION_PROJECTION_STATUSES: frozenset[str] = frozenset(
     {"blocked", "partial", "projected"}
+)
+
+VALID_PROJECTED_PERCEPTION_CHANGE_TYPES: frozenset[str] = frozenset(
+    {
+        "state_changes",
+        "resource_consume",
+        "resource_produce",
+        "object_added",
+        "object_removed",
+        "component_added",
+        "component_removed",
+    }
 )
 
 
@@ -180,6 +193,8 @@ def _mark_perception_as_projected(perception: Perception) -> None:
         perceived_membership.epistemic_status = "projected"
     for perceived_relation in perception.perceived_relations:
         perceived_relation.epistemic_status = "projected"
+    for perceived_component_link in perception.perceived_component_links:
+        perceived_component_link.epistemic_status = "projected"
 
 
 def _resolve_known_space_id(
@@ -259,6 +274,54 @@ def _append_projected_membership(
         )
     )
     return True
+
+
+def _append_projected_component_link(
+    perception: Perception,
+    *,
+    composite_id: ObjectId,
+    component_id: ObjectId,
+    generating_action_id: ObjectId,
+) -> bool:
+    """Append a projected component link to the perception.
+
+    Returns True if the link was added, False if it already exists.
+    """
+    # Check if link already exists
+    for link in perception.perceived_component_links:
+        if link.composite_id == composite_id and link.component_id == component_id:
+            return False
+
+    link_id = f"{generating_action_id}:{composite_id}->{component_id}"
+    perception.perceived_component_links.append(
+        PerceivedComponentLink(
+            link_id=link_id,
+            composite_id=composite_id,
+            component_id=component_id,
+            epistemic_status="projected",
+            noise_metadata={"projection_action_id": generating_action_id},
+        )
+    )
+    return True
+
+
+def _remove_projected_component_link(
+    perception: Perception,
+    *,
+    composite_id: ObjectId,
+    component_id: ObjectId,
+) -> int:
+    """Remove component links from a perception.
+
+    Returns the number of links removed.
+    """
+    original_count = len(perception.perceived_component_links)
+    perception.perceived_component_links = [
+        link
+        for link in perception.perceived_component_links
+        if not (link.composite_id == composite_id and link.component_id == component_id)
+    ]
+    return original_count - len(perception.perceived_component_links)
 
 
 def _projected_perception_id(perception: Perception, action: Action) -> str:
@@ -459,10 +522,7 @@ def _build_projected_perception_state(
 
     for idx, effect in enumerate(action.resource_effects):
         resource_obj = _resource_index.get(effect.resource_id)
-        is_stock = (
-            resource_obj is not None
-            and resource_obj.resource_mode == "stock"
-        )
+        is_stock = resource_obj is not None and resource_obj.resource_mode == "stock"
 
         if effect.effect_type == "consume":
             source_space_id = _resolve_known_space_id(
