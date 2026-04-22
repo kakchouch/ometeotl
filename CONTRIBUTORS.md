@@ -5,10 +5,12 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 25
+- **Merged PRs:** 27
 
 #### Merged Pull Requests
 
+- [#75 DRY run and issues addressing](https://github.com/kakchouch/ometeotl/pull/75)
+- [#71 sliced test files](https://github.com/kakchouch/ometeotl/pull/71)
 - [#64 added first strategy layer](https://github.com/kakchouch/ometeotl/pull/64)
 - [#63 First_strategy_layer](https://github.com/kakchouch/ometeotl/pull/63)
 - [#59 code review run](https://github.com/kakchouch/ometeotl/pull/59)
