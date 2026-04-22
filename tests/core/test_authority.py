@@ -132,6 +132,39 @@ def test_authority_handler_hardening_profile_can_reject_on_validation_error():
     assert world.model_registry.get("actor-hard-1") is None
 
 
+def test_authority_handler_soft_gate_off_skips_validation_blocking():
+    """Disabling soft gate should keep command flow non-blocking."""
+    world = World(id="world-cmd-soft-off-1")
+    handler = AuthorityCommandHandler(
+        world,
+        validation_soft_gate=False,
+        validation_policy_profile=PROFILE_ENFORCE_STRUCTURE,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="soft-off-1",
+                actor_id="system",
+                command_type="register_object",
+                sequence=1,
+                payload={
+                    "object": {
+                        "id": "actor-soft-off-1",
+                        "object_type": "actor",
+                    }
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is True
+    assert result.validation["summary"]["total"] == 0
+    assert world.model_registry.get("actor-soft-off-1") is not None
+
+
 def test_authority_handler_audit_includes_validation_summary():
     """Accepted audit entries should include soft-gate validation summaries."""
     world = World(id="world-cmd-soft-2")

@@ -19,17 +19,6 @@ PROFILE_OBSERVE_ONLY = "observe_only"
 PROFILE_ENFORCE_STRUCTURE = "enforce_structure"
 PROFILE_ENFORCE_DOMAIN = "enforce_domain"
 
-# Backward-compatible aliases for previous naming.
-PROFILE_SOFT_GATE = PROFILE_OBSERVE_ONLY
-PROFILE_HARDEN_STRUCTURAL = PROFILE_ENFORCE_STRUCTURE
-PROFILE_HARDEN_CORE = PROFILE_ENFORCE_DOMAIN
-
-_LEGACY_PROFILE_ALIASES: dict[str, str] = {
-    "soft_gate": PROFILE_OBSERVE_ONLY,
-    "harden_structural": PROFILE_ENFORCE_STRUCTURE,
-    "harden_core": PROFILE_ENFORCE_DOMAIN,
-}
-
 VALID_POLICY_PROFILES: frozenset[str] = frozenset(
     {PROFILE_OBSERVE_ONLY, PROFILE_ENFORCE_STRUCTURE, PROFILE_ENFORCE_DOMAIN}
 )
@@ -47,12 +36,9 @@ def build_stage_modes(
             - ``observe_only`` keeps non-blocking defaults.
             - ``enforce_structure`` promotes core schema checks to strict.
             - ``enforce_domain`` additionally promotes domain checks to strict.
-            Legacy values (``soft_gate``, ``harden_structural``,
-            ``harden_core``) are accepted and normalized.
         stage_mode_overrides: Per-stage mode overrides, where values must be
             one of ``strict``, ``lenient``, or ``warn_only``.
     """
-    policy_profile = _LEGACY_PROFILE_ALIASES.get(policy_profile, policy_profile)
     if policy_profile not in VALID_POLICY_PROFILES:
         raise ValueError(
             f"Unsupported validation policy profile: {policy_profile}. "
