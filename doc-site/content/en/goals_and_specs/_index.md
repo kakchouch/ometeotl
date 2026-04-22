@@ -133,19 +133,23 @@ The repository now contains a broader functional V1-incremental core spanning mo
 6. Projection and strategy layers:
 	- `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`.
 	- `DefaultProjectionTool`, `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
-7. Core runtime infrastructure:
+7. Teleology and utility layers:
+	- `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
+	- `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`, `GoalAdmissibilityChecker`.
+	- `UtilityFunction`, `UtilityFrame`, `WeightedSumUtility`, `LexicographicUtility`, `StrategyRanker`.
+8. Core runtime infrastructure:
 	- `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
 	- `RuntimeContext` and `build_runtime(...)`.
-8. Quality gate:
+9. Quality gate:
 	- Automated tests in `tests/model/` and `tests/core/`.
-	- Current baseline: `188` collected tests.
+	- Current baseline: `259` collected tests.
 
 ### Still incomplete or planned
 
 - `src/masm/validation/` for explicit validation pipelines.
 - `src/masm/io/` for dedicated import/export workflows.
 - `src/masm/generation/` for contextual construction and repair.
-- `src/masm/game/` for the full game layer beyond current projection and strategy foundations.
+- `src/masm/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
 - `src/masm/examples/` for reference worlds and end-to-end demos.
 
 ### Current TODO priorities

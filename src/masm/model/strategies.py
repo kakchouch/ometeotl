@@ -217,6 +217,7 @@ class Strategy(ModelObject):
 
     object_type: str = "strategy"
     actor_id: ObjectId = ""
+    goal_id: Optional[ObjectId] = None
     root_node_id: ObjectId = ""
     nodes: List[StrategyNode] = field(default_factory=list)
     projection_policy: str = "perception_first"
@@ -290,6 +291,7 @@ class Strategy(ModelObject):
         base.update(
             {
                 "actor_id": self.actor_id,
+                "goal_id": self.goal_id,
                 "root_node_id": self.root_node_id,
                 "nodes": [
                     node.to_dict()
@@ -307,6 +309,7 @@ class Strategy(ModelObject):
         return cls(
             **base_obj._base_kwargs(),
             actor_id=_require_non_null_string(data, "actor_id"),
+            goal_id=(str(data["goal_id"]) if data.get("goal_id") else None),
             root_node_id=_require_non_null_string(data, "root_node_id"),
             nodes=[
                 StrategyNode.from_dict(raw_node)

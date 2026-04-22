@@ -9,4 +9,4 @@ This section documents the current V1 implementation of the Ometeotl/MASM librar
 - Then use [Class Reference](/ometeotl/documentation/class-reference/) for complete API details.
 
 Scope note:
-This documentation reflects the currently implemented code in [src/masm/core](https://github.com/kakchouch/ometeotl/tree/main/src/masm/core) and [src/masm/model](https://github.com/kakchouch/ometeotl/tree/main/src/masm/model/), including perception, projection, strategy, composite-actor, and authority/runtime behavior, and aligns with [specs_EN.md](https://github.com/kakchouch/ometeotl/blob/main/specs_EN.md).
+This documentation reflects the currently implemented code in [src/masm/core](https://github.com/kakchouch/ometeotl/tree/main/src/masm/core), [src/masm/model](https://github.com/kakchouch/ometeotl/tree/main/src/masm/model/), and [src/masm/game](https://github.com/kakchouch/ometeotl/tree/main/src/masm/game/), including perception, projection, strategy, teleology, utility, ranking, composite-actor, and authority/runtime behavior, and aligns with [specs_EN.md](https://github.com/kakchouch/ometeotl/blob/main/specs_EN.md).

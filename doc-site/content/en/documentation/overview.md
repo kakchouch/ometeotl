@@ -42,6 +42,13 @@ Candidate actions can then be projected from that perceived state into explicit 
 - [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action to one input perception and one projected successor perceived state
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) groups nodes into a linear or branching perception-driven tree
 
+Teleology and utility/ranking are now implemented as model and game extensions:
+
+- [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/) represent final or intermediate objectives and hierarchical decomposition.
+- [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/) and [DefaultGoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/default-goal-feasibility-tool/) provide model-level feasibility and admissibility checks.
+- [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) defines the abstract utility contract.
+- [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/), [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/), and [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) provide game-layer utility derivation and strategy ranking over projected terminal states.
+
 For server-authoritative setups, mutations can be routed through:
 
 - [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
@@ -63,6 +70,9 @@ The implemented pipeline follows this flow:
 8. Derive first-order projection assumptions and projected successor perceived states from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
 9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py).
 10. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+11. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
+12. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
+13. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -171,3 +181,11 @@ Both builders project each action from the currently active perceived state and 
 
 The current implementation intentionally keeps one projected successor perceived state per node.
 Future support for one-action-to-many-outcomes branching is tracked as a TODO in the strategy layer, with the preferred direction being branch-specific projected outcomes on [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/).
+
+### 9. Teleology and game utility seam
+
+The teleology seam is now explicit in the model layer through [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/), while goal evaluation remains domain-neutral via [GoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-tool/) and [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
+
+The game utility seam is explicit in [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) plus concrete game-layer combinators [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/) and [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/).
+
+[StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) evaluates terminal projected states and aggregates branch probabilities in a deterministic way, including directed acyclic strategy graphs with merged terminal paths.

@@ -17,6 +17,7 @@ Inheritance:
 Parameters and fields:
 - id: str
 - actor_id: str
+- goal_id: Optional[str]
 - root_node_id: str
 - nodes: list[[StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)]
 - projection_policy: str

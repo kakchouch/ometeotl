@@ -40,15 +40,16 @@ This project is **actively under development**. The current repository already i
 - Composite actor hierarchies with explicit `component` links, traversal helpers, and abstract-space support.
 - Perception and sensor layers with epistemic statuses and perceived component links.
 - Projection and strategy layers with projected successor perceptions and perception-driven strategy chaining.
+- Teleology and utility layers with first-class goals, admissibility/feasibility tools, and game utility/ranking primitives.
 - Authority/runtime boundary in `src/masm/core/` for server-owned world mutation flows.
-- Current automated baseline: `188` collected tests.
+- Current automated baseline: `259` collected tests.
 
 ## Near-Term TODOs
 
 - Implement the dedicated validation layer.
 - Implement dedicated IO workflows.
 - Implement contextual generation and repair.
-- Implement the full game layer beyond current projection and strategy foundations.
+- Extend the game layer beyond current utility/ranking primitives with richer solver-facing abstractions.
 - Extend the strategy layer to support one action emitting several alternative projected outcomes, with branch-specific successor perceived states on `StrategyOutcomeBranch`.
 - Add reference examples and end-to-end demo worlds.
 

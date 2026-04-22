@@ -4,7 +4,7 @@ description: "One class per page reference for Ometeotl/MASM"
 ---
 
 This section contains one page per implemented class.
-The filetree mirrors the repository architecture in `src/masm/core` and `src/masm/model`.
+The filetree mirrors the repository architecture in `src/masm/core`, `src/masm/model`, and `src/masm/game`.
 
 Repository source:
 - [GitHub repository](https://github.com/kakchouch/ometeotl)
@@ -74,6 +74,22 @@ Repository source:
 - [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/)
 
+## Model/goals.py
+- [GoalBuildStep](/ometeotl/documentation/class-reference/model/goals/goal-build-step/)
+- [Goal](/ometeotl/documentation/class-reference/model/goals/goal/)
+- [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/)
+
+## Model/goal_tools.py
+- [GoalFeasibilityResult](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-result/)
+- [GoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-tool/)
+- [DefaultGoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/default-goal-feasibility-tool/)
+- [GoalAdmissibilityResult](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-result/)
+- [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/)
+
+## Model/utility.py
+- [UtilityFrame](/ometeotl/documentation/class-reference/model/utility/utility-frame/)
+- [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/)
+
 ## Model/registry.py
 - [reconstruct_model_object](/ometeotl/documentation/class-reference/model/registry/reconstruct-model-object/)
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)
@@ -81,3 +97,9 @@ Repository source:
 
 ## Model/world.py
 - [World](/ometeotl/documentation/class-reference/model/world/world/)
+
+## Game/utility.py
+- [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/)
+- [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/)
+- [RankedStrategy](/ometeotl/documentation/class-reference/game/utility/ranked-strategy/)
+- [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/)

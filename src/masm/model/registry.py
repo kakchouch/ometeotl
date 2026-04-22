@@ -22,6 +22,7 @@ def _get_default_factories() -> Dict[str, ObjectFactory]:
     if _DEFAULT_FACTORIES is None:
         from .actions import Action
         from .actors import Actor
+        from .goals import Goal
         from .objects import GenericObject
         from .resources import Resource
         from .spaces import Space
@@ -31,6 +32,7 @@ def _get_default_factories() -> Dict[str, ObjectFactory]:
         _DEFAULT_FACTORIES = {
             "action": Action.from_dict,
             "actor": Actor.from_dict,
+            "goal": Goal.from_dict,
             "generic": GenericObject.from_dict,
             "resource": Resource.from_dict,
             "space": Space.from_dict,

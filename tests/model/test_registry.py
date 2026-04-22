@@ -3,6 +3,7 @@
 import pytest
 
 from masm.model.actors import Actor
+from masm.model.goals import Goal
 from masm.model.registry import (
     MinimalModelRegistry,
     WorldModelRegistry,
@@ -182,6 +183,21 @@ def test_reconstruct_model_object_space():
     space = Space(id="reconstruct-space")
     payload = space.to_dict()
     restored = reconstruct_model_object(payload)
+    assert restored.to_dict() == payload
+
+
+def test_reconstruct_model_object_goal():
+    """reconstruct_model_object round-trips a Goal via default registry dispatch."""
+    goal = Goal(
+        id="reconstruct-goal",
+        actor_id="actor-1",
+        kind="final",
+        target_condition={"safety": 1.0},
+    )
+    payload = goal.to_dict()
+    restored = reconstruct_model_object(payload)
+
+    assert isinstance(restored, Goal)
     assert restored.to_dict() == payload
 
 
