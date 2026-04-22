@@ -307,16 +307,18 @@ Shares are rounded to 1 decimal place. Any residual from rounding (typically < 1
 
 ## 8. Founder Exclusion Rule
 
-The founder (`kakchouch`) is:
+The configured founder identity (`kakchouch` plus any aliases declared in `leaderboard/config.json`) is:
 
 | Stage | Included? | Reason |
 |-------|-----------|--------|
 | Raw score computation | Yes | Needed for accurate data |
-| z-score normalization | **Yes** | The founder's score affects μ and σ. Excluding it would artificially inflate other z-scores. |
+| z-score normalization | **Yes** | The founder identity affects μ and σ. Excluding it would artificially inflate other z-scores. |
 | Adjusted score computation | Yes | Computed for display purposes |
-| **Share allocation** | **No** | The founder's shares are shown as "theoretical (out-of-competition)" but not deducted from the 1000 pool. |
+| **Share allocation** | **No** | The founder identity's shares are shown as "theoretical (out-of-competition)" but not deducted from the 1000 pool. |
 
 This ensures: (1) the mathematical model is statistically correct, (2) other contributors see their real position relative to the full distribution, and (3) the founder doesn't compete with their own community.
+
+When founder aliases are configured, all activity from those aliases is canonicalized into the founder's main username before scoring. This prevents founder activity from being split across multiple identities during normalization or share slicing.
 
 ---
 
@@ -427,7 +429,10 @@ All parameters live in `leaderboard/config.json`:
 
 ```json
 {
-  "founder": "kakchouch",
+  "founder": {
+    "username": "kakchouch",
+    "aliases": ["kakchouch-alt"]
+  },
   "total_shares": 1000,
   "k_floor": 3,
   "k_offset": 12,
@@ -451,3 +456,5 @@ All parameters live in `leaderboard/config.json`:
 ```
 
 To modify any parameter: edit `config.json`, commit, and the next leaderboard computation will use the new values. No code changes required.
+
+To exclude founder aliases from share slicing while preserving statistically correct normalization, add them to `founder.aliases`. The computation will collapse those usernames into the canonical `founder.username` before scoring.

@@ -21,17 +21,9 @@ import json
 import math
 import os
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-
-# ---------------------------------------------------------------------------
-# GitHub API helpers
-# ---------------------------------------------------------------------------
-
-try:
-    from github import Github
-except ImportError:
-    sys.exit("PyGithub is required. Install with: pip install PyGithub")
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -40,10 +32,50 @@ except ImportError:
 SCRIPT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = SCRIPT_DIR / "config.json"
 
+
+@dataclass(frozen=True)
+class FounderIdentity:
+    """Config-defined founder identity with canonical username and aliases."""
+
+    username: str
+    aliases: frozenset[str]
+
+
+def _normalize_username(username):
+    if username is None:
+        return None
+    return username.strip().lower()
+
+
+def _load_founder_identity(config):
+    founder_config = config["founder"]
+
+    if isinstance(founder_config, str):
+        username = founder_config
+        aliases = config.get("founder_aliases", [])
+    else:
+        username = founder_config["username"]
+        aliases = founder_config.get("aliases", [])
+
+    normalized_username = _normalize_username(username)
+    normalized_aliases = {
+        normalized_alias
+        for normalized_alias in (_normalize_username(alias) for alias in aliases)
+        if normalized_alias
+    }
+    normalized_aliases.add(normalized_username)
+
+    return FounderIdentity(
+        username=normalized_username,
+        aliases=frozenset(normalized_aliases),
+    )
+
+
 with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
-FOUNDER = CONFIG["founder"].lower()
+FOUNDER_IDENTITY = _load_founder_identity(CONFIG)
+FOUNDER = FOUNDER_IDENTITY.username
 TOTAL_SHARES = CONFIG["total_shares"]
 K_FLOOR = CONFIG["k_floor"]
 K_OFFSET = CONFIG["k_offset"]
@@ -56,6 +88,19 @@ WEIGHTS = CONFIG["weights"]
 LINES_CAP = WEIGHTS["lines_changed_cap_per_pr"]
 
 NOW = datetime.now(timezone.utc)
+
+
+def canonicalize_username(username):
+    """Map any configured founder alias to the canonical founder username."""
+    normalized_username = _normalize_username(username)
+    if normalized_username in FOUNDER_IDENTITY.aliases:
+        return FOUNDER
+    return normalized_username
+
+
+def is_founder(username):
+    """Return True when the username belongs to the configured founder identity."""
+    return canonicalize_username(username) == FOUNDER
 
 
 def recency_factor(event_date):
@@ -96,7 +141,7 @@ def collect_events(repo):
     def add_event(user, event_type, date, extra=None):
         if user is None:
             return
-        username = user.lower()
+        username = canonicalize_username(user)
         # Exclude bots
         if username.endswith("[bot]") or username == "github-actions":
             return
@@ -241,7 +286,7 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
     adjusted = {u: adjusted_score(z, k) for u, z in z_scores.items()}
 
     # Share allocation (founder excluded)
-    contributors = {u: s for u, s in adjusted.items() if u != FOUNDER}
+    contributors = {u: s for u, s in adjusted.items() if not is_founder(u)}
 
     if not contributors:
         return k, adjusted, {}
@@ -267,7 +312,7 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
 
 def compute_leaderboard_fallback(raw_scores):
     """Fallback: proportional allocation when n_active < min threshold."""
-    contributors = {u: s for u, s in raw_scores.items() if u != FOUNDER}
+    contributors = {u: s for u, s in raw_scores.items() if not is_founder(u)}
     total = sum(contributors.values())
 
     if total == 0:
@@ -597,6 +642,11 @@ def generate_hugo_page(data, repo_name):
 
 
 def main():
+    try:
+        from github import Github
+    except ImportError:
+        sys.exit("PyGithub is required. Install with: pip install PyGithub")
+
     token = os.environ.get("GITHUB_TOKEN")
     repo_name = os.environ.get("REPO_FULL_NAME")
 
@@ -622,7 +672,9 @@ def main():
         if dates:
             last_events[username] = max(dates)
 
-    active_users = {u for u, d in last_events.items() if is_active(d) and u != FOUNDER}
+    active_users = {
+        u for u, d in last_events.items() if is_active(d) and not is_founder(u)
+    }
     n_active = len(active_users)
     k = compute_k(n_active)
 
@@ -687,7 +739,7 @@ def main():
     # Summary
     print("\n--- Leaderboard ---")
     for user, share in sorted(shares.items(), key=lambda x: -x[1]):
-        flag = " (founder, out-of-competition)" if user == FOUNDER else ""
+        flag = " (founder, out-of-competition)" if is_founder(user) else ""
         print(f"  @{user}: {share:.1f} shares{flag}")
 
 

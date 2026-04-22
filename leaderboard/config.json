@@ -1,5 +1,8 @@
 {
-  "founder": "kakchouch",
+  "founder": {
+    "username": "kakchouch",
+    "aliases": ["kamalakchouch"]
+  },
   "total_shares": 1000,
   "k_floor": 3,
   "k_offset": 12,
