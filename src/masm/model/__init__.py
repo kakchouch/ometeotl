@@ -40,6 +40,12 @@ from .strategies import (
     build_branching_strategy,
     build_linear_strategy,
 )
+from .goals import (
+    Goal,
+    GoalDecompositionTree,
+    GoalBuildStep,
+    build_goal_hierarchy,
+)
 
 __all__ = [
     "ModelObject",
@@ -79,4 +85,8 @@ __all__ = [
     "StrategyBuildStep",
     "build_branching_strategy",
     "build_linear_strategy",
+    "Goal",
+    "GoalDecompositionTree",
+    "GoalBuildStep",
+    "build_goal_hierarchy",
 ]
