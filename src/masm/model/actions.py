@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
 from .base import (
+    _base_kwargs_from_typed_payload,
     ModelObject,
     ObjectId,
     JsonMap,
@@ -187,9 +188,8 @@ class Action(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Action":
         """Reconstruct an action from its canonical representation."""
-        base_obj = ModelObject.from_dict(data)
         return cls(
-            **base_obj._base_kwargs(),
+            **_base_kwargs_from_typed_payload(data, "action"),
             actor_id=_require_non_null_string(data, "actor_id"),
             world_id=_require_non_null_string(data, "world_id"),
             space_id=_require_non_null_string(data, "space_id"),

@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Mapping, Optional
 
 from .base import (
+    _base_kwargs_from_typed_payload,
     JsonMap,
     ModelObject,
     ObjectId,
@@ -307,9 +308,8 @@ class Strategy(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Strategy":
         """Reconstruct a strategy from its canonical representation."""
-        base_obj = ModelObject.from_dict(data)
         return cls(
-            **base_obj._base_kwargs(),
+            **_base_kwargs_from_typed_payload(data, "strategy"),
             actor_id=_require_non_null_string(data, "actor_id"),
             goal_id=(str(data["goal_id"]) if data.get("goal_id") else None),
             root_node_id=_require_non_null_string(data, "root_node_id"),

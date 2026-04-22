@@ -264,6 +264,12 @@ def _validated_unit_interval(value: Any, error_message: str) -> float:
     return numeric_value
 
 
+def _require_in(value: Any, allowed_values: Iterable[Any], error_message: str) -> None:
+    """Raise ValueError when value is not present in the allowed set."""
+    if value not in allowed_values:
+        raise ValueError(error_message)
+
+
 def _base_kwargs_from_typed_payload(
     data: Mapping[str, Any],
     default_object_type: str,

@@ -18,10 +18,12 @@ from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
 from .base import (
+    _base_kwargs_from_typed_payload,
     JsonMap,
     ModelObject,
     ObjectId,
     _canonical_json_map,
+    _require_in,
     _require_non_empty,
     _require_non_null_string,
     _validated_unit_interval,
@@ -46,8 +48,11 @@ class GoalBuildStep:
 
     def __post_init__(self) -> None:
         _require_non_empty(self.actor_id, "GoalBuildStep actor_id cannot be empty")
-        if self.kind not in ("final", "intermediate"):
-            raise ValueError("GoalBuildStep kind must be 'final' or 'intermediate'")
+        _require_in(
+            self.kind,
+            ("final", "intermediate"),
+            "GoalBuildStep kind must be 'final' or 'intermediate'",
+        )
         self.priority = _validated_unit_interval(
             self.priority,
             "GoalBuildStep priority must be in [0, 1]",
@@ -84,16 +89,20 @@ class Goal(ModelObject):
             self.object_type = "goal"
         _require_non_empty(self.id, "Goal id cannot be empty")
         _require_non_empty(self.actor_id, "Goal actor_id cannot be empty")
-        if self.kind not in ("final", "intermediate"):
-            raise ValueError("Goal kind must be 'final' or 'intermediate'")
+        _require_in(
+            self.kind,
+            ("final", "intermediate"),
+            "Goal kind must be 'final' or 'intermediate'",
+        )
         self.priority = _validated_unit_interval(
             self.priority,
             "Goal priority must be in [0, 1]",
         )
-        if self.status not in ("active", "achieved", "abandoned", "blocked"):
-            raise ValueError(
-                "Goal status must be one of: active, achieved, abandoned, blocked"
-            )
+        _require_in(
+            self.status,
+            ("active", "achieved", "abandoned", "blocked"),
+            "Goal status must be one of: active, achieved, abandoned, blocked",
+        )
 
     def add_child_goal(self, goal_id: ObjectId) -> None:
         """Register a child goal, maintaining sorted unique list."""
@@ -137,9 +146,8 @@ class Goal(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Goal":
         """Reconstruct a goal from its canonical representation."""
-        base_obj = ModelObject.from_dict(data)
         return cls(
-            **base_obj._base_kwargs(),
+            **_base_kwargs_from_typed_payload(data, "goal"),
             actor_id=_require_non_null_string(data, "actor_id"),
             kind=str(data.get("kind") or "final"),
             priority=float(data.get("priority") or 1.0),

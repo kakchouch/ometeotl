@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional, Union
 
 from .actors import Actor
-from .base import JsonMap, _canonical_json_map
+from .base import JsonMap, _canonical_json_map, _require_non_empty
 from .perception import Perception
 
 
@@ -38,8 +38,9 @@ class UtilityFrame:
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not self.framework_id:
-            raise ValueError("UtilityFrame framework_id cannot be empty")
+        _require_non_empty(
+            self.framework_id, "UtilityFrame framework_id cannot be empty"
+        )
         if isinstance(self.value, list):
             if self.criteria_labels and len(self.criteria_labels) != len(self.value):
                 raise ValueError(
