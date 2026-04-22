@@ -6,7 +6,16 @@ import bisect
 import copy
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Iterable, List, Mapping, SupportsIndex
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    SupportsIndex,
+)
 
 
 # NEW: Decorator for auto-generating add/remove methods
@@ -264,10 +273,31 @@ def _validated_unit_interval(value: Any, error_message: str) -> float:
     return numeric_value
 
 
-def _require_in(value: Any, allowed_values: Iterable[Any], error_message: str) -> None:
+def _require_in(
+    value: Any, allowed_values: Collection[Any], error_message: str
+) -> None:
     """Raise ValueError when value is not present in the allowed set."""
+    if isinstance(allowed_values, (str, bytes)):
+        raise TypeError("allowed_values must be a non-string collection")
     if value not in allowed_values:
         raise ValueError(error_message)
+
+
+def _validated_model_object_kwargs(data: Mapping[str, Any]) -> JsonMap:
+    """Validate and normalize common ModelObject payload fields."""
+    return {
+        "id": _require_non_null_string(data, "id"),
+        "object_type": _require_non_null_string(data, "object_type"),
+        "schema_version": _validate_schema_version(data.get("schema_version")),
+        "attributes": dict(data.get("attributes") or {}),
+        "relations": {
+            str(key): [str(item) for item in value]
+            for key, value in dict(data.get("relations") or {}).items()
+        },
+        "state": dict(data.get("state") or {}),
+        "context": dict(data.get("context") or {}),
+        "provenance": dict(data.get("provenance") or {}),
+    }
 
 
 def _base_kwargs_from_typed_payload(
@@ -277,8 +307,17 @@ def _base_kwargs_from_typed_payload(
     """Build normalized base kwargs for a concrete ModelObject subtype."""
     payload = dict(data)
     payload["object_type"] = payload.get("object_type") or default_object_type
-    base_obj = ModelObject.from_dict(payload)
-    return base_obj._base_kwargs()
+    validated = _validated_model_object_kwargs(payload)
+    return {
+        "id": validated["id"],
+        "object_type": validated["object_type"],
+        "schema_version": validated["schema_version"],
+        "attributes": _deep_plain_copy(validated["attributes"]),
+        "relations": _deep_plain_copy(validated["relations"]),
+        "state": _deep_plain_copy(validated["state"]),
+        "context": _deep_plain_copy(validated["context"]),
+        "provenance": _deep_plain_copy(validated["provenance"]),
+    }
 
 
 @dataclass
@@ -425,16 +464,4 @@ class ModelObject:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "ModelObject":
-        return cls(
-            id=_require_non_null_string(data, "id"),
-            object_type=_require_non_null_string(data, "object_type"),
-            schema_version=_validate_schema_version(data.get("schema_version")),
-            attributes=dict(data.get("attributes") or {}),
-            relations={
-                str(key): [str(item) for item in value]
-                for key, value in dict(data.get("relations") or {}).items()
-            },
-            state=dict(data.get("state") or {}),
-            context=dict(data.get("context") or {}),
-            provenance=dict(data.get("provenance") or {}),
-        )
+        return cls(**_validated_model_object_kwargs(data))
