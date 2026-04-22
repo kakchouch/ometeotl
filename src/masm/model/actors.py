@@ -176,6 +176,8 @@ class Actor(GenericObject):
 
         Returns an empty list if the actor is not in ``"composite"`` mode.
         """
+        if not self.is_composite:
+            return []
         return list(self.relations.get("component", []))
 
     def add_component(self, target_id: str) -> None:
@@ -350,23 +352,13 @@ def is_abstract_composite(
     if not actor.is_composite:
         return False
 
-    # Check which spaces the actor is placed in
-    # This is a simplified check: if the actor has memberships via the world's
-    # space object graph, we check those spaces. For now, we assume the caller
-    # knows the spaces where this actor is placed.
-    # Return True only if we can confirm it's in at least one abstract space
-    # and no canonical spaces.
-
-    # Since we don't have a direct world membership graph lookup here,
-    # we'll use a heuristic: an abstract composite must exist in the
-    # world's space graph. For a full implementation, this would require
-    # querying the world's space_object_graph.
-
-    # For now, return True if composite and at least one component exists.
-    return actor.is_composite and len(actor.get_components()) > 0
+    spaces = world.space_object_graph.spaces_where_object_exists(actor.id)
+    if not spaces:
+        return False
+    return all(space.is_abstract for space in spaces)
 
 
-def get_abstract_components(
+def get_concrete_components(
     actor_id: ObjectId,
     registry: "WorldModelRegistry",
     world: "World",
@@ -376,7 +368,7 @@ def get_abstract_components(
     These are the real-world actors feeding into an abstract composite.
 
     Args:
-        actor_id: The actor whose real-world components are sought.
+        actor_id: The actor whose concrete components are sought.
         registry: A ``WorldModelRegistry`` for lookups.
         world: A ``World`` for space queries.
 

@@ -5,10 +5,11 @@ import pytest
 from masm.model.actors import (
     Actor,
     is_abstract_composite,
-    get_abstract_components,
+    get_concrete_components,
     get_real_world_base,
 )
 from masm.model.registry import WorldModelRegistry
+from masm.model.spaces import Space
 from masm.model.world import World
 
 
@@ -28,8 +29,40 @@ def test_is_abstract_composite_non_composite_returns_false():
     assert is_abstract_composite(a1, reg, world) is False
 
 
-def test_is_abstract_composite_composite_returns_true():
-    """A composite actor with components is considered abstract."""
+def test_is_abstract_composite_in_abstract_space_returns_true():
+    """A composite actor placed exclusively in abstract spaces is an abstract composite."""
+    a1 = Actor(id="a-1")
+    a2 = Actor(id="a-2")
+    a1.composition_mode = "composite"
+    a1.add_component("a-2")
+    reg = _make_registry(a1, a2)
+    world = World(id="world-1")
+    s1 = Space(id="s-1")
+    s1.is_abstract = True
+    world.add_space(s1)
+    world.place_object("a-1", "s-1")
+
+    assert is_abstract_composite(a1, reg, world) is True
+
+
+def test_is_abstract_composite_in_non_abstract_space_returns_false():
+    """A composite actor placed in a non-abstract space is not an abstract composite."""
+    a1 = Actor(id="a-1")
+    a2 = Actor(id="a-2")
+    a1.composition_mode = "composite"
+    a1.add_component("a-2")
+    reg = _make_registry(a1, a2)
+    world = World(id="world-1")
+    s1 = Space(id="s-1")
+    s1.is_abstract = False
+    world.add_space(s1)
+    world.place_object("a-1", "s-1")
+
+    assert is_abstract_composite(a1, reg, world) is False
+
+
+def test_is_abstract_composite_not_placed_returns_false():
+    """A composite actor not placed in any space is not an abstract composite."""
     a1 = Actor(id="a-1")
     a2 = Actor(id="a-2")
     a1.composition_mode = "composite"
@@ -37,11 +70,11 @@ def test_is_abstract_composite_composite_returns_true():
     reg = _make_registry(a1, a2)
     world = World(id="world-1")
 
-    assert is_abstract_composite(a1, reg, world) is True
+    assert is_abstract_composite(a1, reg, world) is False
 
 
-def test_get_abstract_components_filters_real_world():
-    """get_abstract_components returns only non-abstract components."""
+def test_get_concrete_components_filters_real_world():
+    """get_concrete_components returns only non-abstract components."""
     a1 = Actor(id="a-1")
     a2 = Actor(id="a-2")
     a3 = Actor(id="a-3")
@@ -51,8 +84,8 @@ def test_get_abstract_components_filters_real_world():
     reg = _make_registry(a1, a2, a3)
     world = World(id="world-1")
 
-    real = get_abstract_components("a-1", reg, world)
-    assert sorted(real) == ["a-2", "a-3"]
+    concrete = get_concrete_components("a-1", reg, world)
+    assert sorted(concrete) == ["a-2", "a-3"]
 
 
 def test_get_real_world_base_flat():
@@ -65,6 +98,10 @@ def test_get_real_world_base_flat():
     a1.add_component("a-3")
     reg = _make_registry(a1, a2, a3)
     world = World(id="world-1")
+    s1 = Space(id="s-1")
+    s1.is_abstract = True
+    world.add_space(s1)
+    world.place_object("a-1", "s-1")
 
     base = get_real_world_base("a-1", reg, world)
     assert sorted(base) == ["a-2", "a-3"]
@@ -83,6 +120,11 @@ def test_get_real_world_base_recursive():
     a2.add_component("a-4")
     reg = _make_registry(a1, a2, a3, a4)
     world = World(id="world-1")
+    s1 = Space(id="s-1")
+    s1.is_abstract = True
+    world.add_space(s1)
+    world.place_object("a-1", "s-1")
+    world.place_object("a-2", "s-1")
 
     base = get_real_world_base("a-1", reg, world)
     assert sorted(base) == ["a-3", "a-4"]

@@ -33,7 +33,7 @@ Module-level helpers:
 - `resolve_component_tree(...)` materializes a nested component hierarchy
 - `find_parent_composites(...)` finds reverse component links
 - `is_abstract_composite(...)` identifies a composite actor used as an abstraction node
-- `get_abstract_components(...)` returns direct non-abstract components
+- `get_concrete_components(...)` returns direct non-abstract components
 - `get_real_world_base(...)` resolves the non-abstract leaves beneath an abstract hierarchy
 
 Notes:
