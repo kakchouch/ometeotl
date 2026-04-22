@@ -87,7 +87,7 @@ include = ["masm", "masm.*"]
 testpaths = ["tests"]
 
 # Options pratiques pour un projet de lib
-addopts = "-ra -q"
+addopts = "-ra -q --import-mode=importlib"
 
 [tool.ruff]
 # Longueur de ligne raisonnable

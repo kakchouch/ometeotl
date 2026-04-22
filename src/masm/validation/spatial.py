@@ -50,16 +50,8 @@ class SpatialValidator:
         issues: list[ValidationIssue] = []
 
         if not space_id:
-            issues.append(
-                ValidationIssue(
-                    code="SPATIAL-MISSING-SPACE",
-                    severity=SEVERITY_ERROR,
-                    message="Spatial validation requires a space_id",
-                    object_id=actor_id,
-                )
-            )
             return ValidationResult(
-                issues=issues,
+                issues=[],
                 stage=context.stage or self.name,
                 policy_mode=context.policy_mode,
             )

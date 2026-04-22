@@ -234,6 +234,10 @@ class AuthorityCommandHandler:
                     SyntacticValidator(),
                     StructuralValidator(),
                     CompletenessValidator(),
+                    TemporalValidator(),
+                    SpatialValidator(),
+                    AdmissibilityValidator(),
+                    EpistemicValidator(),
                 ]
             )
         # Lock activation is the final init step to avoid partial-init lock side effects.
@@ -350,6 +354,11 @@ class AuthorityCommandHandler:
             return payload.get("space")
         if command.command_type == "register_object":
             return payload.get("object")
+        if command.command_type == "place_object":
+            return {
+                "actor_id": str(payload.get("object_id") or ""),
+                "space_id": str(payload.get("space_id") or ""),
+            }
         return None
 
     def _run_soft_validation(

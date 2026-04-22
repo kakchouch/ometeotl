@@ -35,13 +35,7 @@ class TemporalValidator:
 
         if not actor_id:
             return ValidationResult(
-                issues=[
-                    ValidationIssue(
-                        code="TEMP-NO-ACTOR",
-                        severity=SEVERITY_WARNING,
-                        message="Temporal validation skipped because actor_id is missing",
-                    )
-                ],
+                issues=[],
                 stage=context.stage or self.name,
                 policy_mode=context.policy_mode,
             )
@@ -49,16 +43,7 @@ class TemporalValidator:
         interaction_time = context.metadata.get("interaction_time")
         if interaction_time is None:
             return ValidationResult(
-                issues=[
-                    ValidationIssue(
-                        code="TEMP-NO-TIME",
-                        severity=SEVERITY_WARNING,
-                        message=(
-                            "Temporal validation skipped because interaction_time "
-                            "is missing"
-                        ),
-                    )
-                ],
+                issues=[],
                 stage=context.stage or self.name,
                 policy_mode=context.policy_mode,
             )
@@ -89,15 +74,25 @@ class TemporalValidator:
 
         start = validity.get("start")
         end = validity.get("end")
-        if not self._is_within_interval(interaction_time, start, end):
+        try:
+            if not self._is_within_interval(interaction_time, start, end):
+                issues.append(
+                    ValidationIssue(
+                        code="TEMP-OUTSIDE-VALIDITY",
+                        severity=SEVERITY_ERROR,
+                        message=(
+                            f"Interaction time {interaction_time!r} is outside actor "
+                            f"validity interval [{start!r}, {end!r}]"
+                        ),
+                        object_id=actor_id,
+                    )
+                )
+        except ValueError as exc:
             issues.append(
                 ValidationIssue(
-                    code="TEMP-OUTSIDE-VALIDITY",
+                    code="TEMP-NORMALIZATION-FAILED",
                     severity=SEVERITY_ERROR,
-                    message=(
-                        f"Interaction time {interaction_time!r} is outside actor "
-                        f"validity interval [{start!r}, {end!r}]"
-                    ),
+                    message=f"Temporal normalization failed: {exc}",
                     object_id=actor_id,
                 )
             )

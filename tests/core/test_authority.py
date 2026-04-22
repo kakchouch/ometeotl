@@ -7,7 +7,11 @@ from masm.model.actors import Actor
 from masm.model.resources import Resource
 from masm.model.spaces import Space
 from masm.model.world import World
-from masm.validation import LEVEL_FULL, PROFILE_ENFORCE_STRUCTURE
+from masm.validation import (
+    LEVEL_FULL,
+    PROFILE_ENFORCE_DOMAIN,
+    PROFILE_ENFORCE_STRUCTURE,
+)
 
 
 def test_world_authority_mode_blocks_direct_mutations():
@@ -130,6 +134,38 @@ def test_authority_handler_hardening_profile_can_reject_on_validation_error():
     assert result.reason == "Validation policy rejected command"
     assert result.validation["summary"]["error"] >= 1
     assert world.model_registry.get("actor-hard-1") is None
+
+
+def test_authority_handler_enforce_domain_rejects_spatially_invalid_place_object():
+    """Domain hardening should reject place_object when referenced space is invalid."""
+    world = World(id="world-cmd-domain-1")
+    world.register_object(Actor(id="actor-domain-1"))
+    world.add_space(Space(id="zone-domain-1"))
+    handler = AuthorityCommandHandler(
+        world,
+        validation_policy_profile=PROFILE_ENFORCE_DOMAIN,
+        validation_block_on_error=True,
+        validation_completeness_level=LEVEL_FULL,
+    )
+    try:
+        result = handler.submit(
+            CommandEnvelope(
+                command_id="domain-1",
+                actor_id="system",
+                command_type="place_object",
+                sequence=1,
+                payload={
+                    "object_id": "actor-domain-1",
+                    "space_id": "zone-missing-domain",
+                },
+            )
+        )
+    finally:
+        handler.close()
+
+    assert result.accepted is False
+    assert result.reason == "Validation policy rejected command"
+    assert result.validation["summary"]["error"] >= 1
 
 
 def test_authority_handler_soft_gate_off_skips_validation_blocking():

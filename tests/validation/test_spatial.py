@@ -51,3 +51,16 @@ def test_spatial_validator_rejects_unknown_space():
 
     assert result.valid is False
     assert result.errors[0].code == "SPATIAL-UNKNOWN-SPACE"
+
+
+def test_spatial_validator_skips_when_space_id_is_missing():
+    """Spatial validator should be silent for payloads without space context."""
+    world = _build_world()
+    payload = {"id": "global-object", "actor_id": "actor-1"}
+
+    result = SpatialValidator().validate(
+        payload, ValidationContext(metadata={"world": world})
+    )
+
+    assert result.valid is True
+    assert result.summary["total"] == 0
