@@ -4,6 +4,7 @@ import pytest
 
 from masm.model.perception import (
     VALID_EPISTEMIC_STATUSES,
+    PerceivedComponentLink,
     PerceivedMembership,
     PerceivedRelation,
     PerceivedSpace,
@@ -230,3 +231,127 @@ def test_perception_from_dict_rejects_unsupported_schema_version():
                 "schema_version": "2.0",
             }
         )
+
+
+# ---------------------------------------------------------------------------
+# PerceivedComponentLink tests (Phase B)
+# ---------------------------------------------------------------------------
+
+
+def test_perceived_component_link_valid_epistemic_statuses():
+    """PerceivedComponentLink accepts all valid epistemic statuses."""
+    for status in VALID_EPISTEMIC_STATUSES:
+        link = PerceivedComponentLink(
+            link_id="link-1",
+            composite_id="a-1",
+            component_id="a-2",
+            epistemic_status=status,
+        )
+        assert link.epistemic_status == status
+
+
+def test_perceived_component_link_invalid_epistemic_status_raises():
+    """PerceivedComponentLink rejects invalid epistemic status."""
+    with pytest.raises(ValueError, match="Invalid epistemic status"):
+        PerceivedComponentLink(
+            link_id="link-1",
+            composite_id="a-1",
+            component_id="a-2",
+            epistemic_status="guessed",
+        )
+
+
+def test_perceived_component_link_to_dict():
+    """PerceivedComponentLink serializes to canonical dict."""
+    link = PerceivedComponentLink(
+        link_id="link-1",
+        composite_id="a-1",
+        component_id="a-2",
+        epistemic_status="believed",
+        noise_metadata={"distortion": 0.1},
+    )
+    d = link.to_dict()
+    assert d["link_id"] == "link-1"
+    assert d["composite_id"] == "a-1"
+    assert d["component_id"] == "a-2"
+    assert d["epistemic_status"] == "believed"
+    assert d["noise_metadata"] == {"distortion": 0.1}
+
+
+def test_perceived_component_link_from_dict():
+    """PerceivedComponentLink reconstructs from dict."""
+    data = {
+        "link_id": "link-2",
+        "composite_id": "a-1",
+        "component_id": "a-3",
+        "epistemic_status": "projected",
+        "noise_metadata": {},
+    }
+    link = PerceivedComponentLink.from_dict(data)
+    assert link.link_id == "link-2"
+    assert link.composite_id == "a-1"
+    assert link.component_id == "a-3"
+    assert link.epistemic_status == "projected"
+
+
+def test_perception_component_links_default_empty():
+    """Perception initializes with empty perceived_component_links."""
+    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    assert perception.perceived_component_links == []
+
+
+def test_perception_query_component_links_for_composite():
+    """component_links_for_composite filters by composite_id."""
+    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception.perceived_component_links += [
+        PerceivedComponentLink("link-1", "a-1", "a-2"),
+        PerceivedComponentLink("link-2", "a-1", "a-3"),
+        PerceivedComponentLink("link-3", "a-4", "a-2"),
+    ]
+
+    result = perception.component_links_for_composite("a-1")
+    assert len(result) == 2
+    assert all(link.composite_id == "a-1" for link in result)
+
+
+def test_perception_query_composite_for_component():
+    """composite_for_component filters by component_id."""
+    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception.perceived_component_links += [
+        PerceivedComponentLink("link-1", "a-1", "a-2"),
+        PerceivedComponentLink("link-2", "a-3", "a-2"),
+        PerceivedComponentLink("link-3", "a-4", "a-5"),
+    ]
+
+    result = perception.composite_for_component("a-2")
+    assert len(result) == 2
+    assert all(link.component_id == "a-2" for link in result)
+
+
+def test_perception_to_dict_roundtrip_with_component_links():
+    """Perception serializes and reconstructs with component links."""
+    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception.perceived_component_links += [
+        PerceivedComponentLink("link-1", "a-1", "a-2", epistemic_status="certain"),
+        PerceivedComponentLink("link-2", "a-1", "a-3", epistemic_status="hypothesis"),
+    ]
+
+    restored = Perception.from_dict(perception.to_dict())
+    assert len(restored.perceived_component_links) == 2
+    assert restored.perceived_component_links[0].link_id == "link-1"
+    assert restored.perceived_component_links[0].composite_id == "a-1"
+    assert restored.perceived_component_links[0].epistemic_status == "certain"
+    assert restored.perceived_component_links[1].epistemic_status == "hypothesis"
+
+
+def test_perception_from_dict_null_component_links_defaults_empty():
+    """Perception.from_dict treats null component_links as empty list."""
+    perception = Perception.from_dict(
+        {
+            "id": "p-null-2",
+            "actor_id": "a1",
+            "source_id": "w1",
+            "perceived_component_links": None,
+        }
+    )
+    assert perception.perceived_component_links == []
