@@ -26,7 +26,9 @@ from .base import (
     ModelObject,
     ObjectId,
     JsonMap,
+    _base_kwargs_from_typed_payload,
     _canonical_json_map,
+    _require_non_empty,
     _require_non_null_string,
 )
 from .objects import GenericObject
@@ -68,8 +70,7 @@ class Space(GenericObject):
         """Set the kind of the space.
         The kind can be used to specify the nature or category of the space,
         such as 'physical', 'virtual', 'conceptual', etc."""
-        if not value:
-            raise ValueError("Kind cannot be empty")
+        _require_non_empty(value, "Kind cannot be empty")
         self.attributes["kind"] = str(value)
 
     @property
@@ -84,8 +85,7 @@ class Space(GenericObject):
 
     def set_dimension(self, name: str, value: Any) -> None:
         """Set a dimension for the space."""
-        if not name:
-            raise ValueError("Dimension name cannot be empty")
+        _require_non_empty(name, "Dimension name cannot be empty")
         dimensions = self.dimensions
         dimensions[name] = value
         self.attributes["dimensions"] = dict(sorted(dimensions.items()))
@@ -171,10 +171,7 @@ class Space(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Space":
         """Create a Space instance from a dictionary representation."""
-        payload = dict(data)
-        payload["object_type"] = payload.get("object_type") or "space"
-        base_obj = ModelObject.from_dict(payload)
-        return cls(**base_obj._base_kwargs())
+        return cls(**_base_kwargs_from_typed_payload(data, "space"))
 
 
 @dataclass

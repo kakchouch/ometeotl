@@ -21,7 +21,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from .base import ModelObject, relation_methods
+from .base import (
+    _base_kwargs_from_typed_payload,
+    _require_non_empty,
+    relation_methods,
+)
 from .objects import GenericObject
 
 
@@ -95,8 +99,7 @@ class Resource(GenericObject):
     @kind.setter
     def kind(self, value: str) -> None:
         """Set the kind of resource."""
-        if not value:
-            raise ValueError("Kind cannot be empty.")
+        _require_non_empty(value, "Kind cannot be empty.")
         self.attributes["kind"] = str(value)
 
     @property
@@ -108,8 +111,7 @@ class Resource(GenericObject):
     @resource_mode.setter
     def resource_mode(self, value: str) -> None:
         """Set the resource mode of the resource."""
-        if not value:
-            raise ValueError("Resource mode cannot be empty.")
+        _require_non_empty(value, "Resource mode cannot be empty.")
         self.attributes["resource_mode"] = str(value)
 
     @property
@@ -121,8 +123,7 @@ class Resource(GenericObject):
     @rivalry.setter
     def rivalry(self, value: str) -> None:
         """Set the rivalry of the resource."""
-        if not value:
-            raise ValueError("Rivalry cannot be empty.")
+        _require_non_empty(value, "Rivalry cannot be empty.")
         self.attributes["rivalry"] = str(value)
 
     @property
@@ -134,8 +135,7 @@ class Resource(GenericObject):
     @transferability.setter
     def transferability(self, value: str) -> None:
         """Set the transferability of the resource."""
-        if not value:
-            raise ValueError("Transferability cannot be empty.")
+        _require_non_empty(value, "Transferability cannot be empty.")
         self.attributes["transferability"] = str(value)
 
     @property
@@ -147,8 +147,7 @@ class Resource(GenericObject):
     @divisibility.setter
     def divisibility(self, value: str) -> None:
         """Set the divisibility of the resource."""
-        if not value:
-            raise ValueError("Divisibility cannot be empty")
+        _require_non_empty(value, "Divisibility cannot be empty")
         self.attributes["divisibility"] = str(value)
 
     @property
@@ -177,7 +176,4 @@ class Resource(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":
         """Create the resource from a dictionary."""
-        payload = dict(data)
-        payload["object_type"] = payload.get("object_type") or "resource"
-        base_obj = ModelObject.from_dict(payload)
-        return cls(**base_obj._base_kwargs())
+        return cls(**_base_kwargs_from_typed_payload(data, "resource"))

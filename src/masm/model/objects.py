@@ -5,7 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from .base import ModelObject, JsonMap, ObjectId, _canonical_json_map
+from .base import (
+    JsonMap,
+    ModelObject,
+    ObjectId,
+    _canonical_json_map,
+    _require_non_empty,
+)
 
 if TYPE_CHECKING:
     from .spaces import SpaceObjectGraph
@@ -22,8 +28,7 @@ class GenericObject(ModelObject):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if not self.id:
-            raise ValueError("Object id cannot be empty")
+        _require_non_empty(self.id, "Object id cannot be empty")
 
     @property
     def label(self) -> Optional[str]:
@@ -34,8 +39,7 @@ class GenericObject(ModelObject):
     @label.setter
     def label(self, value: str) -> None:
         """Set the object's label."""
-        if not value:
-            raise ValueError("Label cannot be empty")
+        _require_non_empty(value, "Label cannot be empty")
         self.attributes["label"] = value
 
     @property
@@ -47,8 +51,7 @@ class GenericObject(ModelObject):
     @description.setter
     def description(self, value: str) -> None:
         """Set the object's description."""
-        if not value:
-            raise ValueError("Description cannot be empty")
+        _require_non_empty(value, "Description cannot be empty")
         self.attributes["description"] = value
 
     @property
@@ -80,8 +83,7 @@ class GenericObject(ModelObject):
 
     def set_profile_item(self, key: str, value: Any) -> None:
         """Set a specific item in the object's profile."""
-        if not key:
-            raise ValueError("Profile key cannot be empty")
+        _require_non_empty(key, "Profile key cannot be empty")
         profile = self.profile
         profile[key] = value
         self.attributes["profile"] = _canonical_json_map(profile)
