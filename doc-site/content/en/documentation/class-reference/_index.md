@@ -75,6 +75,7 @@ Repository source:
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/)
 
 ## Model/registry.py
+- [reconstruct_model_object](/ometeotl/documentation/class-reference/model/registry/reconstruct-model-object/)
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)
 - [MinimalModelRegistry](/ometeotl/documentation/class-reference/model/registry/minimal-model-registry/)
 

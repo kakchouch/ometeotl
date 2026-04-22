@@ -22,9 +22,21 @@ Parameters and fields:
 - applied: Optional[bool]
 - metadata: dict
 
+Known `change_type` values:
+- `state_changes`
+- `resource_consume`
+- `resource_produce`
+- `object_added`
+- `object_removed`
+- `component_added`
+- `component_removed`
+
 Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> ProjectedPerceptionChange`
+
+Notes:
+- `component_added` and `component_removed` describe projected changes to perceived actor composition, not mutations of the ontological world model.
 
 See also:
 - [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)

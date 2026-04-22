@@ -110,38 +110,56 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 
 ## État actuel du dépôt (avril 2026)
 
-Le projet est dans une phase cœur fonctionnel, encore précoce.
+Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, ainsi que la frontière d'autorité/runtime.
 
 ### Implémenté et testé aujourd'hui
 
 1. Modèle d'objets dans `src/masm/model/` :
     - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
+    - `WorldModelRegistry` et helpers de reconstruction.
 2. Structures spatiales :
     - `SpaceObjectGraph` et `SpaceObjectMembership`.
-    - `SpaceRelation` et `SpaceRelationGraph` avec canonicalisation et contraintes de relation.
-3. Couche de perception :
-    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`.
+    - `SpaceRelation`, `SpaceRelationType` et `SpaceRelationGraph` avec canonicalisation et contraintes de relation.
+3. Hiérarchie d'acteurs et abstraction :
+    - Modes de composition sur `Actor`.
+    - Relations explicites `component` pour les acteurs composites.
+    - Helpers de hiérarchie : détection de cycles, résolution d'arbre, recherche des parents.
+    - Support des espaces abstraits via `Space.is_abstract` et helpers du monde.
+    - Utilitaires pour remonter d'une hiérarchie abstraite vers les acteurs réels de base.
+4. Couche de perception :
+    - `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, `PerceivedComponentLink`.
     - Validation des statuts épistémiques (`certain`, `believed`, `hypothesis`, `projected`, `error`).
-    - Ordre de sérialisation déterministe des memberships et relations perçus.
-4. Pipeline sensoriel :
+    - Ordre de sérialisation déterministe des memberships, relations et liens de composition perçus.
+5. Pipeline sensoriel :
     - Abstractions `CoverageRule` et `NoiseRule`.
     - Comportements par défaut `TotalCoverageRule` et `IdentityNoiseRule`.
     - Support du timestamp de snapshot dans `Sensor.sense(...)`.
     - Identifiant de perception déterministe quand le timestamp est fourni.
     - Identifiant de perception unique quand le timestamp est omis.
-5. Contrôle qualité :
-    - Tests automatiques du modèle dans `tests/test_model.py` (45 tests passants).
+6. Couche de projection :
+    - `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`.
+    - `DefaultProjectionTool`.
+    - Support des liens de composition perçus et des changements projetés de composition.
+7. Couche stratégie :
+    - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
+    - Builders linéaires et branchants pilotés par les perceptions projetées successives.
+8. Infrastructure runtime dans `src/masm/core/` :
+    - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
+    - `RuntimeContext` et `build_runtime(...)`.
+    - Mode autoritaire optionnel pour les mutations possédées par le serveur.
+9. Contrôle qualité :
+    - Tests automatisés dans `tests/model/` et `tests/core/`.
+    - Base actuelle : `188` tests collectés.
 
-### Présent mais non implémenté pour l'instant
+### Présent mais encore incomplet ou partiellement scaffoldé
 
-Les packages ci-dessous sont actuellement des squelettes (fichiers bootstrap) et restent au roadmap :
+Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/masm/core/`
-- `src/masm/io/`
-- `src/masm/generation/`
-- `src/masm/game/`
-- `src/masm/validation/`
-- `src/masm/examples/`
+- `src/masm/validation/` pour les pipelines explicites de validation.
+- `src/masm/io/` pour les workflows dédiés d'import/export.
+- `src/masm/generation/` pour la construction contextuelle ou assistée par LLM.
+- `src/masm/game/` pour la couche théorie des jeux complète au-delà des fondations actuelles.
+- `src/masm/examples/` pour les mondes de référence et démonstrations de bout en bout.
 
 ### Arborescence source actuelle
 
@@ -149,34 +167,49 @@ Les packages ci-dessous sont actuellement des squelettes (fichiers bootstrap) et
 ometeotl/
 ├── src/
 │   └── masm/
-│       ├── core/               # squelette
-│       ├── io/                 # squelette
-│       ├── generation/         # squelette
-│       ├── game/               # squelette
-│       ├── validation/         # squelette
-│       ├── examples/           # squelette
-│       └── model/              # implémenté en mode V1 incrémental
+│       ├── core/
+│       │   ├── authority.py
+│       │   └── runtime.py
+│       ├── io/                 # prévu / scaffold partiel
+│       ├── generation/         # prévu / scaffold partiel
+│       ├── game/               # prévu / scaffold partiel
+│       ├── validation/         # prévu / scaffold partiel
+│       ├── examples/           # prévu / scaffold partiel
+│       └── model/
+│           ├── actions.py
+│           ├── actors.py
 │           ├── base.py
 │           ├── objects.py
-│           ├── actors.py
-│           ├── resources.py
-│           ├── spaces.py
-│           ├── space_relations.py
 │           ├── perception.py
+│           ├── projection.py
+│           ├── registry.py
+│           ├── resources.py
 │           ├── sensor.py
-│           ├── world.py
-│           └── registry.py
+│           ├── space_relations.py
+│           ├── spaces.py
+│           ├── strategies.py
+│           └── world.py
 └── tests/
-     └── test_model.py
+    ├── core/
+    └── model/
 ```
 
 ### Lecture pratique de la V1
 
-La V1 est aujourd'hui validée sur le cœur model/perception/sensor. L'implémentation complète de la génération, de la projection théorie des jeux, et des pipelines validation/io reste au roadmap.
+La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques et runtime/autorité déjà implémentées. Les couches validation, génération, IO dédiées et théorie des jeux complète restent au roadmap.
+
+### Priorités TODO actuelles
+
+1. Implémenter la couche explicite de validation requise par F-9 à F-15.
+2. Implémenter des workflows IO dédiés au-dessus de la sérialisation canonique des objets.
+3. Implémenter la génération contextuelle et les workflows de réparation.
+4. Implémenter la couche game au-delà des fondations actuelles de stratégie et projection.
+5. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
+6. Ajouter des exemples de référence et des démos complètes de bout en bout.
 
 
 ## Status
-Le document `specs_EN.md`est la source de verité pour l'architecture et le comportement du module.
+Le document `specs_EN.md` est la source de vérité pour l'architecture et le comportement du module.
 
 Si certaines parties ne sont pas à jour :
 - préferer l'implémentation actuelle pour ces parties ;

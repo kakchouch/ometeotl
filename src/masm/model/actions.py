@@ -15,26 +15,16 @@ F-1 (canonical serialization).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import json
 from typing import Any, List, Mapping, Optional
 
 from .base import (
     ModelObject,
     ObjectId,
     JsonMap,
+    _canonical_json,
     _canonical_json_map,
     _require_non_null_string,
 )
-
-
-def _canonical_json(value: Any) -> str:
-    """Return deterministic JSON for sorting and validation."""
-    try:
-        return json.dumps(value, sort_keys=True, separators=(",", ":"))
-    except (TypeError, ValueError) as exc:
-        raise ValueError(
-            "Metadata must be JSON-serializable for deterministic serialization"
-        ) from exc
 
 
 @dataclass

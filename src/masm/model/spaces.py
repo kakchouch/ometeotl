@@ -16,6 +16,7 @@ Space-to-space relations are managed separately through the space_relations modu
 
 from __future__ import annotations
 
+import bisect
 import copy
 import dataclasses
 from dataclasses import dataclass, field
@@ -52,6 +53,7 @@ class Space(GenericObject):
         self.attributes.setdefault("tags", [])
         self.attributes.setdefault("dimensions", {})
         self.attributes.setdefault("validity", {})
+        self.attributes.setdefault("is_abstract", False)
 
     @property
     def kind(self) -> str:
@@ -104,6 +106,23 @@ class Space(GenericObject):
         if end is not None:
             validity["end"] = end
         self.attributes["validity"] = validity
+
+    @property
+    def is_abstract(self) -> bool:
+        """Return whether this space is abstract (non-canonical).
+
+        Abstract spaces represent conceptual groupings, strategic partitions,
+        or analytical views rather than entities in the ontological world.
+        They commonly host abstract composite actors that aggregate
+        real-world actors.
+        """
+        value = self.attributes.get("is_abstract", False)
+        return bool(value)
+
+    @is_abstract.setter
+    def is_abstract(self, value: bool) -> None:
+        """Set whether this space is abstract."""
+        self.attributes["is_abstract"] = bool(value)
 
     def add_member(self, object_id: ObjectId) -> None:
         """DEPRECATED: Add a member to the space."""
@@ -258,11 +277,12 @@ class SpaceObjectGraph:
         if membership_key in self._membership_keys:
             return
 
-        self.object_memberships.append(object_membership)
-        self._membership_keys.add(membership_key)
-        self.object_memberships.sort(
-            key=lambda item: (item.space_id, item.object_id, item.role)
+        bisect.insort(
+            self.object_memberships,
+            object_membership,
+            key=lambda item: (item.space_id, item.object_id, item.role),
         )
+        self._membership_keys.add(membership_key)
 
     def remove_object_membership(
         self, object_membership: SpaceObjectMembership

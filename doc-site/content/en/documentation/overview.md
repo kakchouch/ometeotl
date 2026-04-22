@@ -29,6 +29,12 @@ Each actor can have a subjective, possibly imperfect view of the world:
 - [CoverageRule](/ometeotl/documentation/class-reference/model/sensor/coverage-rule/) controls what is visible
 - [NoiseRule](/ometeotl/documentation/class-reference/model/sensor/noise-rule/) controls how observed data is distorted
 
+Actors may also form explicit composite hierarchies and abstraction layers:
+
+- [Actor](/ometeotl/documentation/class-reference/model/actors/actor/) supports explicit `component` relations for `composite` actors and helper utilities for hierarchy traversal and cycle checks
+- [Space](/ometeotl/documentation/class-reference/model/spaces/space/) can be marked `is_abstract` to represent conceptual or analytical spaces alongside canonical spaces
+- [Perception](/ometeotl/documentation/class-reference/model/perception/perception/) can carry perceived component links, keeping composition knowledge in the epistemic layer when needed
+
 Candidate actions can then be projected from that perceived state into explicit future-facing strategy artifacts:
 
 - [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/) derives projection assumptions and successor perceived states
@@ -66,6 +72,19 @@ Operationally, [World](/ometeotl/documentation/class-reference/model/world/world
 
 This separation prevents layer mixing and aligns with the architecture constraints in [specs_EN.md](https://github.com/kakchouch/ometeotl/blob/main/specs_EN.md).
 
+## Test Layout
+
+The test suite follows the same layer separation as the source tree:
+
+- `tests/model/`: tests for `masm.model.*`
+- `tests/core/`: tests for `masm.core.*`
+
+Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
+
+Run the complete suite from the repository root in one command:
+
+- `pytest`
+
 ## Expert View
 
 At expert level, the core implementation can be read as a set of deterministic state-transition boundaries.
@@ -84,6 +103,8 @@ Deterministic ordering is enforced by canonical sort helpers and sorted list ser
 The ontology layer is [World](/ometeotl/documentation/class-reference/model/world/world/), [SpaceObjectGraph](/ometeotl/documentation/class-reference/model/spaces/space-object-graph/), [SpaceRelationGraph](/ometeotl/documentation/class-reference/model/space-relations/space-relation-graph/), and [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/).
 
 The epistemic layer is [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), [PerceivedSpace](/ometeotl/documentation/class-reference/model/perception/perceived-space/), [PerceivedMembership](/ometeotl/documentation/class-reference/model/perception/perceived-membership/), and [PerceivedRelation](/ometeotl/documentation/class-reference/model/perception/perceived-relation/), created by [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/) through composable [CoverageRule](/ometeotl/documentation/class-reference/model/sensor/coverage-rule/) and [NoiseRule](/ometeotl/documentation/class-reference/model/sensor/noise-rule/).
+
+Perceived actor composition is represented explicitly through [PerceivedComponentLink](/ometeotl/documentation/class-reference/model/perception/perceived-component-link/), which lets perceived hierarchies diverge from ontological hierarchies without mixing layers.
 
 This realizes reality/perception dissociation from the spec: decisions can be based on perceived states, not only ontological states.
 

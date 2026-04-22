@@ -35,6 +35,7 @@ from .perception import (
     PerceivedMembership,
     PerceivedRelation,
     PerceivedSpace,
+    _validate_epistemic_status,
 )
 from .spaces import Space, SpaceObjectMembership
 from .space_relations import SpaceRelation
@@ -186,11 +187,7 @@ class Sensor:
     default_epistemic_status: str = "certain"
 
     def __post_init__(self) -> None:
-        if self.default_epistemic_status not in VALID_EPISTEMIC_STATUSES:
-            raise ValueError(
-                f"Invalid default_epistemic_status: '{self.default_epistemic_status}'. "
-                f"Must be one of {sorted(VALID_EPISTEMIC_STATUSES)}."
-            )
+        _validate_epistemic_status(self.default_epistemic_status)
 
     # --- Public API ---------------------------------------------------------
 
