@@ -130,16 +130,19 @@ def test_utility_function_cannot_be_instantiated():
         UtilityFunction()  # type: ignore
 
 
-def test_utility_function_incomplete_subclass_rejected():
-    """UtilityFunction subclass missing abstract methods raises on instantiation."""
+def test_utility_function_incomplete_subclass_is_abstract():
+    """UtilityFunction subclass missing required members remains abstract."""
 
     class IncompleteUtility(UtilityFunction):
         """Missing framework_id, is_multi_criteria, and evaluate implementations."""
 
         pass
 
-    with pytest.raises(TypeError):
-        IncompleteUtility()
+    abstract_methods = IncompleteUtility.__abstractmethods__
+    assert abstract_methods
+    assert "framework_id" in abstract_methods
+    assert "is_multi_criteria" in abstract_methods
+    assert "evaluate" in abstract_methods
 
 
 def test_utility_function_minimal_concrete_subclass():
@@ -159,6 +162,7 @@ def test_utility_function_minimal_concrete_subclass():
             return False
 
         def evaluate(self, perception, actor, context):
+            del perception, actor, context
             return UtilityFrame(
                 value=self._value,
                 framework_id=self._framework_id,
@@ -198,6 +202,7 @@ def test_utility_function_multi_criteria_subclass():
             return True
 
         def evaluate(self, perception, actor, context):
+            del perception, actor, context
             return UtilityFrame(
                 value=[0.8, 0.6, 0.4],
                 framework_id=self._framework_id,
@@ -235,6 +240,7 @@ def test_utility_function_evaluation_with_context():
             return False
 
         def evaluate(self, perception, actor, context):
+            del perception, actor
             # Use context to scale utility
             scale = float(context.get("scale", 1.0))
             base_value = float(context.get("base_value", 0.5))
