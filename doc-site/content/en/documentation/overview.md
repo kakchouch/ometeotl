@@ -70,7 +70,9 @@ The implemented pipeline follows this flow:
 8. Derive first-order projection assumptions and projected successor perceived states from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
 9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py).
 10. Validate payloads/objects with the staged validation pipeline in `masm.validation` (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), using policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`) when needed.
-11. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+11. Export a world to canonical JSON or YAML via `masm.io` ([world_to_json](/ometeotl/documentation/class-reference/io/world-export/), [world_to_yaml](/ometeotl/documentation/class-reference/io/world-export/), [write_world_json](/ometeotl/documentation/class-reference/io/world-export/), [write_world_yaml](/ometeotl/documentation/class-reference/io/world-export/)).
+12. Re-import a world from JSON or YAML with validated reconstruction via [world_from_json / world_from_yaml](/ometeotl/documentation/class-reference/io/world-import/), which runs syntactic then structural validation before calling `World.from_dict`.
+13. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
 12. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
 13. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
 14. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
@@ -91,6 +93,7 @@ The test suite follows the same layer separation as the source tree:
 - `tests/core/`: tests for `masm.core.*`
 - `tests/validation/`: tests for `masm.validation.*`
 - `tests/game/`: tests for `masm.game.*`
+- `tests/io/`: tests for `masm.io.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 
