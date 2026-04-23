@@ -97,6 +97,34 @@ def test_world_from_mapping_raises_validation_exception_for_structural_errors():
     assert exc_info.value.result.summary["error"] >= 1
 
 
+def test_world_from_json_aggregates_all_stage_issues_before_raising():
+    """All validation stages must run to completion before a ValidationException is raised.
+
+    A syntactically valid JSON that fails structural validation must produce a
+    ValidationResult that records execution of both the syntactic and the structural
+    stages. Before the fix, the first failing stage raised early and the aggregated
+    result was never returned to the caller.
+    """
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
+    with pytest.raises(ValidationException) as exc_info:
+        world_from_json(structurally_invalid_json, raise_on_error=True)
+
+    result = exc_info.value.result
+    assert result.valid is False
+    executed = result.metadata["executed_validators"]
+    assert "syntactic" in executed, "Syntactic stage must have run"
+    assert "structural" in executed, "Structural stage must have run"
+    assert result.summary["error"] >= 1
+
+
+def test_world_from_json_returns_result_without_raising_when_raise_on_error_false():
+    """raise_on_error=False must suppress ValidationException and return the result."""
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
+    result = world_from_json(structurally_invalid_json, raise_on_error=False)
+    assert result.validation.valid is False
+    assert result.validation.summary["error"] >= 1
+
+
 def test_world_json_and_yaml_exports_describe_same_payload():
     """JSON and YAML exports should encode the same canonical mapping."""
     world = _build_world()

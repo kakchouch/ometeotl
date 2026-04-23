@@ -50,9 +50,8 @@ def world_from_mapping(
         validation_pipeline=validation_pipeline,
         mode=mode,
         stage_modes=stage_modes,
-        raise_on_error=raise_on_error,
     )
-    if not validation.valid:
+    if raise_on_error and not validation.valid:
         raise ValidationException(validation)
     return WorldImportResult(
         world=World.from_dict(native_payload),
@@ -154,9 +153,8 @@ def _world_from_serialized(
         validation_pipeline=validation_pipeline,
         mode=mode,
         stage_modes=stage_modes,
-        raise_on_error=raise_on_error,
     )
-    if not validation.valid:
+    if raise_on_error and not validation.valid:
         raise ValidationException(validation)
     return WorldImportResult(
         world=World.from_dict(parsed_payload),
@@ -174,7 +172,6 @@ def _validate_world_payload(
     validation_pipeline: ValidationPipeline | None,
     mode: str,
     stage_modes: Mapping[str, str] | None,
-    raise_on_error: bool,
 ) -> ValidationResult:
     validators = (
         validation_pipeline
@@ -185,18 +182,26 @@ def _validate_world_payload(
     effective_stage_modes: dict[str, str] = {}
 
     for validator in validators:
+        # Syntactic validation requires serialized text; skip it for native mappings.
+        if source_format == "native" and validator.name == "syntactic":
+            continue
+
         stage_pipeline = ValidationPipeline([validator])
         stage_target: str | Mapping[str, Any]
         if validator.name == "syntactic":
             stage_target = serialized_payload
         else:
             stage_target = parsed_payload
+
+        # Always pass raise_on_error=False so every stage runs and aggregates its
+        # issues. The callers (world_from_mapping / _world_from_serialized) decide
+        # whether to raise based on the final combined result.
         stage_result = stage_pipeline.validate(
             stage_target,
             mode=mode,
             context=ValidationContext(metadata={"format": source_format}),
             stage_modes=stage_modes,
-            raise_on_error=raise_on_error,
+            raise_on_error=False,
         )
         issues.extend(stage_result.issues)
         executed_validators.append(validator.name)
