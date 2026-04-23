@@ -183,12 +183,12 @@ def _validate_world_payload(
 
     for validator in validators:
         # Syntactic validation requires serialized text; skip it for native mappings.
-        if source_format == "native" and validator.name == "syntactic":
+        if source_format == "native" and isinstance(validator, SyntacticValidator):
             continue
 
         stage_pipeline = ValidationPipeline([validator])
         stage_target: str | Mapping[str, Any]
-        if validator.name == "syntactic":
+        if isinstance(validator, SyntacticValidator):
             stage_target = serialized_payload
         else:
             stage_target = parsed_payload

@@ -17,7 +17,12 @@ from masm.model.resources import Resource
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
-from masm.validation import ValidationException
+from masm.validation import (
+    StructuralValidator,
+    SyntacticValidator,
+    ValidationException,
+    ValidationPipeline,
+)
 
 
 def _build_world() -> World:
@@ -123,6 +128,30 @@ def test_world_from_json_returns_result_without_raising_when_raise_on_error_fals
     result = world_from_json(structurally_invalid_json, raise_on_error=False)
     assert result.validation.valid is False
     assert result.validation.summary["error"] >= 1
+
+
+def test_world_from_mapping_skips_syntactic_subclass_validator():
+    """Native mapping imports should skip any syntactic-validator subclass."""
+
+    class CustomSyntacticValidator(SyntacticValidator):
+        @property
+        def name(self) -> str:
+            return "syntactic_custom"
+
+    pipeline = ValidationPipeline(
+        validators=[CustomSyntacticValidator(), StructuralValidator()]
+    )
+
+    with pytest.raises(ValidationException) as exc_info:
+        world_from_mapping(
+            {"id": "broken-world", "relations": []},
+            validation_pipeline=pipeline,
+            raise_on_error=True,
+        )
+
+    executed = exc_info.value.result.metadata["executed_validators"]
+    assert "syntactic_custom" not in executed
+    assert "structural" in executed
 
 
 def test_world_json_and_yaml_exports_describe_same_payload():
