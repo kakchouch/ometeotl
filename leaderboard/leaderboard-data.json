@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-23T07:21:12.619108+00:00",
+  "timestamp": "2026-04-23T10:22:09.072913+00:00",
   "repository": "kakchouch/ometeotl",
   "n_active": 0,
   "k": 12,
@@ -32,7 +32,7 @@
     }
   },
   "raw_scores": {
-    "kakchouch": 923.0402
+    "kakchouch": 953.1433
   },
   "z_scores": {
     "kakchouch": 0.0
