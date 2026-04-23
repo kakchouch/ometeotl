@@ -9,6 +9,9 @@ venv/
 #testing logs
 logs/
 
+#local lab
+local_lab/
+
 # C extensions
 *.so
 
