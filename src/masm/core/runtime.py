@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, Sequence, Type
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+)
 
 from masm.model.world import World
-from masm.validation import LEVEL_RECOMMENDED, PROFILE_OBSERVE_ONLY
+from masm.validation import (
+    LEVEL_RECOMMENDED,
+    PROFILE_OBSERVE_ONLY,
+)
 
 from .authority import AuthorityCommandHandler, CommandEnvelope
 
@@ -52,14 +62,23 @@ def build_runtime(
     server_authoritative: bool = False,
     validation_soft_gate: bool = True,
     validation_policy_profile: str = PROFILE_OBSERVE_ONLY,
-    validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
+    validation_stage_mode_overrides: Optional[
+        Mapping[str, str]
+    ] = None,
     validation_block_on_error: bool = False,
     validation_completeness_level: str = LEVEL_RECOMMENDED,
     allowed_command_types: Optional[Sequence[str]] = None,
     custom_command_handlers: Optional[
-        Mapping[str, Callable[[CommandEnvelope, World, str], dict[str, Any]]]
+        Mapping[
+            str,
+            Callable[
+                [CommandEnvelope, World, str], dict[str, Any]
+            ],
+        ]
     ] = None,
-    object_factories: Optional[Mapping[str, Callable[[Mapping[str, Any]], Any]]] = None,
+    object_factories: Optional[
+        Mapping[str, Callable[[Mapping[str, Any]], Any]]
+    ] = None,
     audit_log_maxlen: int = 1000,
     processed_ids_maxlen: int = 10000,
     sequence_tracker_max_actors: Optional[int] = 1000,
@@ -76,7 +95,9 @@ def build_runtime(
         - ``validation_block_on_error`` enables rejection on validation errors.
     """
     if not server_authoritative:
-        return RuntimeContext(world=world, authority_handler=None)
+        return RuntimeContext(
+            world=world, authority_handler=None
+        )
 
     return RuntimeContext(
         world=world,

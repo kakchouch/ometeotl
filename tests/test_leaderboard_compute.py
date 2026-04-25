@@ -1,14 +1,21 @@
 from datetime import datetime, timezone
-from importlib.util import module_from_spec, spec_from_file_location
+from importlib.util import (
+    module_from_spec,
+    spec_from_file_location,
+)
 from pathlib import Path
 
 MODULE_PATH = (
-    Path(__file__).resolve().parents[1] / "leaderboard" / "compute_leaderboard.py"
+    Path(__file__).resolve().parents[1]
+    / "leaderboard"
+    / "compute_leaderboard.py"
 )
 
 
 def load_leaderboard_module():
-    spec = spec_from_file_location("leaderboard_compute", MODULE_PATH)
+    spec = spec_from_file_location(
+        "leaderboard_compute", MODULE_PATH
+    )
     module = module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -22,7 +29,9 @@ class DummyUser:
 
 class DummyCommitMetadata:
     def __init__(self, date):
-        self.author = type("AuthorMetadata", (), {"date": date})()
+        self.author = type(
+            "AuthorMetadata", (), {"date": date}
+        )()
 
 
 class DummyCommit:
@@ -44,7 +53,14 @@ class DummyComment:
 
 
 class DummyPullRequest:
-    def __init__(self, login, merged_at, commits=None, reviews=None, comments=None):
+    def __init__(
+        self,
+        login,
+        merged_at,
+        commits=None,
+        reviews=None,
+        comments=None,
+    ):
         self.merged = True
         self.user = DummyUser(login)
         self.merged_at = merged_at
@@ -101,17 +117,25 @@ def test_load_founder_identity_from_object_config():
     )
 
     assert founder_identity.username == "kakchouch"
-    assert founder_identity.aliases == frozenset({"kakchouch", "founder-alt"})
+    assert founder_identity.aliases == frozenset(
+        {"kakchouch", "founder-alt"}
+    )
 
 
-def test_collect_events_merges_founder_aliases_and_excludes_shares(monkeypatch):
+def test_collect_events_merges_founder_aliases_and_excludes_shares(
+    monkeypatch,
+):
     leaderboard = load_leaderboard_module()
     founder_identity = leaderboard.FounderIdentity(
         username="kakchouch",
         aliases=frozenset({"kakchouch", "founder-alt"}),
     )
-    monkeypatch.setattr(leaderboard, "FOUNDER_IDENTITY", founder_identity)
-    monkeypatch.setattr(leaderboard, "FOUNDER", founder_identity.username)
+    monkeypatch.setattr(
+        leaderboard, "FOUNDER_IDENTITY", founder_identity
+    )
+    monkeypatch.setattr(
+        leaderboard, "FOUNDER", founder_identity.username
+    )
     monkeypatch.setattr(
         leaderboard,
         "NOW",
@@ -133,7 +157,9 @@ def test_collect_events_merges_founder_aliases_and_excludes_shares(monkeypatch):
                 reviews=[DummyReview("bob", merged_at)],
             ),
         ],
-        issues=[DummyIssue(login="kakchouch", created_at=merged_at)],
+        issues=[
+            DummyIssue(login="kakchouch", created_at=merged_at)
+        ],
     )
 
     events = leaderboard.collect_events(repo)

@@ -32,7 +32,9 @@ def relation_methods(method_name: str, rel_key: str):
         add_method.__name__ = f"add_{method_name}"
         remove_method.__name__ = f"remove_{method_name}"
         add_method.__doc__ = f"Adds {method_name} relation."
-        remove_method.__doc__ = f"Removes {method_name} relation."
+        remove_method.__doc__ = (
+            f"Removes {method_name} relation."
+        )
 
         setattr(cls, add_method.__name__, add_method)
         setattr(cls, remove_method.__name__, remove_method)
@@ -49,7 +51,9 @@ SUPPORTED_SCHEMA_VERSION = "1.0"
 MutationGuard = Callable[[], None]
 
 
-def _wrap_mutable_value(value: Any, mutation_guard: MutationGuard) -> Any:
+def _wrap_mutable_value(
+    value: Any, mutation_guard: MutationGuard
+) -> Any:
     if isinstance(value, GuardedJsonDict):
         value.set_mutation_guard(mutation_guard)
         return value
@@ -65,17 +69,25 @@ def _wrap_mutable_value(value: Any, mutation_guard: MutationGuard) -> Any:
 
 def _deep_plain_copy(value: Any) -> Any:
     if isinstance(value, GuardedJsonDict):
-        return {key: _deep_plain_copy(item) for key, item in value.items()}
+        return {
+            key: _deep_plain_copy(item)
+            for key, item in value.items()
+        }
     if isinstance(value, GuardedJsonList):
         return [_deep_plain_copy(item) for item in value]
     if isinstance(value, dict):
-        return {key: _deep_plain_copy(item) for key, item in value.items()}
+        return {
+            key: _deep_plain_copy(item)
+            for key, item in value.items()
+        }
     if isinstance(value, list):
         return [_deep_plain_copy(item) for item in value]
     return copy.deepcopy(value)
 
 
-def _canonical_json_map(mapping: Mapping[str, Any] | None) -> JsonMap:
+def _canonical_json_map(
+    mapping: Mapping[str, Any] | None,
+) -> JsonMap:
     """Return a deterministically ordered plain dict."""
     return dict(sorted(dict(mapping or {}).items()))
 
@@ -83,7 +95,9 @@ def _canonical_json_map(mapping: Mapping[str, Any] | None) -> JsonMap:
 def _canonical_json(value: Any) -> str:
     """Return deterministic JSON string for a value (for sorting and hashing)."""
     try:
-        return json.dumps(value, sort_keys=True, separators=(",", ":"))
+        return json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        )
     except (TypeError, ValueError) as exc:
         raise ValueError(
             "Value must be JSON-serializable for deterministic serialization"
@@ -94,24 +108,34 @@ class GuardedJsonDict(dict[str, Any]):
     """Dict wrapper that can reject direct mutations under authority mode."""
 
     def __init__(
-        self, initial: Mapping[str, Any] | None, mutation_guard: MutationGuard
+        self,
+        initial: Mapping[str, Any] | None,
+        mutation_guard: MutationGuard,
     ):
         super().__init__()
         self._mutation_guard = mutation_guard
         for key, value in dict(initial or {}).items():
-            super().__setitem__(key, _wrap_mutable_value(value, mutation_guard))
+            super().__setitem__(
+                key, _wrap_mutable_value(value, mutation_guard)
+            )
 
-    def set_mutation_guard(self, mutation_guard: MutationGuard) -> None:
+    def set_mutation_guard(
+        self, mutation_guard: MutationGuard
+    ) -> None:
         self._mutation_guard = mutation_guard
         for key, value in list(super().items()):
-            super().__setitem__(key, _wrap_mutable_value(value, mutation_guard))
+            super().__setitem__(
+                key, _wrap_mutable_value(value, mutation_guard)
+            )
 
     def _assert_mutation_allowed(self) -> None:
         self._mutation_guard()
 
     def __setitem__(self, key: str, value: Any) -> None:
         self._assert_mutation_allowed()
-        super().__setitem__(key, _wrap_mutable_value(value, self._mutation_guard))
+        super().__setitem__(
+            key, _wrap_mutable_value(value, self._mutation_guard)
+        )
 
     def __delitem__(self, key: str) -> None:
         self._assert_mutation_allowed()
@@ -131,16 +155,23 @@ class GuardedJsonDict(dict[str, Any]):
 
     def setdefault(self, key: str, default: Any = None) -> Any:
         self._assert_mutation_allowed()
-        wrapped_default = _wrap_mutable_value(default, self._mutation_guard)
+        wrapped_default = _wrap_mutable_value(
+            default, self._mutation_guard
+        )
         return super().setdefault(key, wrapped_default)
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         self._assert_mutation_allowed()
         other = dict(*args, **kwargs)
         for key, value in other.items():
-            super().__setitem__(key, _wrap_mutable_value(value, self._mutation_guard))
+            super().__setitem__(
+                key,
+                _wrap_mutable_value(value, self._mutation_guard),
+            )
 
-    def __deepcopy__(self, memo: dict[int, Any]) -> dict[str, Any]:
+    def __deepcopy__(
+        self, memo: dict[int, Any]
+    ) -> dict[str, Any]:
         return {
             copy.deepcopy(key, memo): copy.deepcopy(value, memo)
             for key, value in self.items()
@@ -150,29 +181,44 @@ class GuardedJsonDict(dict[str, Any]):
 class GuardedJsonList(list[Any]):
     """List wrapper that can reject direct mutations under authority mode."""
 
-    def __init__(self, initial: List[Any] | None, mutation_guard: MutationGuard):
+    def __init__(
+        self,
+        initial: List[Any] | None,
+        mutation_guard: MutationGuard,
+    ):
         super().__init__(
-            _wrap_mutable_value(value, mutation_guard) for value in (initial or [])
+            _wrap_mutable_value(value, mutation_guard)
+            for value in (initial or [])
         )
         self._mutation_guard = mutation_guard
 
-    def set_mutation_guard(self, mutation_guard: MutationGuard) -> None:
+    def set_mutation_guard(
+        self, mutation_guard: MutationGuard
+    ) -> None:
         self._mutation_guard = mutation_guard
         for index, value in enumerate(list(self)):
-            super().__setitem__(index, _wrap_mutable_value(value, mutation_guard))
+            super().__setitem__(
+                index, _wrap_mutable_value(value, mutation_guard)
+            )
 
     def _assert_mutation_allowed(self) -> None:
         self._mutation_guard()
 
-    def __setitem__(self, index: SupportsIndex | slice, value: Any) -> None:
+    def __setitem__(
+        self, index: SupportsIndex | slice, value: Any
+    ) -> None:
         self._assert_mutation_allowed()
         if isinstance(index, slice):
             wrapped_values = [
-                _wrap_mutable_value(item, self._mutation_guard) for item in list(value)
+                _wrap_mutable_value(item, self._mutation_guard)
+                for item in list(value)
             ]
             super().__setitem__(index, wrapped_values)
             return
-        super().__setitem__(index, _wrap_mutable_value(value, self._mutation_guard))
+        super().__setitem__(
+            index,
+            _wrap_mutable_value(value, self._mutation_guard),
+        )
 
     def __delitem__(self, index: SupportsIndex | slice) -> None:
         self._assert_mutation_allowed()
@@ -180,7 +226,9 @@ class GuardedJsonList(list[Any]):
 
     def append(self, value: Any) -> None:
         self._assert_mutation_allowed()
-        super().append(_wrap_mutable_value(value, self._mutation_guard))
+        super().append(
+            _wrap_mutable_value(value, self._mutation_guard)
+        )
 
     def clear(self) -> None:
         self._assert_mutation_allowed()
@@ -189,12 +237,16 @@ class GuardedJsonList(list[Any]):
     def extend(self, values: Iterable[Any]) -> None:
         self._assert_mutation_allowed()
         super().extend(
-            _wrap_mutable_value(value, self._mutation_guard) for value in values
+            _wrap_mutable_value(value, self._mutation_guard)
+            for value in values
         )
 
     def insert(self, index: SupportsIndex, value: Any) -> None:
         self._assert_mutation_allowed()
-        super().insert(index, _wrap_mutable_value(value, self._mutation_guard))
+        super().insert(
+            index,
+            _wrap_mutable_value(value, self._mutation_guard),
+        )
 
     def pop(self, index: SupportsIndex = -1) -> Any:
         self._assert_mutation_allowed()
@@ -212,10 +264,13 @@ class GuardedJsonList(list[Any]):
         self._assert_mutation_allowed()
         super().sort(*args, **kwargs)
 
-    def __iadd__(self, values: Iterable[Any]) -> "GuardedJsonList":
+    def __iadd__(
+        self, values: Iterable[Any]
+    ) -> "GuardedJsonList":
         self._assert_mutation_allowed()
         super().extend(
-            _wrap_mutable_value(value, self._mutation_guard) for value in values
+            _wrap_mutable_value(value, self._mutation_guard)
+            for value in values
         )
         return self
 
@@ -238,7 +293,9 @@ def _validate_schema_version(value: Any) -> str:
     return version
 
 
-def _require_non_null_value(data: Mapping[str, Any], key: str) -> Any:
+def _require_non_null_value(
+    data: Mapping[str, Any], key: str
+) -> Any:
     """Read a required field and reject explicit null values."""
     value = data.get(key)
     if value is None:
@@ -246,7 +303,9 @@ def _require_non_null_value(data: Mapping[str, Any], key: str) -> Any:
     return value
 
 
-def _require_non_null_mapping(data: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+def _require_non_null_mapping(
+    data: Mapping[str, Any], key: str
+) -> Mapping[str, Any]:
     """Read a required mapping field and reject non-mapping payloads."""
     value = _require_non_null_value(data, key)
     if not isinstance(value, Mapping):
@@ -254,7 +313,9 @@ def _require_non_null_mapping(data: Mapping[str, Any], key: str) -> Mapping[str,
     return value
 
 
-def _require_non_null_string(data: Mapping[str, Any], key: str) -> str:
+def _require_non_null_string(
+    data: Mapping[str, Any], key: str
+) -> str:
     """Read a required string field and reject explicit null values."""
     return str(_require_non_null_value(data, key))
 
@@ -265,7 +326,9 @@ def _require_non_empty(value: Any, error_message: str) -> None:
         raise ValueError(error_message)
 
 
-def _validated_unit_interval(value: Any, error_message: str) -> float:
+def _validated_unit_interval(
+    value: Any, error_message: str
+) -> float:
     """Validate and normalize a numeric value constrained to [0, 1]."""
     numeric_value = float(value)
     if not 0.0 <= numeric_value <= 1.0:
@@ -274,25 +337,37 @@ def _validated_unit_interval(value: Any, error_message: str) -> float:
 
 
 def _require_in(
-    value: Any, allowed_values: Collection[Any], error_message: str
+    value: Any,
+    allowed_values: Collection[Any],
+    error_message: str,
 ) -> None:
     """Raise ValueError when value is not present in the allowed set."""
     if isinstance(allowed_values, (str, bytes)):
-        raise TypeError("allowed_values must be a non-string collection")
+        raise TypeError(
+            "allowed_values must be a non-string collection"
+        )
     if value not in allowed_values:
         raise ValueError(error_message)
 
 
-def _validated_model_object_kwargs(data: Mapping[str, Any]) -> JsonMap:
+def _validated_model_object_kwargs(
+    data: Mapping[str, Any],
+) -> JsonMap:
     """Validate and normalize common ModelObject payload fields."""
     return {
         "id": _require_non_null_string(data, "id"),
-        "object_type": _require_non_null_string(data, "object_type"),
-        "schema_version": _validate_schema_version(data.get("schema_version")),
+        "object_type": _require_non_null_string(
+            data, "object_type"
+        ),
+        "schema_version": _validate_schema_version(
+            data.get("schema_version")
+        ),
         "attributes": dict(data.get("attributes") or {}),
         "relations": {
             str(key): [str(item) for item in value]
-            for key, value in dict(data.get("relations") or {}).items()
+            for key, value in dict(
+                data.get("relations") or {}
+            ).items()
         },
         "state": dict(data.get("state") or {}),
         "context": dict(data.get("context") or {}),
@@ -306,7 +381,9 @@ def _base_kwargs_from_typed_payload(
 ) -> JsonMap:
     """Build normalized base kwargs for a concrete ModelObject subtype."""
     payload = dict(data)
-    payload["object_type"] = payload.get("object_type") or default_object_type
+    payload["object_type"] = (
+        payload.get("object_type") or default_object_type
+    )
     validated = _validated_model_object_kwargs(payload)
     return {
         "id": validated["id"],
@@ -334,36 +411,59 @@ class ModelObject:
 
     id: ObjectId
     object_type: str
-    schema_version: SchemaVersion = field(default_factory=_default_schema_version)
+    schema_version: SchemaVersion = field(
+        default_factory=_default_schema_version
+    )
     attributes: JsonMap = field(default_factory=dict)
     relations: RelationMap = field(default_factory=dict)
     state: JsonMap = field(default_factory=dict)
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
-    _mutation_guard: MutationGuard = field(default=lambda: None, init=False, repr=False)
+    _mutation_guard: MutationGuard = field(
+        default=lambda: None, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         """Terminal hook for the cooperative __post_init__ chain."""
 
-    def set_mutation_guard(self, mutation_guard: MutationGuard) -> None:
+    def set_mutation_guard(
+        self, mutation_guard: MutationGuard
+    ) -> None:
         """Attach a guard used to reject unsanctioned direct mutations."""
         self._mutation_guard = mutation_guard
-        self.attributes = _wrap_mutable_value(self.attributes, mutation_guard)
-        self.relations = _wrap_mutable_value(self.relations, mutation_guard)
-        self.state = _wrap_mutable_value(self.state, mutation_guard)
-        self.context = _wrap_mutable_value(self.context, mutation_guard)
-        self.provenance = _wrap_mutable_value(self.provenance, mutation_guard)
+        self.attributes = _wrap_mutable_value(
+            self.attributes, mutation_guard
+        )
+        self.relations = _wrap_mutable_value(
+            self.relations, mutation_guard
+        )
+        self.state = _wrap_mutable_value(
+            self.state, mutation_guard
+        )
+        self.context = _wrap_mutable_value(
+            self.context, mutation_guard
+        )
+        self.provenance = _wrap_mutable_value(
+            self.provenance, mutation_guard
+        )
 
-    def add_relation(self, name: str, target_id: ObjectId) -> None:
+    def add_relation(
+        self, name: str, target_id: ObjectId
+    ) -> None:
         """Add a relation to another object."""
         self._manage_relation(name, target_id, add=True)
 
-    def remove_relation(self, name: str, target_id: ObjectId) -> None:
+    def remove_relation(
+        self, name: str, target_id: ObjectId
+    ) -> None:
         """Remove a relation to another object."""
         self._manage_relation(name, target_id, add=False)
 
     def _manage_relation(
-        self, rel_name: str, target_id: ObjectId, add: bool = True
+        self,
+        rel_name: str,
+        target_id: ObjectId,
+        add: bool = True,
     ) -> None:
         """Generic add/remove for relations. Used by subclasses."""
         if not rel_name:
@@ -377,7 +477,10 @@ class ModelObject:
         rel_list: List[ObjectId] = self.relations[rel_name]
         if add:
             pos = bisect.bisect_left(rel_list, target_id)
-            if pos >= len(rel_list) or rel_list[pos] != target_id:
+            if (
+                pos >= len(rel_list)
+                or rel_list[pos] != target_id
+            ):
                 bisect.insort(rel_list, target_id)
         else:
             if target_id in rel_list:
@@ -403,7 +506,9 @@ class ModelObject:
             raise ValueError("Provenance key cannot be empty")
         self.provenance[key] = value
 
-    def add_to_attribute_list(self, attr_name: str, item: Any) -> None:
+    def add_to_attribute_list(
+        self, attr_name: str, item: Any
+    ) -> None:
         """Add an item to a list attribute, avoiding duplicates."""
         if not attr_name:
             raise ValueError("Attribute name cannot be empty")
@@ -417,7 +522,9 @@ class ModelObject:
                 lst.sort()
             self.attributes[attr_name] = lst
 
-    def remove_from_attribute_list(self, attr_name: str, item: Any) -> None:
+    def remove_from_attribute_list(
+        self, attr_name: str, item: Any
+    ) -> None:
         """Remove an item from a list attribute."""
         if not attr_name:
             raise ValueError("Attribute name cannot be empty")

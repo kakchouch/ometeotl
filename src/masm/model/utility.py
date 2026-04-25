@@ -20,7 +20,11 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional, Union
 
 from .actors import Actor
-from .base import JsonMap, _canonical_json_map, _require_non_empty
+from .base import (
+    JsonMap,
+    _canonical_json_map,
+    _require_non_empty,
+)
 from .perception import Perception
 
 
@@ -39,10 +43,13 @@ class UtilityFrame:
 
     def __post_init__(self) -> None:
         _require_non_empty(
-            self.framework_id, "UtilityFrame framework_id cannot be empty"
+            self.framework_id,
+            "UtilityFrame framework_id cannot be empty",
         )
         if isinstance(self.value, list):
-            if self.criteria_labels and len(self.criteria_labels) != len(self.value):
+            if self.criteria_labels and len(
+                self.criteria_labels
+            ) != len(self.value):
                 raise ValueError(
                     "UtilityFrame criteria_labels length must match value list length"
                 )
@@ -65,7 +72,9 @@ class UtilityFrame:
         """Serialize the utility frame."""
         return {
             "value": (
-                self.value if not isinstance(self.value, list) else list(self.value)
+                self.value
+                if not isinstance(self.value, list)
+                else list(self.value)
             ),
             "framework_id": self.framework_id,
             "criteria_labels": list(self.criteria_labels),
@@ -73,19 +82,28 @@ class UtilityFrame:
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "UtilityFrame":
+    def from_dict(
+        cls, data: Mapping[str, Any]
+    ) -> "UtilityFrame":
         """Reconstruct a utility frame from mapping data."""
         raw_value = data.get("value")
         if isinstance(raw_value, list):
-            value: Union[float, list[float]] = [float(v) for v in raw_value]
+            value: Union[float, list[float]] = [
+                float(v) for v in raw_value
+            ]
         else:
-            value = float(raw_value) if raw_value is not None else 0.0
+            value = (
+                float(raw_value)
+                if raw_value is not None
+                else 0.0
+            )
 
         return cls(
             value=value,
             framework_id=str(data.get("framework_id") or ""),
             criteria_labels=[
-                str(label) for label in (data.get("criteria_labels") or [])
+                str(label)
+                for label in (data.get("criteria_labels") or [])
             ],
             metadata=dict(data.get("metadata") or {}),
         )
@@ -109,7 +127,9 @@ class UtilityFunction(ABC):
     """
 
     MISSING_METRIC_POLICY_DEFAULT_NEUTRAL = "default_neutral"
-    MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC = "default_pessimistic"
+    MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC = (
+        "default_pessimistic"
+    )
     SUPPORTED_MISSING_METRIC_POLICIES = {
         MISSING_METRIC_POLICY_DEFAULT_NEUTRAL,
         MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC,
@@ -175,27 +195,42 @@ class UtilityFunction(ABC):
             context.get("missing_metric_policy")
             or self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
         )
-        if requested_policy not in self.SUPPORTED_MISSING_METRIC_POLICIES:
-            requested_policy = self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+        if (
+            requested_policy
+            not in self.SUPPORTED_MISSING_METRIC_POLICIES
+        ):
+            requested_policy = (
+                self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+            )
 
         default_for_missing = 0.0
-        if requested_policy == self.MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC:
+        if (
+            requested_policy
+            == self.MISSING_METRIC_POLICY_DEFAULT_PESSIMISTIC
+        ):
             default_for_missing = -1.0
 
-        explicit_default_raw = context.get("missing_metric_default")
+        explicit_default_raw = context.get(
+            "missing_metric_default"
+        )
         if explicit_default_raw is not None:
             try:
                 default_for_missing = float(explicit_default_raw)
             except (TypeError, ValueError):
                 default_for_missing = (
                     0.0
-                    if requested_policy == self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
+                    if requested_policy
+                    == self.MISSING_METRIC_POLICY_DEFAULT_NEUTRAL
                     else -1.0
                 )
 
-        strict_invalid = bool(context.get("missing_metric_strict_invalid", False))
+        strict_invalid = bool(
+            context.get("missing_metric_strict_invalid", False)
+        )
 
-        fallback_dominance_threshold_raw = context.get("fallback_dominance_threshold")
+        fallback_dominance_threshold_raw = context.get(
+            "fallback_dominance_threshold"
+        )
         try:
             fallback_dominance_threshold = (
                 float(fallback_dominance_threshold_raw)
@@ -204,7 +239,9 @@ class UtilityFunction(ABC):
             )
         except (TypeError, ValueError):
             fallback_dominance_threshold = 0.5
-        fallback_dominance_threshold = max(0.0, min(1.0, fallback_dominance_threshold))
+        fallback_dominance_threshold = max(
+            0.0, min(1.0, fallback_dominance_threshold)
+        )
 
         resolved: dict[str, float] = {}
         missing_metrics: list[str] = []
@@ -214,13 +251,17 @@ class UtilityFunction(ABC):
         for metric_key in metric_keys:
             if metric_key in metric_overrides:
                 raw = metric_overrides.get(metric_key)
-                source_by_metric[metric_key] = "context.metric_overrides"
+                source_by_metric[metric_key] = (
+                    "context.metric_overrides"
+                )
             elif metric_key in context:
                 raw = context.get(metric_key)
                 source_by_metric[metric_key] = "context"
             elif metric_key in perception.context:
                 raw = perception.context.get(metric_key)
-                source_by_metric[metric_key] = "perception.context"
+                source_by_metric[metric_key] = (
+                    "perception.context"
+                )
             else:
                 raw = default_for_missing
                 missing_metrics.append(metric_key)
@@ -228,7 +269,11 @@ class UtilityFunction(ABC):
                 fallback_applied_count += 1
 
             if raw is None:
-                if strict_invalid and source_by_metric[metric_key] != "default_missing":
+                if (
+                    strict_invalid
+                    and source_by_metric[metric_key]
+                    != "default_missing"
+                ):
                     raise ValueError(
                         f"Metric '{metric_key}' has invalid value None under strict mode"
                     )
@@ -268,8 +313,11 @@ class UtilityFunction(ABC):
             "total_metrics": total_metrics,
             "fallback_ratio": fallback_ratio,
             "fallback_dominance_threshold": fallback_dominance_threshold,
-            "fallback_dominates": fallback_ratio > fallback_dominance_threshold,
-            "metric_sources": _canonical_json_map(source_by_metric),
+            "fallback_dominates": fallback_ratio
+            > fallback_dominance_threshold,
+            "metric_sources": _canonical_json_map(
+                source_by_metric
+            ),
         }
         return resolved, trace_metadata
 
@@ -287,9 +335,12 @@ class UtilityFunction(ABC):
         - ``utility_shape``: ``"scalar"`` or ``"vector"``
         """
         resolved_metadata = dict(metadata or {})
-        resolved_metadata.setdefault("framework_id", self.framework_id)
         resolved_metadata.setdefault(
-            "utility_shape", "vector" if isinstance(value, list) else "scalar"
+            "framework_id", self.framework_id
+        )
+        resolved_metadata.setdefault(
+            "utility_shape",
+            "vector" if isinstance(value, list) else "scalar",
         )
         return UtilityFrame(
             value=value,

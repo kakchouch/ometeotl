@@ -58,7 +58,10 @@ def test_strategy_instantiation():
     assert strategy.root_node_id == "node-root"
     assert strategy.projection_policy == "perception_first"
     assert len(strategy.nodes) == 1
-    assert strategy.nodes[0].source_perception_id == "perception-root"
+    assert (
+        strategy.nodes[0].source_perception_id
+        == "perception-root"
+    )
     assert (
         strategy.nodes[0].successor_perception_id
         == "projection-perception-root-action-1"
@@ -117,15 +120,24 @@ def test_strategy_serialization_is_deterministic():
     payload = strategy.to_dict()
     restored = Strategy.from_dict(payload)
 
-    assert [node["node_id"] for node in payload["nodes"]] == ["node-a", "node-b"]
+    assert [node["node_id"] for node in payload["nodes"]] == [
+        "node-a",
+        "node-b",
+    ]
     assert payload["goal_id"] is None
-    assert payload["nodes"][0]["source_perception_id"] == "perception-chain-root"
     assert (
-        payload["nodes"][0]["projected_state"]["perception"]["id"]
+        payload["nodes"][0]["source_perception_id"]
+        == "perception-chain-root"
+    )
+    assert (
+        payload["nodes"][0]["projected_state"]["perception"][
+            "id"
+        ]
         == "projection-perception-chain-root-action-1"
     )
     assert [
-        branch["branch_id"] for branch in payload["nodes"][1]["outcome_branches"]
+        branch["branch_id"]
+        for branch in payload["nodes"][1]["outcome_branches"]
     ] == ["a", "z"]
     assert restored.to_dict() == payload
 
@@ -249,7 +261,10 @@ def test_strategy_validate_tree_rejects_child_not_chained_to_parent_projection()
         ],
     )
 
-    with pytest.raises(ValueError, match="consume the parent projected perception"):
+    with pytest.raises(
+        ValueError,
+        match="consume the parent projected perception",
+    ):
         strategy.validate_tree()
 
 
@@ -336,7 +351,10 @@ def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
         "node-0001-action-build-1",
         "node-0002-action-build-2",
     ]
-    assert strategy.nodes[0].source_perception_id == "perception-build-root"
+    assert (
+        strategy.nodes[0].source_perception_id
+        == "perception-build-root"
+    )
     assert (
         strategy.nodes[1].source_perception_id
         == strategy.nodes[0].successor_perception_id
@@ -346,7 +364,12 @@ def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
         == "node-0002-action-build-2"
     )
     assert strategy.nodes[1].projected_state is not None
-    assert strategy.nodes[1].projected_state.perception.context["step"] == 2
+    assert (
+        strategy.nodes[1].projected_state.perception.context[
+            "step"
+        ]
+        == 2
+    )
 
 
 def test_build_linear_strategy_rejects_empty_action_sequence():
@@ -404,7 +427,9 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                 world_id="world-1",
                 space_id="space-1",
                 action_type="plan",
-                state_changes={"context_updates": {"phase": "root"}},
+                state_changes={
+                    "context_updates": {"phase": "root"}
+                },
             ),
             children=[
                 StrategyBuildStep(
@@ -414,7 +439,9 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                         world_id="world-1",
                         space_id="space-1",
                         action_type="explore",
-                        state_changes={"context_updates": {"phase": "left"}},
+                        state_changes={
+                            "context_updates": {"phase": "left"}
+                        },
                     ),
                     branch_label="left",
                     branch_probability=0.4,
@@ -427,7 +454,9 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                         world_id="world-1",
                         space_id="space-1",
                         action_type="secure",
-                        state_changes={"context_updates": {"phase": "right"}},
+                        state_changes={
+                            "context_updates": {"phase": "right"}
+                        },
                     ),
                     branch_label="right",
                     branch_probability=0.6,
@@ -438,20 +467,41 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
     )
 
     root_node = strategy.get_node("node-0001-action-root-branch")
-    left_node = strategy.get_node("node-0001-0001-action-left-branch")
-    right_node = strategy.get_node("node-0001-0002-action-right-branch")
+    left_node = strategy.get_node(
+        "node-0001-0001-action-left-branch"
+    )
+    right_node = strategy.get_node(
+        "node-0001-0002-action-right-branch"
+    )
 
     assert root_node is not None
     assert left_node is not None
     assert right_node is not None
     assert len(root_node.outcome_branches) == 2
-    assert [branch.label for branch in root_node.outcome_branches] == ["left", "right"]
-    assert left_node.source_perception_id == root_node.successor_perception_id
-    assert right_node.source_perception_id == root_node.successor_perception_id
+    assert [
+        branch.label for branch in root_node.outcome_branches
+    ] == [
+        "left",
+        "right",
+    ]
+    assert (
+        left_node.source_perception_id
+        == root_node.successor_perception_id
+    )
+    assert (
+        right_node.source_perception_id
+        == root_node.successor_perception_id
+    )
     assert left_node.projected_state is not None
     assert right_node.projected_state is not None
-    assert left_node.projected_state.perception.context["phase"] == "left"
-    assert right_node.projected_state.perception.context["phase"] == "right"
+    assert (
+        left_node.projected_state.perception.context["phase"]
+        == "left"
+    )
+    assert (
+        right_node.projected_state.perception.context["phase"]
+        == "right"
+    )
 
 
 def test_build_branching_strategy_rejects_blocked_child_step():

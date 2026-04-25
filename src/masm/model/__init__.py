@@ -4,7 +4,11 @@ from .base import ModelObject
 from .objects import GenericObject
 from .actors import Actor
 from .resources import Resource
-from .spaces import Space, SpaceObjectGraph, SpaceObjectMembership
+from .spaces import (
+    Space,
+    SpaceObjectGraph,
+    SpaceObjectMembership,
+)
 from .space_relations import SpaceRelation, SpaceRelationGraph
 from .perception import (
     Perception,
@@ -54,7 +58,12 @@ from .goal_tools import (
     GoalAdmissibilityChecker,
 )
 from .utility import UtilityFunction, UtilityFrame
-from .interfaces import Serializable, Validatable, LLMExportable, ContextualBuildable
+from .interfaces import (
+    Serializable,
+    Validatable,
+    LLMExportable,
+    ContextualBuildable,
+)
 
 __all__ = [
     "ModelObject",

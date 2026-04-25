@@ -111,7 +111,9 @@ class Resource(GenericObject):
     @resource_mode.setter
     def resource_mode(self, value: str) -> None:
         """Set the resource mode of the resource."""
-        _require_non_empty(value, "Resource mode cannot be empty.")
+        _require_non_empty(
+            value, "Resource mode cannot be empty."
+        )
         self.attributes["resource_mode"] = str(value)
 
     @property
@@ -135,7 +137,9 @@ class Resource(GenericObject):
     @transferability.setter
     def transferability(self, value: str) -> None:
         """Set the transferability of the resource."""
-        _require_non_empty(value, "Transferability cannot be empty.")
+        _require_non_empty(
+            value, "Transferability cannot be empty."
+        )
         self.attributes["transferability"] = str(value)
 
     @property
@@ -176,4 +180,6 @@ class Resource(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Resource":
         """Create the resource from a dictionary."""
-        return cls(**_base_kwargs_from_typed_payload(data, "resource"))
+        return cls(
+            **_base_kwargs_from_typed_payload(data, "resource")
+        )

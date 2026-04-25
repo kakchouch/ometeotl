@@ -23,7 +23,9 @@ class SpatialValidator:
     def name(self) -> str:
         return "spatial"
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         world = context.metadata.get("world")
         if not isinstance(world, World):
             return ValidationResult(
@@ -72,7 +74,11 @@ class SpatialValidator:
             )
 
         if actor_id:
-            objects_in_space = world.space_object_graph.list_objects_in_space(space_id)
+            objects_in_space = (
+                world.space_object_graph.list_objects_in_space(
+                    space_id
+                )
+            )
             if actor_id not in objects_in_space:
                 issues.append(
                     ValidationIssue(
@@ -85,7 +91,9 @@ class SpatialValidator:
                     )
                 )
 
-        target_actor_id = str(context.metadata.get("target_actor_id") or "")
+        target_actor_id = str(
+            context.metadata.get("target_actor_id") or ""
+        )
         if target_actor_id:
             shared = world.space_object_graph.shared_spaces_ids_for_objects(
                 actor_id,
@@ -101,7 +109,9 @@ class SpatialValidator:
                             "any space"
                         ),
                         object_id=actor_id,
-                        context={"target_actor_id": target_actor_id},
+                        context={
+                            "target_actor_id": target_actor_id
+                        },
                     )
                 )
 

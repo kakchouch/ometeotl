@@ -1,6 +1,11 @@
 """Tests for model interface exports required by F-26."""
 
-from masm.model import ContextualBuildable, LLMExportable, Serializable, Validatable
+from masm.model import (
+    ContextualBuildable,
+    LLMExportable,
+    Serializable,
+    Validatable,
+)
 
 
 def test_f26_interface_symbols_are_exported():

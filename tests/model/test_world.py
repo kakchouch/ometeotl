@@ -48,7 +48,9 @@ def test_world_place_object_in_subspace():
     world.add_space(sub)
     world.place_object("actor-1", "zone-b", role="occupies")
 
-    members = world.space_object_graph.list_objects_in_space("zone-b")
+    members = world.space_object_graph.list_objects_in_space(
+        "zone-b"
+    )
     assert "actor-1" in members
 
 
@@ -102,12 +104,16 @@ def test_object_register_and_place():
     world.add_space(space)
     actor = Actor(id="test-actor")
 
-    world._object_register_and_place(actor, "test-space", role="occupies")
+    world.add_object_to_space(
+        actor, "test-space", role="occupies"
+    )
 
     # Check registration
     assert world.model_registry.exists("test-actor")
     # Check placement
-    members = world.space_object_graph.list_objects_in_space("test-space")
+    members = world.space_object_graph.list_objects_in_space(
+        "test-space"
+    )
     assert "test-actor" in members
 
 
@@ -158,8 +164,15 @@ def test_world_to_dict_roundtrip():
     assert restored.label == "Test World"
     assert restored.get_space("s1") is not None
     assert restored.get_space("s2") is not None
-    assert "actor-x" in restored.space_object_graph.list_objects_in_space("s1")
-    assert "s2" in restored.space_relation_graph.neighbors_of("s1")
+    assert (
+        "actor-x"
+        in restored.space_object_graph.list_objects_in_space(
+            "s1"
+        )
+    )
+    assert "s2" in restored.space_relation_graph.neighbors_of(
+        "s1"
+    )
 
 
 def test_world_spaces_where_object_exists():
@@ -170,7 +183,9 @@ def test_world_spaces_where_object_exists():
     world.place_object("actor-multi", "phys")
     world.place_object("actor-multi", "info")
 
-    spaces = world.space_object_graph.spaces_where_object_exists("actor-multi")
+    spaces = world.space_object_graph.spaces_where_object_exists(
+        "actor-multi"
+    )
     space_ids = [space.id for space in spaces]
     assert "phys" in space_ids
     assert "info" in space_ids
@@ -190,7 +205,9 @@ def test_world_to_dict_roundtrip_preserves_registered_objects():
     restored = World.from_dict(world.to_dict())
 
     restored_actor = restored.model_registry.get("actor-rt-1")
-    restored_resource = restored.model_registry.get("resource-rt-1")
+    restored_resource = restored.model_registry.get(
+        "resource-rt-1"
+    )
 
     assert isinstance(restored_actor, Actor)
     assert isinstance(restored_resource, Resource)

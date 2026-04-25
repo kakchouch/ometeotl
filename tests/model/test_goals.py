@@ -18,7 +18,10 @@ def test_goal_instantiation():
         kind="final",
         priority=1.0,
         status="active",
-        target_condition={"location": "target_zone", "resource_count": 10},
+        target_condition={
+            "location": "target_zone",
+            "resource_count": 10,
+        },
     )
 
     assert goal.id == "goal-1"
@@ -27,7 +30,10 @@ def test_goal_instantiation():
     assert goal.kind == "final"
     assert goal.priority == 1.0
     assert goal.status == "active"
-    assert goal.target_condition == {"location": "target_zone", "resource_count": 10}
+    assert goal.target_condition == {
+        "location": "target_zone",
+        "resource_count": 10,
+    }
     assert goal.parent_goal_id is None
     assert goal.child_goal_ids == []
     assert goal.strategy_ids == []
@@ -35,7 +41,10 @@ def test_goal_instantiation():
 
 def test_goal_kind_validation():
     """Goal kind must be 'final' or 'intermediate'."""
-    with pytest.raises(ValueError, match="kind must be 'final' or 'intermediate'"):
+    with pytest.raises(
+        ValueError,
+        match="kind must be 'final' or 'intermediate'",
+    ):
         Goal(
             id="goal-bad-kind",
             actor_id="actor-1",
@@ -58,7 +67,9 @@ def test_goal_priority_validation():
 
 def test_goal_status_validation():
     """Goal status must be one of the defined values."""
-    with pytest.raises(ValueError, match="status must be one of"):
+    with pytest.raises(
+        ValueError, match="status must be one of"
+    ):
         Goal(
             id="goal-bad-status",
             actor_id="actor-1",
@@ -80,7 +91,10 @@ def test_goal_add_child_goal():
     goal.add_child_goal("goal-child-2")
     goal.add_child_goal("goal-child-1")  # duplicate
 
-    assert goal.child_goal_ids == ["goal-child-1", "goal-child-2"]
+    assert goal.child_goal_ids == [
+        "goal-child-1",
+        "goal-child-2",
+    ]
 
 
 def test_goal_add_strategy():
@@ -124,7 +138,10 @@ def test_goal_serialization_round_trip():
     assert goal_dict["target_condition"] == {"wealth": 500}
     assert goal_dict["target_perception_id"] == "perception-1"
     assert goal_dict["parent_goal_id"] == "goal-parent"
-    assert goal_dict["child_goal_ids"] == ["goal-child-1", "goal-child-2"]
+    assert goal_dict["child_goal_ids"] == [
+        "goal-child-1",
+        "goal-child-2",
+    ]
     assert goal_dict["strategy_ids"] == ["strategy-1"]
 
     recovered_goal = Goal.from_dict(goal_dict)
@@ -134,8 +151,13 @@ def test_goal_serialization_round_trip():
     assert recovered_goal.priority == goal.priority
     assert recovered_goal.status == goal.status
     assert recovered_goal.horizon == goal.horizon
-    assert recovered_goal.target_condition == goal.target_condition
-    assert recovered_goal.target_perception_id == goal.target_perception_id
+    assert (
+        recovered_goal.target_condition == goal.target_condition
+    )
+    assert (
+        recovered_goal.target_perception_id
+        == goal.target_perception_id
+    )
     assert recovered_goal.parent_goal_id == goal.parent_goal_id
     assert recovered_goal.child_goal_ids == goal.child_goal_ids
     assert recovered_goal.strategy_ids == goal.strategy_ids
@@ -160,7 +182,9 @@ def test_goal_decomposition_tree_instantiation():
 
 def test_goal_decomposition_tree_rejects_unknown_root():
     """GoalDecompositionTree rejects if root_goal_id is not registered."""
-    with pytest.raises(ValueError, match="must reference a registered goal"):
+    with pytest.raises(
+        ValueError, match="must reference a registered goal"
+    ):
         GoalDecompositionTree(
             root_goal_id="nonexistent",
             goals={},
@@ -176,7 +200,9 @@ def test_goal_decomposition_tree_rejects_root_with_parent():
         target_condition={},
         parent_goal_id="some-parent",
     )
-    with pytest.raises(ValueError, match="must not have a parent_goal_id"):
+    with pytest.raises(
+        ValueError, match="must not have a parent_goal_id"
+    ):
         GoalDecompositionTree(
             root_goal_id="root-with-parent",
             goals={"root-with-parent": root_goal},
@@ -316,7 +342,11 @@ def test_goal_decomposition_tree_children_of():
     )
     tree = GoalDecompositionTree(
         root_goal_id="root",
-        goals={"root": root_goal, "child-1": child_1, "child-2": child_2},
+        goals={
+            "root": root_goal,
+            "child-1": child_1,
+            "child-2": child_2,
+        },
     )
 
     children = tree.children_of("root")
@@ -368,7 +398,10 @@ def test_goal_decomposition_tree_serialization_round_trip():
     )
     tree = GoalDecompositionTree(
         root_goal_id="root",
-        goals={"root": root_goal, "intermediate": intermediate_goal},
+        goals={
+            "root": root_goal,
+            "intermediate": intermediate_goal,
+        },
     )
 
     tree_dict = tree.to_dict()
@@ -446,7 +479,9 @@ def test_build_goal_hierarchy_branching():
 
     children = tree.children_of(root_goal.id)
     assert len(children) == 2
-    assert all(c.parent_goal_id == root_goal.id for c in children)
+    assert all(
+        c.parent_goal_id == root_goal.id for c in children
+    )
 
 
 def test_build_goal_hierarchy_deep_nesting():

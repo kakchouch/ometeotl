@@ -13,12 +13,17 @@ from masm.validation import (
 
 def test_observe_only_profile_defaults_to_no_stage_overrides():
     """Observe-only profile keeps warn-only behavior through empty overrides."""
-    assert build_stage_modes(policy_profile=PROFILE_OBSERVE_ONLY) == {}
+    assert (
+        build_stage_modes(policy_profile=PROFILE_OBSERVE_ONLY)
+        == {}
+    )
 
 
 def test_enforce_structure_profile_promotes_expected_stages():
     """Enforce-structure profile promotes core schema stages to strict."""
-    stage_modes = build_stage_modes(policy_profile=PROFILE_ENFORCE_STRUCTURE)
+    stage_modes = build_stage_modes(
+        policy_profile=PROFILE_ENFORCE_STRUCTURE
+    )
 
     assert stage_modes["syntactic"] == MODE_STRICT
     assert stage_modes["structural"] == MODE_STRICT
@@ -27,7 +32,9 @@ def test_enforce_structure_profile_promotes_expected_stages():
 
 def test_enforce_domain_profile_promotes_temporal_and_spatial_checks():
     """Enforce-domain profile also promotes dynamic domain validator stages."""
-    stage_modes = build_stage_modes(policy_profile=PROFILE_ENFORCE_DOMAIN)
+    stage_modes = build_stage_modes(
+        policy_profile=PROFILE_ENFORCE_DOMAIN
+    )
 
     assert stage_modes["temporal"] == MODE_STRICT
     assert stage_modes["spatial"] == MODE_STRICT

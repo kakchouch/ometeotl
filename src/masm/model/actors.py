@@ -65,7 +65,8 @@ class Actor(GenericObject):
     This class is intentionally lightweight and extensible:
     - intrinsic descriptive data is stored in ``attributes``;
     - links to other model objects are stored in ``relations``;
-    - dynamic evolution remains possible through ``state`` and ``context``."""
+    - dynamic evolution remains possible through ``state`` and ``context``.
+    """
 
     object_type: str = "actor"
 
@@ -80,7 +81,9 @@ class Actor(GenericObject):
         self.attributes.setdefault("roles", [])
         self.attributes.setdefault("profile", {})
         self.attributes.setdefault("emergent", False)
-        self.attributes.setdefault("composition_mode", "standalone")
+        self.attributes.setdefault(
+            "composition_mode", "standalone"
+        )
 
     @property
     def kind(self) -> str:
@@ -122,7 +125,8 @@ class Actor(GenericObject):
     @property
     def emergent(self) -> bool:
         """Returns whether the actor is emergent, meaning it is a loosely
-        defined entity emerging from the perceptions of other actors."""
+        defined entity emerging from the perceptions of other actors.
+        """
         value = self.attributes.get("emergent", False)
         return bool(value)
 
@@ -149,13 +153,17 @@ class Actor(GenericObject):
           clear existence but is treated as an actor for modeling purposes or
           through other actors interactions.
         """
-        value = self.attributes.get("composition_mode", "standalone")
+        value = self.attributes.get(
+            "composition_mode", "standalone"
+        )
         return str(value) if value is not None else "standalone"
 
     @composition_mode.setter
     def composition_mode(self, value: str) -> None:
         """Sets the actor's composition mode."""
-        _require_non_empty(value, "Composition mode cannot be empty")
+        _require_non_empty(
+            value, "Composition mode cannot be empty"
+        )
         self.attributes["composition_mode"] = value
 
     @property
@@ -221,7 +229,9 @@ class Actor(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Actor":
         """Create an Actor instance from a dictionary representation."""
-        return cls(**_base_kwargs_from_typed_payload(data, "actor"))
+        return cls(
+            **_base_kwargs_from_typed_payload(data, "actor")
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -353,7 +363,9 @@ def is_abstract_composite(
     if not actor.is_composite:
         return False
 
-    spaces = world.space_object_graph.spaces_where_object_exists(actor.id)
+    spaces = world.space_object_graph.spaces_where_object_exists(
+        actor.id
+    )
     if not spaces:
         return False
     return all(space.is_abstract for space in spaces)

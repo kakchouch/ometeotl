@@ -18,7 +18,11 @@ import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, List, Mapping, Optional, Any
 
-from .base import JsonMap, _canonical_json_map, _require_non_null_string
+from .base import (
+    JsonMap,
+    _canonical_json_map,
+    _require_non_null_string,
+)
 
 SpaceId = str
 
@@ -94,11 +98,16 @@ class SpaceRelation:
     def canonicalize(self) -> SpaceRelation:
         """Return a canonicalized version of the relation, where symmetric
         relations are ordered by space IDs."""
-        relation_def = SPACE_RELATION_TYPES.get(self.relation_type)
+        relation_def = SPACE_RELATION_TYPES.get(
+            self.relation_type
+        )
         if relation_def is None:
             return self  # If the relation type is unknown, return as is
             # without canonicalization
-        if relation_def.is_symmetric and self.source_space_id > self.target_space_id:
+        if (
+            relation_def.is_symmetric
+            and self.source_space_id > self.target_space_id
+        ):
             return SpaceRelation(
                 source_space_id=self.target_space_id,
                 target_space_id=self.source_space_id,
@@ -124,17 +133,27 @@ class SpaceRelation:
         memo[id(self)] = new_obj
         for f in dataclasses.fields(self):
             object.__setattr__(
-                new_obj, f.name, copy.deepcopy(getattr(self, f.name), memo)
+                new_obj,
+                f.name,
+                copy.deepcopy(getattr(self, f.name), memo),
             )
         return new_obj
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelation":
+    def from_dict(
+        cls, data: Mapping[str, Any]
+    ) -> "SpaceRelation":
         """Create a SpaceRelation instance from a dictionary representation."""
         return cls(
-            source_space_id=_require_non_null_string(data, "source_space_id"),
-            target_space_id=_require_non_null_string(data, "target_space_id"),
-            relation_type=_require_non_null_string(data, "relation_type"),
+            source_space_id=_require_non_null_string(
+                data, "source_space_id"
+            ),
+            target_space_id=_require_non_null_string(
+                data, "target_space_id"
+            ),
+            relation_type=_require_non_null_string(
+                data, "relation_type"
+            ),
             metadata=dict(data.get("metadata") or {}),
         )
 
@@ -163,14 +182,19 @@ class SpaceRelationGraph:
         unique_relations = {}
         for relation in self.relations:
             normalized_relation = relation.canonicalize()
-            unique_relations[self._relation_key(normalized_relation)] = (
-                normalized_relation
-            )
-        self.relations = [unique_relations[key] for key in sorted(unique_relations)]
+            unique_relations[
+                self._relation_key(normalized_relation)
+            ] = normalized_relation
+        self.relations = [
+            unique_relations[key]
+            for key in sorted(unique_relations)
+        ]
         self._relation_keys = set(unique_relations)
 
     @staticmethod
-    def _relation_key(relation: SpaceRelation) -> tuple[SpaceId, SpaceId, str]:
+    def _relation_key(
+        relation: SpaceRelation,
+    ) -> tuple[SpaceId, SpaceId, str]:
         return (
             relation.source_space_id,
             relation.target_space_id,
@@ -187,7 +211,9 @@ class SpaceRelationGraph:
         """
 
         normalized_relation = relation.canonicalize()
-        relation_def = SPACE_RELATION_TYPES.get(normalized_relation.relation_type)
+        relation_def = SPACE_RELATION_TYPES.get(
+            normalized_relation.relation_type
+        )
 
         if relation_def is None:
             raise ValueError(
@@ -234,11 +260,18 @@ class SpaceRelationGraph:
         self.relations.append(normalized_relation)
         self._relation_keys.add(relation_key)
         self.relations.sort(
-            key=lambda r: (r.source_space_id, r.target_space_id, r.relation_type)
+            key=lambda r: (
+                r.source_space_id,
+                r.target_space_id,
+                r.relation_type,
+            )
         )  # Keep relations sorted for consistency
 
     def remove_relation(
-        self, source_space_id: SpaceId, target_space_id: SpaceId, relation_type: str
+        self,
+        source_space_id: SpaceId,
+        target_space_id: SpaceId,
+        relation_type: str,
     ) -> None:
         """Remove a relation between two spaces."""
         normalized_relation = SpaceRelation(
@@ -254,33 +287,46 @@ class SpaceRelationGraph:
             r
             for r in self.relations
             if not (
-                r.source_space_id == normalized_relation.source_space_id
-                and r.target_space_id == normalized_relation.target_space_id
-                and r.relation_type == normalized_relation.relation_type
+                r.source_space_id
+                == normalized_relation.source_space_id
+                and r.target_space_id
+                == normalized_relation.target_space_id
+                and r.relation_type
+                == normalized_relation.relation_type
             )
         ]
         self._relation_keys.discard(relation_key)
 
     def relations_from(
-        self, space_id: SpaceId, relation_type: Optional[str] = None
+        self,
+        space_id: SpaceId,
+        relation_type: Optional[str] = None,
     ) -> List[SpaceRelation]:
         """Get all relations originating from a given space."""
         return [
             r
             for r in self.relations
             if r.source_space_id == space_id
-            and (relation_type is None or r.relation_type == relation_type)
+            and (
+                relation_type is None
+                or r.relation_type == relation_type
+            )
         ]
 
     def relations_to(
-        self, space_id: SpaceId, relation_type: Optional[str] = None
+        self,
+        space_id: SpaceId,
+        relation_type: Optional[str] = None,
     ) -> List[SpaceRelation]:
         """Get all relations targeting a given space."""
         return [
             r
             for r in self.relations
             if r.target_space_id == space_id
-            and (relation_type is None or r.relation_type == relation_type)
+            and (
+                relation_type is None
+                or r.relation_type == relation_type
+            )
         ]
 
     def children_of(self, space_id: SpaceId) -> List[SpaceId]:
@@ -306,7 +352,9 @@ class SpaceRelationGraph:
          and TGT is the child."""
         return sorted(
             relation.source_space_id
-            for relation in self.relations_to(space_id, relation_type="contains_space")
+            for relation in self.relations_to(
+                space_id, relation_type="contains_space"
+            )
         )
 
     def neighbors_of(self, space_id: SpaceId) -> List[SpaceId]:
@@ -316,15 +364,23 @@ class SpaceRelationGraph:
         """
         outgoing_neighbors = {
             relation.target_space_id
-            for relation in self.relations_from(space_id, relation_type="adjacent_to")
+            for relation in self.relations_from(
+                space_id, relation_type="adjacent_to"
+            )
         }
         incoming_neighbors = {
             relation.source_space_id
-            for relation in self.relations_to(space_id, relation_type="adjacent_to")
+            for relation in self.relations_to(
+                space_id, relation_type="adjacent_to"
+            )
         }
-        return sorted(outgoing_neighbors.union(incoming_neighbors))
+        return sorted(
+            outgoing_neighbors.union(incoming_neighbors)
+        )
 
-    def intersects_with(self, space_id: SpaceId) -> List[SpaceId]:
+    def intersects_with(
+        self, space_id: SpaceId
+    ) -> List[SpaceId]:
         """Get all spaces that intersect with the given space.
         Convention : "intersects_with" relations indicate that the source space
         intersects with the target space.
@@ -337,9 +393,13 @@ class SpaceRelationGraph:
         }
         incoming_intersections = {
             relation.source_space_id
-            for relation in self.relations_to(space_id, relation_type="intersects_with")
+            for relation in self.relations_to(
+                space_id, relation_type="intersects_with"
+            )
         }
-        return sorted(outgoing_intersections.union(incoming_intersections))
+        return sorted(
+            outgoing_intersections.union(incoming_intersections)
+        )
 
     def to_dict(self) -> JsonMap:
         """Convert the SpaceRelationGraph to a canonical dictionary representation."""
@@ -348,9 +408,13 @@ class SpaceRelationGraph:
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelationGraph":
+    def from_dict(
+        cls, data: Mapping[str, Any]
+    ) -> "SpaceRelationGraph":
         """Reconstruct a SpaceRelationGraph from a canonical dictionary representation."""
         graph = cls()
         for relation_data in data.get("relations") or []:
-            graph.add_relation(SpaceRelation.from_dict(relation_data))
+            graph.add_relation(
+                SpaceRelation.from_dict(relation_data)
+            )
         return graph

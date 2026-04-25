@@ -17,7 +17,9 @@ def test_temporal_validator_rejects_outside_validity_window():
     context = ValidationContext(
         metadata={
             "interaction_time": 20,
-            "actor_validity": {"actor-1": {"start": 0, "end": 10}},
+            "actor_validity": {
+                "actor-1": {"start": 0, "end": 10}
+            },
         }
     )
 
@@ -37,7 +39,9 @@ def test_temporal_validator_skips_without_interaction_time():
         action_type="move",
     )
 
-    result = TemporalValidator().validate(action, ValidationContext())
+    result = TemporalValidator().validate(
+        action, ValidationContext()
+    )
 
     assert result.valid is True
     assert result.summary["total"] == 0
@@ -66,7 +70,9 @@ def test_temporal_validator_reports_normalization_failure_as_issue():
     context = ValidationContext(
         metadata={
             "interaction_time": "not-a-time",
-            "actor_validity": {"actor-1": {"start": 0, "end": 10}},
+            "actor_validity": {
+                "actor-1": {"start": 0, "end": 10}
+            },
         }
     )
 

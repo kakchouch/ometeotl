@@ -35,15 +35,21 @@ def world_to_yaml(world: World) -> str:
     )
 
 
-def write_world_json(world: World, path: str | Path, *, indent: int = 2) -> Path:
+def write_world_json(
+    world: World, path: str | Path, *, indent: int = 2
+) -> Path:
     """Write a deterministic JSON export for a world."""
     output_path = Path(path)
-    output_path.write_text(world_to_json(world, indent=indent), encoding="utf-8")
+    output_path.write_text(
+        world_to_json(world, indent=indent), encoding="utf-8"
+    )
     return output_path
 
 
 def write_world_yaml(world: World, path: str | Path) -> Path:
     """Write a deterministic YAML export for a world."""
     output_path = Path(path)
-    output_path.write_text(world_to_yaml(world), encoding="utf-8")
+    output_path.write_text(
+        world_to_yaml(world), encoding="utf-8"
+    )
     return output_path

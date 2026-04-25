@@ -29,7 +29,11 @@ def test_generic_object_space_membership_helper_updates_graph():
     )
 
     assert len(graph.object_memberships) == 1
-    assert graph.object_memberships[0].metadata == {"priority": 1}
+    assert graph.object_memberships[0].metadata == {
+        "priority": 1
+    }
 
-    obj.remove_space_membership(graph, "space-generic", role="observes")
+    obj.remove_space_membership(
+        graph, "space-generic", role="observes"
+    )
     assert graph.object_memberships == []

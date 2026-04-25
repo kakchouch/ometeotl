@@ -44,7 +44,10 @@ def test_diagnostic_builder_adds_default_repair_suggestion():
     report = DiagnosticBuilder().build(result)
 
     assert len(report.diagnostics) == 1
-    assert "allowed epistemic statuses" in report.diagnostics[0].suggestion
+    assert (
+        "allowed epistemic statuses"
+        in report.diagnostics[0].suggestion
+    )
 
 
 def test_diagnostic_builder_preserves_explicit_issue_suggestion():

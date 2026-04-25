@@ -36,14 +36,18 @@ class DiagnosticEntry:
 class DiagnosticReport:
     """Collection of diagnostics plus aggregate metadata."""
 
-    diagnostics: list[DiagnosticEntry] = field(default_factory=list)
+    diagnostics: list[DiagnosticEntry] = field(
+        default_factory=list
+    )
     summary: dict[str, int] = field(default_factory=dict)
     stage: str = ""
     policy_mode: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "diagnostics": [entry.to_dict() for entry in self.diagnostics],
+            "diagnostics": [
+                entry.to_dict() for entry in self.diagnostics
+            ],
             "summary": dict(self.summary),
             "stage": self.stage,
             "policy_mode": self.policy_mode,
@@ -53,8 +57,13 @@ class DiagnosticReport:
 class DiagnosticBuilder:
     """Build actionable diagnostics and repair hints from validation output."""
 
-    def build(self, result: ValidationResult) -> DiagnosticReport:
-        diagnostics = [self._entry_from_issue(issue) for issue in result.issues]
+    def build(
+        self, result: ValidationResult
+    ) -> DiagnosticReport:
+        diagnostics = [
+            self._entry_from_issue(issue)
+            for issue in result.issues
+        ]
         return DiagnosticReport(
             diagnostics=diagnostics,
             summary=result.summary,
@@ -62,8 +71,12 @@ class DiagnosticBuilder:
             policy_mode=result.policy_mode,
         )
 
-    def _entry_from_issue(self, issue: ValidationIssue) -> DiagnosticEntry:
-        suggestion = issue.suggestion or self._default_suggestion(issue)
+    def _entry_from_issue(
+        self, issue: ValidationIssue
+    ) -> DiagnosticEntry:
+        suggestion = (
+            issue.suggestion or self._default_suggestion(issue)
+        )
         reason = issue.message
         return DiagnosticEntry(
             code=issue.code,
@@ -112,9 +125,7 @@ class DiagnosticBuilder:
             "SPATIAL-ACTOR-NOT-IN-SPACE",
             "SPATIAL-NO-SHARED-SPACE",
         }:
-            return (
-                "Align space references and memberships before issuing this interaction"
-            )
+            return "Align space references and memberships before issuing this interaction"
 
         if code in {
             "TEMP-OUTSIDE-VALIDITY",

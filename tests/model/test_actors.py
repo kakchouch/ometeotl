@@ -33,7 +33,9 @@ def test_actor_add_role_and_tag():
 
 def test_actor_from_dict_null_optional_maps_defaults_empty():
     """Actor should accept null optional maps in from_dict."""
-    actor = Actor.from_dict({"id": "a-null", "attributes": None, "relations": None})
+    actor = Actor.from_dict(
+        {"id": "a-null", "attributes": None, "relations": None}
+    )
 
     assert isinstance(actor.attributes, dict)
     assert actor.relations == {}
@@ -244,7 +246,10 @@ def test_find_parent_composites_multiple_parents():
     a1.add_component("shared")
     a2.add_component("shared")
     reg = _make_registry(a1, a2, shared)
-    assert find_parent_composites("shared", reg) == ["a-1", "a-2"]
+    assert find_parent_composites("shared", reg) == [
+        "a-1",
+        "a-2",
+    ]
 
 
 def test_find_parent_composites_no_parent():

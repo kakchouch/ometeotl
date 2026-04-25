@@ -24,7 +24,9 @@ class TemporalValidator:
     def name(self) -> str:
         return "temporal"
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         issues: list[ValidationIssue] = []
 
         actor_id = ""
@@ -40,7 +42,9 @@ class TemporalValidator:
                 policy_mode=context.policy_mode,
             )
 
-        interaction_time = context.metadata.get("interaction_time")
+        interaction_time = context.metadata.get(
+            "interaction_time"
+        )
         if interaction_time is None:
             return ValidationResult(
                 issues=[],
@@ -75,7 +79,9 @@ class TemporalValidator:
         start = validity.get("start")
         end = validity.get("end")
         try:
-            if not self._is_within_interval(interaction_time, start, end):
+            if not self._is_within_interval(
+                interaction_time, start, end
+            ):
                 issues.append(
                     ValidationIssue(
                         code="TEMP-OUTSIDE-VALIDITY",
@@ -128,7 +134,9 @@ class TemporalValidator:
             return validity
         return None
 
-    def _is_within_interval(self, value: Any, start: Any, end: Any) -> bool:
+    def _is_within_interval(
+        self, value: Any, start: Any, end: Any
+    ) -> bool:
         normalized_value = self._normalize_temporal_value(value)
         normalized_start = self._normalize_temporal_value(start)
         normalized_end = self._normalize_temporal_value(end)
@@ -136,13 +144,21 @@ class TemporalValidator:
         if normalized_value is None:
             return False
 
-        if normalized_start is not None and normalized_value < normalized_start:
+        if (
+            normalized_start is not None
+            and normalized_value < normalized_start
+        ):
             return False
-        if normalized_end is not None and normalized_value > normalized_end:
+        if (
+            normalized_end is not None
+            and normalized_value > normalized_end
+        ):
             return False
         return True
 
-    def _normalize_temporal_value(self, value: Any) -> float | None:
+    def _normalize_temporal_value(
+        self, value: Any
+    ) -> float | None:
         if value is None:
             return None
         if isinstance(value, (int, float)):
@@ -154,5 +170,9 @@ class TemporalValidator:
                 try:
                     return float(value)
                 except ValueError as exc:
-                    raise ValueError(f"Unsupported temporal value: {value!r}") from exc
-        raise ValueError(f"Unsupported temporal value type: {type(value).__name__}")
+                    raise ValueError(
+                        f"Unsupported temporal value: {value!r}"
+                    ) from exc
+        raise ValueError(
+            f"Unsupported temporal value type: {type(value).__name__}"
+        )

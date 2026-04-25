@@ -28,13 +28,17 @@ class ValidationIssue:
 
     def __post_init__(self) -> None:
         if not self.code:
-            raise ValueError("ValidationIssue code cannot be empty")
+            raise ValueError(
+                "ValidationIssue code cannot be empty"
+            )
         if self.severity not in VALID_SEVERITIES:
             raise ValueError(
                 f"ValidationIssue severity must be one of {sorted(VALID_SEVERITIES)}"
             )
         if not self.message:
-            raise ValueError("ValidationIssue message cannot be empty")
+            raise ValueError(
+                "ValidationIssue message cannot be empty"
+            )
 
 
 @dataclass(frozen=True)
@@ -59,15 +63,27 @@ class ValidationResult:
 
     @property
     def errors(self) -> list[ValidationIssue]:
-        return [issue for issue in self.issues if issue.severity == SEVERITY_ERROR]
+        return [
+            issue
+            for issue in self.issues
+            if issue.severity == SEVERITY_ERROR
+        ]
 
     @property
     def warnings(self) -> list[ValidationIssue]:
-        return [issue for issue in self.issues if issue.severity == SEVERITY_WARNING]
+        return [
+            issue
+            for issue in self.issues
+            if issue.severity == SEVERITY_WARNING
+        ]
 
     @property
     def infos(self) -> list[ValidationIssue]:
-        return [issue for issue in self.issues if issue.severity == SEVERITY_INFO]
+        return [
+            issue
+            for issue in self.issues
+            if issue.severity == SEVERITY_INFO
+        ]
 
     @property
     def valid(self) -> bool:
@@ -82,7 +98,9 @@ class ValidationResult:
             "total": len(self.issues),
         }
 
-    def merged_with(self, other: "ValidationResult") -> "ValidationResult":
+    def merged_with(
+        self, other: "ValidationResult"
+    ) -> "ValidationResult":
         """Return a deterministic merge of two validation results."""
         merged_issues = list(self.issues) + list(other.issues)
         merged_stage = other.stage or self.stage
@@ -115,11 +133,15 @@ class Validator(Protocol):
     def name(self) -> str:
         """Stable stage name for reporting and diagnostics."""
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         """Validate one object with the provided context."""
 
 
-def issue_from_mapping(data: Mapping[str, Any]) -> ValidationIssue:
+def issue_from_mapping(
+    data: Mapping[str, Any],
+) -> ValidationIssue:
     """Construct a ValidationIssue from mapping data."""
     return ValidationIssue(
         code=str(data.get("code") or ""),

@@ -68,9 +68,13 @@ def test_model_object_from_dict_null_optional_maps_defaults_empty():
 def test_model_object_from_dict_null_required_raises():
     """ModelObject.from_dict should reject null required identity fields."""
     with pytest.raises(ValueError):
-        ModelObject.from_dict({"id": None, "object_type": "generic"})
+        ModelObject.from_dict(
+            {"id": None, "object_type": "generic"}
+        )
     with pytest.raises(ValueError):
-        ModelObject.from_dict({"id": "obj-1", "object_type": None})
+        ModelObject.from_dict(
+            {"id": "obj-1", "object_type": None}
+        )
 
 
 def test_model_object_from_dict_rejects_unsupported_schema_version():

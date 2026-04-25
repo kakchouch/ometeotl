@@ -2,7 +2,10 @@
 
 import pytest
 
-from masm.core.authority import AuthorityCommandHandler, CommandEnvelope
+from masm.core.authority import (
+    AuthorityCommandHandler,
+    CommandEnvelope,
+)
 from masm.model.actors import Actor
 from masm.model.resources import Resource
 from masm.model.spaces import Space
@@ -27,7 +30,9 @@ def test_world_authority_mode_allows_authorized_mutations():
     """Mutations succeed with the expected authority token."""
     world = World(id="world-auth-2")
     world.enable_authority_mode("secret")
-    world.add_space(Space(id="allowed"), authority_token="secret")
+    world.add_space(
+        Space(id="allowed"), authority_token="secret"
+    )
 
     assert world.get_space("allowed") is not None
 
@@ -39,7 +44,12 @@ def test_world_local_mode_mutations_do_not_require_authority_token():
     world.place_object("actor-local", "local-zone")
 
     assert world.get_space("local-zone") is not None
-    assert "actor-local" in world.space_object_graph.list_objects_in_space("local-zone")
+    assert (
+        "actor-local"
+        in world.space_object_graph.list_objects_in_space(
+            "local-zone"
+        )
+    )
 
 
 def test_authority_handler_applies_allowlisted_commands():
@@ -57,7 +67,10 @@ def test_authority_handler_applies_allowlisted_commands():
             )
         )
         assert add_space_result.accepted is True
-        assert add_space_result.validation["summary"]["warning"] >= 0
+        assert (
+            add_space_result.validation["summary"]["warning"]
+            >= 0
+        )
 
         place_result = handler.submit(
             CommandEnvelope(
@@ -65,7 +78,10 @@ def test_authority_handler_applies_allowlisted_commands():
                 actor_id="system",
                 command_type="place_object",
                 sequence=2,
-                payload={"object_id": "actor-42", "space_id": "zone-1"},
+                payload={
+                    "object_id": "actor-42",
+                    "space_id": "zone-1",
+                },
             )
         )
         assert place_result.accepted is True
@@ -73,7 +89,12 @@ def test_authority_handler_applies_allowlisted_commands():
     finally:
         handler.close()
 
-    assert "actor-42" in world.space_object_graph.list_objects_in_space("zone-1")
+    assert (
+        "actor-42"
+        in world.space_object_graph.list_objects_in_space(
+            "zone-1"
+        )
+    )
 
 
 def test_authority_handler_soft_gate_reports_validation_without_rejecting():
@@ -198,7 +219,9 @@ def test_authority_handler_soft_gate_off_skips_validation_blocking():
 
     assert result.accepted is True
     assert result.validation["summary"]["total"] == 0
-    assert world.model_registry.get("actor-soft-off-1") is not None
+    assert (
+        world.model_registry.get("actor-soft-off-1") is not None
+    )
 
 
 def test_authority_handler_audit_includes_validation_summary():
@@ -212,7 +235,9 @@ def test_authority_handler_audit_includes_validation_summary():
                 actor_id="system",
                 command_type="add_space",
                 sequence=1,
-                payload={"space": Space(id="zone-soft-1").to_dict()},
+                payload={
+                    "space": Space(id="zone-soft-1").to_dict()
+                },
             )
         )
         audit = handler.audit_log
@@ -358,7 +383,9 @@ def test_world_model_registry_direct_mutation_blocked_in_authority_mode():
     handler = AuthorityCommandHandler(world)
     try:
         with pytest.raises(PermissionError):
-            world.model_registry.register(Actor(id="actor-direct-bypass"))
+            world.model_registry.register(
+                Actor(id="actor-direct-bypass")
+            )
     finally:
         handler.close()
 
@@ -453,7 +480,12 @@ def test_unregistered_actor_id_does_not_reset_sequence_history():
                 actor_id="system",
                 command_type="register_object",
                 sequence=2,
-                payload={"object": {"id": "actor-reuse", "object_type": "actor"}},
+                payload={
+                    "object": {
+                        "id": "actor-reuse",
+                        "object_type": "actor",
+                    }
+                },
             )
         )
         replay = handler.submit(
@@ -488,7 +520,9 @@ def test_authority_handler_supports_custom_command_handlers():
     world.register_object(Actor(id="actor-custom"))
     handler = AuthorityCommandHandler(
         world,
-        custom_command_handlers={"custom_ping": custom_ping_handler},
+        custom_command_handlers={
+            "custom_ping": custom_ping_handler
+        },
     )
     try:
         result = handler.submit(
@@ -602,7 +636,10 @@ def test_authority_handler_accepts_custom_object_factories():
                 command_type="register_object",
                 sequence=1,
                 payload={
-                    "object": {"id": "actor-custom-type", "object_type": "custom_actor"}
+                    "object": {
+                        "id": "actor-custom-type",
+                        "object_type": "custom_actor",
+                    }
                 },
             )
         )
@@ -632,7 +669,9 @@ def test_authority_handler_tracker_capacity_rejects_new_actor_without_reset():
     world = World(id="world-cmd-8")
     world.register_object(Actor(id="actor-a"))
     world.register_object(Actor(id="actor-b"))
-    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    handler = AuthorityCommandHandler(
+        world, sequence_tracker_max_actors=1
+    )
     try:
         accepted_a = handler.submit(
             CommandEnvelope(
@@ -674,7 +713,9 @@ def test_authority_unregister_releases_slot_but_keeps_replay_floor():
     world = World(id="world-cmd-16")
     world.register_object(Actor(id="actor-a"))
     world.register_object(Actor(id="actor-b"))
-    handler = AuthorityCommandHandler(world, sequence_tracker_max_actors=1)
+    handler = AuthorityCommandHandler(
+        world, sequence_tracker_max_actors=1
+    )
     try:
         first = handler.submit(
             CommandEnvelope(
@@ -770,7 +811,9 @@ def test_authority_handler_rejects_invalid_limit_arguments():
         AuthorityCommandHandler(world, processed_ids_maxlen=0)
 
     with pytest.raises(ValueError):
-        AuthorityCommandHandler(world, sequence_tracker_max_actors=0)
+        AuthorityCommandHandler(
+            world, sequence_tracker_max_actors=0
+        )
 
     with pytest.raises(ValueError):
         AuthorityCommandHandler(
@@ -780,7 +823,9 @@ def test_authority_handler_rejects_invalid_limit_arguments():
         )
 
     with pytest.raises(ValueError):
-        AuthorityCommandHandler(world, sequence_history_max_actors=0)
+        AuthorityCommandHandler(
+            world, sequence_history_max_actors=0
+        )
 
     with pytest.raises(ValueError):
         AuthorityCommandHandler(

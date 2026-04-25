@@ -38,7 +38,11 @@ from .completeness import (
     LEVEL_RECOMMENDED,
     CompletenessValidator,
 )
-from .diagnostic import DiagnosticBuilder, DiagnosticEntry, DiagnosticReport
+from .diagnostic import (
+    DiagnosticBuilder,
+    DiagnosticEntry,
+    DiagnosticReport,
+)
 
 __all__ = [
     "SEVERITY_ERROR",

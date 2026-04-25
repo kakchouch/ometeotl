@@ -16,7 +16,9 @@ from masm.model.spaces import Space, SpaceObjectMembership
 
 def test_perception_instantiation():
     """Perception instantiates with correct defaults."""
-    perception = Perception(id="perc-1", actor_id="actor-1", source_id="world-1")
+    perception = Perception(
+        id="perc-1", actor_id="actor-1", source_id="world-1"
+    )
 
     assert perception.id == "perc-1"
     assert perception.actor_id == "actor-1"
@@ -30,7 +32,9 @@ def test_perception_instantiation():
 def test_perceived_space_invalid_epistemic_status_raises():
     """PerceivedSpace rejects an unknown epistemic status."""
     with pytest.raises(ValueError):
-        PerceivedSpace(space=Space(id="s1"), epistemic_status="omniscient")
+        PerceivedSpace(
+            space=Space(id="s1"), epistemic_status="omniscient"
+        )
 
 
 def test_perceived_membership_invalid_epistemic_status_raises():
@@ -62,7 +66,9 @@ def test_perceived_relation_invalid_epistemic_status_raises():
 def test_perceived_space_valid_epistemic_statuses():
     """All documented epistemic statuses are accepted."""
     for status in VALID_EPISTEMIC_STATUSES:
-        perceived_space = PerceivedSpace(space=Space(id="s1"), epistemic_status=status)
+        perceived_space = PerceivedSpace(
+            space=Space(id="s1"), epistemic_status=status
+        )
         assert perceived_space.epistemic_status == status
 
 
@@ -106,49 +112,78 @@ def test_perception_to_dict_roundtrip():
     assert restored.actor_id == "actor-rt"
     assert restored.source_id == "world-rt"
     assert "s1" in restored.perceived_spaces
-    assert restored.perceived_spaces["s1"].epistemic_status == "believed"
-    assert restored.perceived_spaces["s1"].noise_metadata == {"snr": 0.9}
+    assert (
+        restored.perceived_spaces["s1"].epistemic_status
+        == "believed"
+    )
+    assert restored.perceived_spaces["s1"].noise_metadata == {
+        "snr": 0.9
+    }
     assert len(restored.perceived_memberships) == 1
-    assert restored.perceived_memberships[0].membership.object_id == "actor-x"
+    assert (
+        restored.perceived_memberships[0].membership.object_id
+        == "actor-x"
+    )
     assert len(restored.perceived_relations) == 1
-    assert restored.perceived_relations[0].epistemic_status == "hypothesis"
+    assert (
+        restored.perceived_relations[0].epistemic_status
+        == "hypothesis"
+    )
 
 
 def test_perception_to_dict_contains_object_type():
     """to_dict always emits object_type = 'perception'."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     assert perception.to_dict()["object_type"] == "perception"
 
 
 def test_perception_query_memberships_for_object():
     """memberships_for_object filters by object_id."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_memberships += [
         PerceivedMembership(
-            membership=SpaceObjectMembership("actor-x", "s1", "occupies")
+            membership=SpaceObjectMembership(
+                "actor-x", "s1", "occupies"
+            )
         ),
         PerceivedMembership(
-            membership=SpaceObjectMembership("actor-y", "s1", "occupies")
+            membership=SpaceObjectMembership(
+                "actor-y", "s1", "occupies"
+            )
         ),
         PerceivedMembership(
-            membership=SpaceObjectMembership("actor-x", "s2", "observes")
+            membership=SpaceObjectMembership(
+                "actor-x", "s2", "observes"
+            )
         ),
     ]
 
     result = perception.memberships_for_object("actor-x")
     assert len(result) == 2
-    assert all(item.membership.object_id == "actor-x" for item in result)
+    assert all(
+        item.membership.object_id == "actor-x" for item in result
+    )
 
 
 def test_perception_query_memberships_in_space():
     """memberships_in_space filters by space_id."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_memberships += [
         PerceivedMembership(
-            membership=SpaceObjectMembership("actor-x", "s1", "occupies")
+            membership=SpaceObjectMembership(
+                "actor-x", "s1", "occupies"
+            )
         ),
         PerceivedMembership(
-            membership=SpaceObjectMembership("actor-y", "s2", "occupies")
+            membership=SpaceObjectMembership(
+                "actor-y", "s2", "occupies"
+            )
         ),
     ]
 
@@ -159,11 +194,19 @@ def test_perception_query_memberships_in_space():
 
 def test_perception_query_relations_for_space():
     """relations_for_space returns relations where the space is source or target."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_relations += [
-        PerceivedRelation(relation=SpaceRelation("s1", "s2", "adjacent_to")),
-        PerceivedRelation(relation=SpaceRelation("s3", "s1", "adjacent_to")),
-        PerceivedRelation(relation=SpaceRelation("s2", "s3", "adjacent_to")),
+        PerceivedRelation(
+            relation=SpaceRelation("s1", "s2", "adjacent_to")
+        ),
+        PerceivedRelation(
+            relation=SpaceRelation("s3", "s1", "adjacent_to")
+        ),
+        PerceivedRelation(
+            relation=SpaceRelation("s2", "s3", "adjacent_to")
+        ),
     ]
 
     result = perception.relations_for_space("s1")
@@ -203,14 +246,18 @@ def test_perceived_wrappers_from_dict_null_noise_defaults_empty():
     )
     perceived_membership = PerceivedMembership.from_dict(
         {
-            "membership": SpaceObjectMembership("a1", "s1", "occupies").to_dict(),
+            "membership": SpaceObjectMembership(
+                "a1", "s1", "occupies"
+            ).to_dict(),
             "epistemic_status": "certain",
             "noise_metadata": None,
         }
     )
     perceived_relation = PerceivedRelation.from_dict(
         {
-            "relation": SpaceRelation("s1", "s2", "adjacent_to").to_dict(),
+            "relation": SpaceRelation(
+                "s1", "s2", "adjacent_to"
+            ).to_dict(),
             "epistemic_status": "certain",
             "noise_metadata": None,
         }
@@ -252,7 +299,9 @@ def test_perceived_component_link_valid_epistemic_statuses():
 
 def test_perceived_component_link_invalid_epistemic_status_raises():
     """PerceivedComponentLink rejects invalid epistemic status."""
-    with pytest.raises(ValueError, match="Invalid epistemic status"):
+    with pytest.raises(
+        ValueError, match="Invalid epistemic status"
+    ):
         PerceivedComponentLink(
             link_id="link-1",
             composite_id="a-1",
@@ -296,13 +345,17 @@ def test_perceived_component_link_from_dict():
 
 def test_perception_component_links_default_empty():
     """Perception initializes with empty perceived_component_links."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     assert perception.perceived_component_links == []
 
 
 def test_perception_query_component_links_for_composite():
     """component_links_for_composite filters by composite_id."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_component_links += [
         PerceivedComponentLink("link-1", "a-1", "a-2"),
         PerceivedComponentLink("link-2", "a-1", "a-3"),
@@ -316,7 +369,9 @@ def test_perception_query_component_links_for_composite():
 
 def test_perception_query_composite_for_component():
     """composite_for_component filters by component_id."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_component_links += [
         PerceivedComponentLink("link-1", "a-1", "a-2"),
         PerceivedComponentLink("link-2", "a-3", "a-2"),
@@ -330,18 +385,35 @@ def test_perception_query_composite_for_component():
 
 def test_perception_to_dict_roundtrip_with_component_links():
     """Perception serializes and reconstructs with component links."""
-    perception = Perception(id="p1", actor_id="a1", source_id="w1")
+    perception = Perception(
+        id="p1", actor_id="a1", source_id="w1"
+    )
     perception.perceived_component_links += [
-        PerceivedComponentLink("link-1", "a-1", "a-2", epistemic_status="certain"),
-        PerceivedComponentLink("link-2", "a-1", "a-3", epistemic_status="hypothesis"),
+        PerceivedComponentLink(
+            "link-1", "a-1", "a-2", epistemic_status="certain"
+        ),
+        PerceivedComponentLink(
+            "link-2", "a-1", "a-3", epistemic_status="hypothesis"
+        ),
     ]
 
     restored = Perception.from_dict(perception.to_dict())
     assert len(restored.perceived_component_links) == 2
-    assert restored.perceived_component_links[0].link_id == "link-1"
-    assert restored.perceived_component_links[0].composite_id == "a-1"
-    assert restored.perceived_component_links[0].epistemic_status == "certain"
-    assert restored.perceived_component_links[1].epistemic_status == "hypothesis"
+    assert (
+        restored.perceived_component_links[0].link_id == "link-1"
+    )
+    assert (
+        restored.perceived_component_links[0].composite_id
+        == "a-1"
+    )
+    assert (
+        restored.perceived_component_links[0].epistemic_status
+        == "certain"
+    )
+    assert (
+        restored.perceived_component_links[1].epistemic_status
+        == "hypothesis"
+    )
 
 
 def test_perception_from_dict_null_component_links_defaults_empty():

@@ -2,7 +2,10 @@
 
 import pytest
 
-from masm.model.space_relations import SpaceRelation, SpaceRelationGraph
+from masm.model.space_relations import (
+    SpaceRelation,
+    SpaceRelationGraph,
+)
 
 
 def test_space_relation_graph_adjacency():

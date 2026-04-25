@@ -2,7 +2,12 @@
 
 import pytest
 
-from masm.model.sensor import CoverageRule, IdentityNoiseRule, NoiseRule, Sensor
+from masm.model.sensor import (
+    CoverageRule,
+    IdentityNoiseRule,
+    NoiseRule,
+    Sensor,
+)
 from masm.model.space_relations import SpaceRelation
 from masm.model.spaces import Space
 from masm.model.world import World
@@ -51,7 +56,9 @@ def test_sensor_custom_epistemic_status():
     for perceived_space in perception.perceived_spaces.values():
         assert perceived_space.epistemic_status == "believed"
     for perceived_membership in perception.perceived_memberships:
-        assert perceived_membership.epistemic_status == "believed"
+        assert (
+            perceived_membership.epistemic_status == "believed"
+        )
     for perceived_relation in perception.perceived_relations:
         assert perceived_relation.epistemic_status == "believed"
 
@@ -137,8 +144,13 @@ def test_sensor_noise_rule_modifies_space_attribute():
 
     perceived_space = perception.get_perceived_space("s1")
     assert perceived_space is not None
-    assert perceived_space.space.attributes.get("label") == "noisy_label"
-    assert perceived_space.noise_metadata == {"noise_type": "label_override"}
+    assert (
+        perceived_space.space.attributes.get("label")
+        == "noisy_label"
+    )
+    assert perceived_space.noise_metadata == {
+        "noise_type": "label_override"
+    }
 
 
 def test_sensor_noise_does_not_mutate_world():
@@ -188,7 +200,9 @@ def test_sensor_two_coverage_rules_and_logic():
             return True
 
     world = _build_world("w-and-1")
-    sensor = Sensor(coverage_rules=[AllowOnlyS1(), AllowOnlyS2()])
+    sensor = Sensor(
+        coverage_rules=[AllowOnlyS1(), AllowOnlyS2()]
+    )
     perception = sensor.sense(world, "actor-1")
 
     assert len(perception.perceived_spaces) == 0
@@ -237,8 +251,12 @@ def test_sensor_multi_space_actor_perception():
     sensor = Sensor()
     perception = sensor.sense(world, "actor-multi")
 
-    memberships = perception.memberships_for_object("actor-multi")
-    space_ids = {item.membership.space_id for item in memberships}
+    memberships = perception.memberships_for_object(
+        "actor-multi"
+    )
+    space_ids = {
+        item.membership.space_id for item in memberships
+    }
     assert "phys" in space_ids
     assert "info" in space_ids
 

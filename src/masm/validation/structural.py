@@ -24,7 +24,9 @@ class StructuralValidator:
     def name(self) -> str:
         return "structural"
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         issues: list[ValidationIssue] = []
 
         if isinstance(obj, GoalDecompositionTree):
@@ -104,10 +106,17 @@ class StructuralValidator:
             )
 
         self._validate_map_field(
-            obj.attributes, "attributes", str(obj.id or ""), issues
+            obj.attributes,
+            "attributes",
+            str(obj.id or ""),
+            issues,
         )
-        self._validate_map_field(obj.state, "state", str(obj.id or ""), issues)
-        self._validate_map_field(obj.context, "context", str(obj.id or ""), issues)
+        self._validate_map_field(
+            obj.state, "state", str(obj.id or ""), issues
+        )
+        self._validate_map_field(
+            obj.context, "context", str(obj.id or ""), issues
+        )
         self._validate_map_field(
             obj.provenance,
             "provenance",
@@ -141,7 +150,9 @@ class StructuralValidator:
             self._validate_goal_tree_payload(payload, issues)
             return
 
-        inferred_type = str(payload.get("object_type") or "").lower()
+        inferred_type = str(
+            payload.get("object_type") or ""
+        ).lower()
         if inferred_type == "strategy":
             self._validate_strategy_payload(payload, issues)
             return
@@ -177,7 +188,9 @@ class StructuralValidator:
                 )
             )
 
-        schema_version = payload.get("schema_version", SUPPORTED_SCHEMA_VERSION)
+        schema_version = payload.get(
+            "schema_version", SUPPORTED_SCHEMA_VERSION
+        )
         if str(schema_version) != SUPPORTED_SCHEMA_VERSION:
             issues.append(
                 ValidationIssue(
@@ -192,7 +205,12 @@ class StructuralValidator:
                 )
             )
 
-        for field_name in ("attributes", "state", "context", "provenance"):
+        for field_name in (
+            "attributes",
+            "state",
+            "context",
+            "provenance",
+        ):
             if field_name in payload:
                 self._validate_map_field(
                     payload.get(field_name),
@@ -214,7 +232,9 @@ class StructuralValidator:
                     )
                 )
             else:
-                self._validate_relations_mapping(relations_value, object_id, issues)
+                self._validate_relations_mapping(
+                    relations_value, object_id, issues
+                )
 
     def _validate_goal_tree_instance(
         self,
@@ -246,7 +266,9 @@ class StructuralValidator:
                     code="STR-GOAL-TREE",
                     severity=SEVERITY_ERROR,
                     message=str(exc),
-                    object_id=str(payload.get("root_goal_id") or ""),
+                    object_id=str(
+                        payload.get("root_goal_id") or ""
+                    ),
                 )
             )
 
@@ -312,7 +334,9 @@ class StructuralValidator:
         issues: list[ValidationIssue],
     ) -> None:
         for relation_name, targets in relations.items():
-            if not isinstance(targets, Sequence) or isinstance(targets, (str, bytes)):
+            if not isinstance(targets, Sequence) or isinstance(
+                targets, (str, bytes)
+            ):
                 issues.append(
                     ValidationIssue(
                         code="STR-RELATION-TARGETS-TYPE",

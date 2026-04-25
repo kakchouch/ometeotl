@@ -23,7 +23,9 @@ class SyntacticValidator:
     def name(self) -> str:
         return "syntactic"
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         issues: list[ValidationIssue] = []
 
         if isinstance(obj, (Mapping, list)):
@@ -62,8 +64,12 @@ class SyntacticValidator:
                 metadata={"input_kind": type(obj).__name__},
             )
 
-        requested_format = str(context.metadata.get("format") or "auto").lower()
-        parsed, fmt, parse_error = self._parse(raw_text, requested_format)
+        requested_format = str(
+            context.metadata.get("format") or "auto"
+        ).lower()
+        parsed, fmt, parse_error = self._parse(
+            raw_text, requested_format
+        )
         if parse_error is not None:
             issues.append(
                 ValidationIssue(
@@ -86,7 +92,9 @@ class SyntacticValidator:
                     code="SYN-PARSED-SCALAR",
                     severity=SEVERITY_INFO,
                     message="Payload parsed successfully but produced a scalar value",
-                    context={"parsed_type": type(parsed).__name__},
+                    context={
+                        "parsed_type": type(parsed).__name__
+                    },
                 )
             )
 
@@ -117,30 +125,46 @@ class SyntacticValidator:
         requested_format: str,
     ) -> tuple[Any, str | None, str | None]:
         if requested_format not in {"json", "yaml", "auto"}:
-            return None, None, f"unsupported format hint '{requested_format}'"
+            return (
+                None,
+                None,
+                f"unsupported format hint '{requested_format}'",
+            )
 
         if requested_format == "json":
             return self._parse_json(payload)
         if requested_format == "yaml":
             return self._parse_yaml(payload)
 
-        parsed_json, json_format, json_error = self._parse_json(payload)
+        parsed_json, json_format, json_error = self._parse_json(
+            payload
+        )
         if json_error is None:
             return parsed_json, json_format, None
 
-        parsed_yaml, yaml_format, yaml_error = self._parse_yaml(payload)
+        parsed_yaml, yaml_format, yaml_error = self._parse_yaml(
+            payload
+        )
         if yaml_error is None:
             return parsed_yaml, yaml_format, None
 
-        return None, None, f"json={json_error}; yaml={yaml_error}"
+        return (
+            None,
+            None,
+            f"json={json_error}; yaml={yaml_error}",
+        )
 
-    def _parse_json(self, payload: str) -> tuple[Any, str | None, str | None]:
+    def _parse_json(
+        self, payload: str
+    ) -> tuple[Any, str | None, str | None]:
         try:
             return json.loads(payload), "json", None
         except (TypeError, ValueError) as exc:
             return None, None, str(exc)
 
-    def _parse_yaml(self, payload: str) -> tuple[Any, str | None, str | None]:
+    def _parse_yaml(
+        self, payload: str
+    ) -> tuple[Any, str | None, str | None]:
         try:
             return yaml.safe_load(payload), "yaml", None
         except yaml.YAMLError as exc:

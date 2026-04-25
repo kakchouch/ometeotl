@@ -2,7 +2,11 @@
 
 import pytest
 
-from masm.model.actions import Action, ActionPrerequisite, ResourceEffect
+from masm.model.actions import (
+    Action,
+    ActionPrerequisite,
+    ResourceEffect,
+)
 
 
 def test_action_instantiation():
@@ -121,9 +125,15 @@ def test_action_to_dict_contains_required_fields():
     assert action_dict["world_id"] == "world-1"
     assert action_dict["space_id"] == "space-1"
     assert action_dict["action_type"] == "interact"
-    assert action_dict["outcome_description"] == "Actor interacts with space"
+    assert (
+        action_dict["outcome_description"]
+        == "Actor interacts with space"
+    )
     assert len(action_dict["resource_effects"]) == 1
-    assert action_dict["resource_effects"][0]["resource_id"] == "res-1"
+    assert (
+        action_dict["resource_effects"][0]["resource_id"]
+        == "res-1"
+    )
 
 
 def test_action_to_dict_roundtrip():
@@ -165,14 +175,24 @@ def test_action_to_dict_roundtrip():
     assert restored.world_id == original.world_id
     assert restored.space_id == original.space_id
     assert restored.action_type == original.action_type
-    assert restored.outcome_description == original.outcome_description
-    assert len(restored.resource_effects) == len(original.resource_effects)
+    assert (
+        restored.outcome_description
+        == original.outcome_description
+    )
+    assert len(restored.resource_effects) == len(
+        original.resource_effects
+    )
     assert (
         restored.resource_effects[0].resource_id
         == original.resource_effects[0].resource_id
     )
-    assert len(restored.prerequisites) == len(original.prerequisites)
-    assert restored.prerequisites[0].field_name == original.prerequisites[0].field_name
+    assert len(restored.prerequisites) == len(
+        original.prerequisites
+    )
+    assert (
+        restored.prerequisites[0].field_name
+        == original.prerequisites[0].field_name
+    )
     assert restored.attributes == original.attributes
     assert restored.relations == original.relations
     assert restored.state == original.state
@@ -189,7 +209,13 @@ def test_action_required_fields_cannot_be_empty():
         "space_id": "s1",
         "action_type": "move",
     }
-    for field_name in ["id", "actor_id", "world_id", "space_id", "action_type"]:
+    for field_name in [
+        "id",
+        "actor_id",
+        "world_id",
+        "space_id",
+        "action_type",
+    ]:
         args = base_args.copy()
         args[field_name] = ""
         with pytest.raises(ValueError):
@@ -357,7 +383,9 @@ def test_action_prerequisite_to_dict_roundtrip():
 
     restored = ActionPrerequisite.from_dict(original.to_dict())
 
-    assert restored.prerequisite_type == original.prerequisite_type
+    assert (
+        restored.prerequisite_type == original.prerequisite_type
+    )
     assert restored.field_name == original.field_name
     assert restored.required_value == original.required_value
     assert restored.metadata == original.metadata
@@ -401,7 +429,11 @@ def test_action_related_from_dict_null_handling():
         }
     )
     prereq = ActionPrerequisite.from_dict(
-        {"field_name": "energy", "prerequisite_type": None, "metadata": None}
+        {
+            "field_name": "energy",
+            "prerequisite_type": None,
+            "metadata": None,
+        }
     )
     assert effect.effect_type == "consume"
     assert effect.quantity == 1.0

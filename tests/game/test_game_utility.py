@@ -1,11 +1,19 @@
 """Tests for masm.game.utility."""
 
-from masm.game.utility import LexicographicUtility, StrategyRanker, WeightedSumUtility
+from masm.game.utility import (
+    LexicographicUtility,
+    StrategyRanker,
+    WeightedSumUtility,
+)
 from masm.model.actions import Action
 from masm.model.actors import Actor
 from masm.model.perception import Perception
 from masm.model.projection import ProjectedPerceptionState
-from masm.model.strategies import Strategy, StrategyNode, StrategyOutcomeBranch
+from masm.model.strategies import (
+    Strategy,
+    StrategyNode,
+    StrategyOutcomeBranch,
+)
 
 
 def _make_action(action_id: str) -> Action:
@@ -55,9 +63,18 @@ def test_weighted_sum_utility_returns_scalar_frame_with_metadata():
 
     assert frame.value == 4.5
     assert frame.framework_id == "material-gain"
-    assert frame.metadata["metric_values"] == {"risk": 1.0, "wealth": 3.0}
-    assert frame.metadata["metric_weights"] == {"risk": -1.5, "wealth": 2.0}
-    assert frame.metadata["weighted_components"] == {"risk": -1.5, "wealth": 6.0}
+    assert frame.metadata["metric_values"] == {
+        "risk": 1.0,
+        "wealth": 3.0,
+    }
+    assert frame.metadata["metric_weights"] == {
+        "risk": -1.5,
+        "wealth": 2.0,
+    }
+    assert frame.metadata["weighted_components"] == {
+        "risk": -1.5,
+        "wealth": 6.0,
+    }
     assert frame.metadata["comparison_values"] == [4.5]
 
 
@@ -69,7 +86,9 @@ def test_lexicographic_utility_uses_raw_values_and_directional_comparison():
     )
 
     frame = utility.evaluate(
-        perception=_make_perception("p-2", safety=10.0, cost=2.0),
+        perception=_make_perception(
+            "p-2", safety=10.0, cost=2.0
+        ),
         actor=Actor(id="actor-1"),
         context={},
     )
@@ -126,9 +145,14 @@ def test_strategy_ranker_orders_strategies_by_scalar_terminal_utility():
         ],
     )
 
-    ranked = ranker.rank_strategies([strategy_a, strategy_b], actor=actor)
+    ranked = ranker.rank_strategies(
+        [strategy_a, strategy_b], actor=actor
+    )
 
-    assert [item.strategy.id for item in ranked] == ["strategy-b", "strategy-a"]
+    assert [item.strategy.id for item in ranked] == [
+        "strategy-b",
+        "strategy-a",
+    ]
     assert ranked[0].utility_frame.value == 3.0
     assert ranked[1].utility_frame.value == 1.0
 
@@ -222,7 +246,10 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
         "strategy-baseline",
     ]
     assert ranked[0].utility_frame.value == 1.0
-    assert ranked[0].terminal_probabilities == {"left-node": 0.25, "right-node": 0.75}
+    assert ranked[0].terminal_probabilities == {
+        "left-node": 0.25,
+        "right-node": 0.75,
+    }
 
 
 def test_strategy_ranker_uses_lexicographic_rank_key_for_multi_criteria_frames():
@@ -274,9 +301,14 @@ def test_strategy_ranker_uses_lexicographic_rank_key_for_multi_criteria_frames()
         ],
     )
 
-    ranked = ranker.rank_strategies([safer_costlier, safer_cheaper], actor=actor)
+    ranked = ranker.rank_strategies(
+        [safer_costlier, safer_cheaper], actor=actor
+    )
 
-    assert [item.strategy.id for item in ranked] == ["strategy-a", "strategy-b"]
+    assert [item.strategy.id for item in ranked] == [
+        "strategy-a",
+        "strategy-b",
+    ]
     assert ranked[0].rank_key == (10.0, -5.0)
     assert ranked[1].rank_key == (10.0, -7.0)
 
@@ -305,9 +337,13 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
                 action_id=root_action.id,
                 projected_state=root_state,
                 outcome_branches=[
-                    StrategyOutcomeBranch(branch_id="left", child_node_id="left-node"),
                     StrategyOutcomeBranch(
-                        branch_id="right", child_node_id="right-node"
+                        branch_id="left",
+                        child_node_id="left-node",
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="right",
+                        child_node_id="right-node",
                     ),
                 ],
             ),
@@ -336,7 +372,9 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
+    ranked_strategy = ranker.evaluate_strategy(
+        strategy, actor=actor
+    )
 
     assert ranked_strategy.utility_frame.value == 1.0
     assert ranked_strategy.terminal_probabilities == {
@@ -411,7 +449,9 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
+    ranked_strategy = ranker.evaluate_strategy(
+        strategy, actor=actor
+    )
 
     assert ranked_strategy.terminal_probabilities == {
         "left-node": 0.5,
@@ -507,8 +547,12 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
+    ranked_strategy = ranker.evaluate_strategy(
+        strategy, actor=actor
+    )
 
     assert ranked_strategy.terminal_node_ids == ["terminal-node"]
-    assert ranked_strategy.terminal_probabilities == {"terminal-node": 1.0}
+    assert ranked_strategy.terminal_probabilities == {
+        "terminal-node": 1.0
+    }
     assert ranked_strategy.utility_frame.value == 5.0

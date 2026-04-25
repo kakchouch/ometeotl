@@ -13,14 +13,22 @@ from __future__ import annotations
 
 from typing import Mapping
 
-from .pipeline import MODE_STRICT, MODE_WARN_ONLY, VALID_PIPELINE_MODES
+from .pipeline import (
+    MODE_STRICT,
+    MODE_WARN_ONLY,
+    VALID_PIPELINE_MODES,
+)
 
 PROFILE_OBSERVE_ONLY = "observe_only"
 PROFILE_ENFORCE_STRUCTURE = "enforce_structure"
 PROFILE_ENFORCE_DOMAIN = "enforce_domain"
 
 VALID_POLICY_PROFILES: frozenset[str] = frozenset(
-    {PROFILE_OBSERVE_ONLY, PROFILE_ENFORCE_STRUCTURE, PROFILE_ENFORCE_DOMAIN}
+    {
+        PROFILE_OBSERVE_ONLY,
+        PROFILE_ENFORCE_STRUCTURE,
+        PROFILE_ENFORCE_DOMAIN,
+    }
 )
 
 
@@ -67,7 +75,9 @@ def build_stage_modes(
             }
         )
 
-    for stage_name, mode in dict(stage_mode_overrides or {}).items():
+    for stage_name, mode in dict(
+        stage_mode_overrides or {}
+    ).items():
         normalized_mode = str(mode or MODE_WARN_ONLY)
         if normalized_mode not in VALID_PIPELINE_MODES:
             raise ValueError(

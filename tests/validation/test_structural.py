@@ -28,7 +28,9 @@ def test_structural_validator_rejects_missing_identity_fields():
     """Missing id/object_type should be flagged as structural errors."""
     validator = StructuralValidator()
 
-    result = validator.validate({"schema_version": "1.0"}, ValidationContext())
+    result = validator.validate(
+        {"schema_version": "1.0"}, ValidationContext()
+    )
 
     assert result.valid is False
     assert result.summary["error"] >= 2
@@ -94,7 +96,10 @@ def test_structural_validator_reuses_strategy_tree_validation():
     result = validator.validate(payload, ValidationContext())
 
     assert result.valid is False
-    assert any(issue.code == "STR-STRATEGY-TREE" for issue in result.errors)
+    assert any(
+        issue.code == "STR-STRATEGY-TREE"
+        for issue in result.errors
+    )
 
 
 def test_structural_validator_reuses_goal_tree_validation():
@@ -123,4 +128,6 @@ def test_structural_validator_reuses_goal_tree_validation():
     result = validator.validate(tree, ValidationContext())
 
     assert result.valid is False
-    assert any(issue.code == "STR-GOAL-TREE" for issue in result.errors)
+    assert any(
+        issue.code == "STR-GOAL-TREE" for issue in result.errors
+    )

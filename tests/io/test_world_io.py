@@ -69,10 +69,24 @@ def test_world_json_roundtrip_preserves_graph_and_registry():
     assert result.validation.valid is True
     assert result.world.id == world.id
     assert result.world.get_space("zone-a") is not None
-    assert "actor-1" in result.world.space_object_graph.list_objects_in_space("zone-a")
-    assert result.world.model_registry.get("actor-registered") is not None
-    assert isinstance(result.world.model_registry.get("actor-registered"), Actor)
-    assert isinstance(result.world.model_registry.get("resource-registered"), Resource)
+    assert (
+        "actor-1"
+        in result.world.space_object_graph.list_objects_in_space(
+            "zone-a"
+        )
+    )
+    assert (
+        result.world.model_registry.get("actor-registered")
+        is not None
+    )
+    assert isinstance(
+        result.world.model_registry.get("actor-registered"),
+        Actor,
+    )
+    assert isinstance(
+        result.world.model_registry.get("resource-registered"),
+        Resource,
+    )
 
 
 def test_world_yaml_roundtrip_preserves_canonical_payload():
@@ -96,7 +110,9 @@ def test_world_from_json_rejects_invalid_payload():
 def test_world_from_mapping_raises_validation_exception_for_structural_errors():
     """Structurally invalid mappings should be rejected explicitly."""
     with pytest.raises(ValidationException) as exc_info:
-        world_from_mapping({"id": "broken-world", "relations": []})
+        world_from_mapping(
+            {"id": "broken-world", "relations": []}
+        )
 
     assert exc_info.value.result.valid is False
     assert exc_info.value.result.summary["error"] >= 1
@@ -110,22 +126,34 @@ def test_world_from_json_aggregates_all_stage_issues_before_raising():
     stages. Before the fix, the first failing stage raised early and the aggregated
     result was never returned to the caller.
     """
-    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
+    structurally_invalid_json = (
+        '{"id": "broken-world", "relations": []}'
+    )
     with pytest.raises(ValidationException) as exc_info:
-        world_from_json(structurally_invalid_json, raise_on_error=True)
+        world_from_json(
+            structurally_invalid_json, raise_on_error=True
+        )
 
     result = exc_info.value.result
     assert result.valid is False
     executed = result.metadata["executed_validators"]
-    assert "syntactic" in executed, "Syntactic stage must have run"
-    assert "structural" in executed, "Structural stage must have run"
+    assert (
+        "syntactic" in executed
+    ), "Syntactic stage must have run"
+    assert (
+        "structural" in executed
+    ), "Structural stage must have run"
     assert result.summary["error"] >= 1
 
 
 def test_world_from_json_returns_result_without_raising_when_raise_on_error_false():
     """raise_on_error=False must suppress ValidationException and return the result."""
-    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
-    result = world_from_json(structurally_invalid_json, raise_on_error=False)
+    structurally_invalid_json = (
+        '{"id": "broken-world", "relations": []}'
+    )
+    result = world_from_json(
+        structurally_invalid_json, raise_on_error=False
+    )
     assert result.validation.valid is False
     assert result.validation.summary["error"] >= 1
 
@@ -139,7 +167,10 @@ def test_world_from_mapping_skips_syntactic_subclass_validator():
             return "syntactic_custom"
 
     pipeline = ValidationPipeline(
-        validators=[CustomSyntacticValidator(), StructuralValidator()]
+        validators=[
+            CustomSyntacticValidator(),
+            StructuralValidator(),
+        ]
     )
 
     with pytest.raises(ValidationException) as exc_info:
@@ -149,7 +180,9 @@ def test_world_from_mapping_skips_syntactic_subclass_validator():
             raise_on_error=True,
         )
 
-    executed = exc_info.value.result.metadata["executed_validators"]
+    executed = exc_info.value.result.metadata[
+        "executed_validators"
+    ]
     assert "syntactic_custom" not in executed
     assert "structural" in executed
 

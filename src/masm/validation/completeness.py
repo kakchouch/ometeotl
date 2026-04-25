@@ -24,8 +24,20 @@ VALID_COMPLETENESS_LEVELS: frozenset[str] = frozenset(
 
 REQUIRED_FIELDS_BY_TYPE: dict[str, tuple[str, ...]] = {
     "default": ("id", "object_type", "schema_version"),
-    "action": ("id", "object_type", "schema_version", "actor_id", "space_id"),
-    "goal": ("id", "object_type", "schema_version", "actor_id", "kind"),
+    "action": (
+        "id",
+        "object_type",
+        "schema_version",
+        "actor_id",
+        "space_id",
+    ),
+    "goal": (
+        "id",
+        "object_type",
+        "schema_version",
+        "actor_id",
+        "kind",
+    ),
     "strategy": (
         "id",
         "object_type",
@@ -42,11 +54,25 @@ REQUIRED_FIELDS_BY_TYPE: dict[str, tuple[str, ...]] = {
 }
 
 RECOMMENDED_FIELDS_BY_TYPE: dict[str, tuple[str, ...]] = {
-    "default": ("attributes", "relations", "state", "context", "provenance"),
-    "action": ("resource_effects", "prerequisites", "state_changes"),
+    "default": (
+        "attributes",
+        "relations",
+        "state",
+        "context",
+        "provenance",
+    ),
+    "action": (
+        "resource_effects",
+        "prerequisites",
+        "state_changes",
+    ),
     "goal": ("target_condition", "horizon", "status"),
     "strategy": ("nodes", "projection_policy"),
-    "perception": ("perceived_spaces", "perceived_memberships", "context"),
+    "perception": (
+        "perceived_spaces",
+        "perceived_memberships",
+        "context",
+    ),
 }
 
 
@@ -57,7 +83,9 @@ class CompletenessValidator:
     def name(self) -> str:
         return "completeness"
 
-    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+    def validate(
+        self, obj: Any, context: ValidationContext
+    ) -> ValidationResult:
         payload = self._to_mapping(obj)
         if payload is None:
             return ValidationResult(
@@ -69,18 +97,25 @@ class CompletenessValidator:
                             "Completeness validation expects mapping-like payload "
                             "or ModelObject"
                         ),
-                        context={"input_type": type(obj).__name__},
+                        context={
+                            "input_type": type(obj).__name__
+                        },
                     )
                 ],
                 stage=context.stage or self.name,
                 policy_mode=context.policy_mode,
             )
 
-        level = str(context.metadata.get("completeness_level") or LEVEL_MINIMAL)
+        level = str(
+            context.metadata.get("completeness_level")
+            or LEVEL_MINIMAL
+        )
         if level not in VALID_COMPLETENESS_LEVELS:
             level = LEVEL_MINIMAL
 
-        object_type = str(payload.get("object_type") or "default").lower()
+        object_type = str(
+            payload.get("object_type") or "default"
+        ).lower()
         required_fields = REQUIRED_FIELDS_BY_TYPE.get(
             object_type,
             REQUIRED_FIELDS_BY_TYPE["default"],
