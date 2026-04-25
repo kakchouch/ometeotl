@@ -95,6 +95,22 @@ def test_world_register_and_unregister_object():
     MinimalModelRegistry.clear()
 
 
+def test_object_register_and_place():
+    """Test that _object_register_and_place registers and places the object in one step."""
+    world = World(id="test-world")
+    space = Space(id="test-space")
+    world.add_space(space)
+    actor = Actor(id="test-actor")
+
+    world._object_register_and_place(actor, "test-space", role="occupies")
+
+    # Check registration
+    assert world.model_registry.exists("test-actor")
+    # Check placement
+    members = world.space_object_graph.list_objects_in_space("test-space")
+    assert "test-actor" in members
+
+
 def test_world_to_dict_contains_required_fields():
     """Verify that World.to_dict() exports all mandatory canonical fields."""
     world = World(id="world-7")

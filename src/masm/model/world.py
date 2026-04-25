@@ -160,6 +160,17 @@ class World(Space):
         """
         space = self.get_space(space_id)
         return space.is_abstract if space is not None else False
+    
+
+    # --- Convenience Wrappers ------------------------------------------------
+    def _object_register_and_place(self, obj, space_id, role="occupies", authority_token: Optional[str] = None) -> None:
+        """Register an object and place it in a sub-space in one step.
+
+        This is a convenience method that ensures the object is registered
+        before being placed in the specified sub-space.
+        """
+        self.register_object(obj, authority_token=authority_token)
+        self.place_object(obj.id, space_id, role=role, authority_token=authority_token)
 
     # --- Serialization ------------------------------------------------------
 
