@@ -43,7 +43,7 @@ This project is **actively under development**. The current repository already i
 - Teleology and utility layers with first-class goals, admissibility/feasibility tools, and game utility/ranking primitives.
 - Dedicated validation layer with staged validation pipeline, policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`), and diagnostics.
 - Authority/runtime boundary in `src/ometeotl_core/generic/` for server-owned world mutation flows.
-- Current automated baseline: `307` collected tests.
+- Current automated baseline: `317` collected tests.
 
 ## Near-Term TODOs
 

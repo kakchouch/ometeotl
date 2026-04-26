@@ -171,7 +171,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Quality gate:
     - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
-    - Current baseline: `307` collected tests.
+    - Current baseline: `317` collected tests.
 
 ### Present but still incomplete or scaffolded
 

@@ -173,7 +173,7 @@ Les tests locaux révèlent que l’architecture actuelle est trop abstraite pou
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Contrôle qualité :
     - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/` et `tests/ometeotl_core/validation/`.
-    - Base actuelle : `307` tests collectés.
+    - Base actuelle : `317` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 

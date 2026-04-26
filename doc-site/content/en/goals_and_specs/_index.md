@@ -157,7 +157,7 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- Diagnostics and repair suggestions.
 10. Quality gate:
 	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
-	- Current baseline: `307` collected tests.
+	- Current baseline: `317` collected tests.
 
 ### Still incomplete or planned
 
