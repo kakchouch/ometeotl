@@ -80,7 +80,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 # Inclut core et tous ses sous-packages
-include = ["ometeotl_core", "ometeotl_core.*"]
+include = ["ometeotl_core", "ometeotl_core.*", "ometeotl_foundations", "ometeotl_foundations.*", "ometeotl_adapters", "ometeotl_adapters.*"]
 
 [tool.pytest.ini_options]
 # Indique à pytest où chercher les tests
