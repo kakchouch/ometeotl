@@ -3,7 +3,7 @@ title: "Actor"
 ---
 
 Source:
-- [src/masm/model/actors.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/actors.py)
+- [src/ometeotl_core/model/actors.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/actors.py)
 
 Local role:
 Represents an actor entity with roles, composition mode, and domain relations.

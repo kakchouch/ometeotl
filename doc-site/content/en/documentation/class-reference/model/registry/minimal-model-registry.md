@@ -3,7 +3,7 @@ title: "MinimalModelRegistry"
 ---
 
 Source:
-- [src/masm/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/registry.py)
+- [src/ometeotl_core/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/registry.py)
 
 Local role:
 Global class-level fallback registry.

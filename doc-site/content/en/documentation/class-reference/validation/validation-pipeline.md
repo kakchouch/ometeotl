@@ -3,7 +3,7 @@ title: "ValidationPipeline"
 ---
 
 Source:
-- [src/masm/validation/pipeline.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/pipeline.py)
+- [src/ometeotl_core/validation/pipeline.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/pipeline.py)
 
 Local role:
 Orchestrates ordered validator execution and result aggregation.

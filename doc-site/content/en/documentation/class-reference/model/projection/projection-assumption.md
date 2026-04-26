@@ -3,7 +3,7 @@ title: "ProjectionAssumption"
 ---
 
 Source:
-- [src/masm/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/projection.py)
+- [src/ometeotl_core/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/projection.py)
 
 Local role:
 One explicit assumption extracted from evaluating an [Action](/ometeotl/documentation/class-reference/model/actions/action/) under a [Perception](/ometeotl/documentation/class-reference/model/perception/perception/) and a resource set.

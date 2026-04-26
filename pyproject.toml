@@ -67,7 +67,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/kakchouch/ometeotl"
+Homepage = "https://kakchouch.github.io/ometeotl/"
 Repository = "https://github.com/kakchouch/ometeotl"
 Issues = "https://github.com/kakchouch/ometeotl/issues"
 
@@ -79,8 +79,8 @@ package-dir = {"" = "src"}
 # Demande à setuptools de chercher les packages dans src/
 where = ["src"]
 
-# Inclut masm et tous ses sous-packages
-include = ["masm", "masm.*"]
+# Inclut core et tous ses sous-packages
+include = ["ometeotl_core", "ometeotl_core.*", "ometeotl_foundations", "ometeotl_foundations.*", "ometeotl_adapters", "ometeotl_adapters.*"]
 
 [tool.pytest.ini_options]
 # Indique à pytest où chercher les tests
@@ -91,7 +91,7 @@ addopts = "-ra -q --import-mode=importlib"
 
 [tool.ruff]
 # Longueur de ligne raisonnable
-line-length = 100
+line-length = 80
 target-version = "py311"
 
 [tool.ruff.lint]

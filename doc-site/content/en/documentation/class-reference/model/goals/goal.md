@@ -3,7 +3,7 @@ title: "Goal"
 ---
 
 Source:
-- [src/masm/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goals.py)
+- [src/ometeotl_core/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goals.py)
 
 Local role:
 First-class objective model object for one actor.

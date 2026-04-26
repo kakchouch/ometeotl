@@ -1,15 +1,24 @@
 ---
 title: "Overview"
-description: "Three-level walkthrough of how Ometeotl/MASM works internally"
+description: "Three-level walkthrough of how Ometeotl/ometeotl_core works internally"
 ---
 
-This page explains the internal workings of Ometeotl/MASM at three depth levels.
+This page explains the internal workings of Ometeotl/ometeotl_core at three depth levels.
 
 For API-level details, use [Class Reference](/ometeotl/documentation/class-reference/).
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundations`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
 ## Beginner View
 
-Ometeotl/MASM is a modeling library where everything starts from a generic object, then becomes more specific.
+Ometeotl/ometeotl_core is a modeling library where everything starts from a generic object, then becomes more specific.
 
 - [ModelObject](/ometeotl/documentation/class-reference/model/base/model-object/) is the universal base container.
 - [GenericObject](/ometeotl/documentation/class-reference/model/objects/generic-object/) adds practical metadata such as labels, tags, and profiles.
@@ -68,9 +77,9 @@ The implemented pipeline follows this flow:
 6. Rebuild canonical objects with `from_dict()` methods.
 7. Generate actor-relative snapshots via [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/) into [Perception](/ometeotl/documentation/class-reference/model/perception/perception/).
 8. Derive first-order projection assumptions and projected successor perceived states from candidate actions, one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/), and available resources through [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/).
-9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py).
-10. Validate payloads/objects with the staged validation pipeline in `masm.validation` (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), using policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`) when needed.
-11. Export a world to canonical JSON or YAML via `masm.io` ([world_to_json](/ometeotl/documentation/class-reference/io/world-export/), [world_to_yaml](/ometeotl/documentation/class-reference/io/world-export/), [write_world_json](/ometeotl/documentation/class-reference/io/world-export/), [write_world_yaml](/ometeotl/documentation/class-reference/io/world-export/)).
+9. Build a perception-driven [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) with [build_linear_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py) or [build_branching_strategy(...)](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py).
+10. Validate payloads/objects with the staged validation pipeline in `ometeotl_core.validation` (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), using policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`) when needed.
+11. Export a world to canonical JSON or YAML via `ometeotl_core.io` ([world_to_json](/ometeotl/documentation/class-reference/io/world-export/), [world_to_yaml](/ometeotl/documentation/class-reference/io/world-export/), [write_world_json](/ometeotl/documentation/class-reference/io/world-export/), [write_world_yaml](/ometeotl/documentation/class-reference/io/world-export/)).
 12. Re-import a world from JSON or YAML with validated reconstruction via [world_from_json / world_from_yaml](/ometeotl/documentation/class-reference/io/world-import/), which runs syntactic then structural validation before calling `World.from_dict`.
 13. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
 14. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
@@ -89,11 +98,11 @@ This separation prevents layer mixing and aligns with the architecture constrain
 
 The test suite follows the same layer separation as the source tree:
 
-- `tests/model/`: tests for `masm.model.*`
-- `tests/core/`: tests for `masm.core.*`
-- `tests/validation/`: tests for `masm.validation.*`
-- `tests/game/`: tests for `masm.game.*`
-- `tests/io/`: tests for `masm.io.*`
+- `tests/ometeotl_core/model/`: tests for `ometeotl_core.model.*`
+- `tests/ometeotl_core/generic/`: tests for `ometeotl_core.generic.*`
+- `tests/ometeotl_core/validation/`: tests for `ometeotl_core.validation.*`
+- `tests/ometeotl_core/game/`: tests for `ometeotl_core.game.*`
+- `tests/ometeotl_core/io/`: tests for `ometeotl_core.io.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 
@@ -182,7 +191,7 @@ This makes strategy hops explicitly perception-driven rather than action-list dr
 
 ### 8. Builder seam
 
-Two minimal builders exist today in `src/masm/model/strategies.py`:
+Two minimal builders exist today in `src/ometeotl_core/model/strategies.py`:
 
 - `build_linear_strategy(...)` for ordered action sequences
 - `build_branching_strategy(...)` for recursive action trees built from [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)

@@ -3,7 +3,7 @@ title: "GoalAdmissibilityChecker"
 ---
 
 Source:
-- [src/masm/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goal_tools.py)
+- [src/ometeotl_core/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goal_tools.py)
 
 Local role:
 Model-level F-13 checker for whether a goal is admissible for one actor under one perception.

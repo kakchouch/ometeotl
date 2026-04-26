@@ -3,7 +3,7 @@ title: "World"
 ---
 
 Source:
-- [src/masm/model/world.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/world.py)
+- [src/ometeotl_core/model/world.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/world.py)
 
 Local role:
 Root simulation container and orchestration hub.

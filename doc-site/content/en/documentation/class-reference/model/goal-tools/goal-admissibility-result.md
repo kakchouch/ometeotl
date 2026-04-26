@@ -3,7 +3,7 @@ title: "GoalAdmissibilityResult"
 ---
 
 Source:
-- [src/masm/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goal_tools.py)
+- [src/ometeotl_core/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goal_tools.py)
 
 Local role:
 Result container for actor-relative goal admissibility checks.

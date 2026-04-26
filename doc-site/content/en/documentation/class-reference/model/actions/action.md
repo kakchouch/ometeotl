@@ -3,7 +3,7 @@ title: "Action"
 ---
 
 Source:
-- [src/masm/model/actions.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/actions.py)
+- [src/ometeotl_core/model/actions.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/actions.py)
 
 Local role:
 Represents one actor-driven state transition in one world and one space.

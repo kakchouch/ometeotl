@@ -3,7 +3,7 @@ title: "IdentityNoiseRule"
 ---
 
 Source:
-- [src/masm/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/sensor.py)
+- [src/ometeotl_core/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/sensor.py)
 
 Local role:
 Default [NoiseRule](/ometeotl/documentation/class-reference/model/sensor/noise-rule/) that leaves copies unchanged.

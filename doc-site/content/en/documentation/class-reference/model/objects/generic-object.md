@@ -3,7 +3,7 @@ title: "GenericObject"
 ---
 
 Source:
-- [src/masm/model/objects.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/objects.py)
+- [src/ometeotl_core/model/objects.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/objects.py)
 
 Local role:
 First semantic layer above [ModelObject](/ometeotl/documentation/class-reference/model/base/model-object/).

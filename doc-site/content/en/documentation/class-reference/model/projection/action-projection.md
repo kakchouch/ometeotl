@@ -3,7 +3,7 @@ title: "ActionProjection"
 ---
 
 Source:
-- [src/masm/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/projection.py)
+- [src/ometeotl_core/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/projection.py)
 
 Local role:
 Serializable result of projecting one [Action](/ometeotl/documentation/class-reference/model/actions/action/) from one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/) with an explicit resource set.

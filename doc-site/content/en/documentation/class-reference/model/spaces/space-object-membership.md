@@ -3,7 +3,7 @@ title: "SpaceObjectMembership"
 ---
 
 Source:
-- [src/masm/model/spaces.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/spaces.py)
+- [src/ometeotl_core/model/spaces.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/spaces.py)
 
 Local role:
 Canonical object-to-space membership record.

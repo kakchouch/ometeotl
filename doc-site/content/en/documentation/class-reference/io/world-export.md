@@ -3,7 +3,7 @@ title: "World export"
 ---
 
 Source:
-- [src/masm/io/exporters.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/io/exporters.py)
+- [src/ometeotl_core/io/exporters.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/io/exporters.py)
 
 Local role:
 Canonical JSON and YAML serialization of a `World` instance.

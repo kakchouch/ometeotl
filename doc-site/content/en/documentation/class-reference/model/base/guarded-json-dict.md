@@ -3,7 +3,7 @@ title: "GuardedJsonDict"
 ---
 
 Source:
-- [src/masm/model/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/base.py)
+- [src/ometeotl_core/model/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/base.py)
 
 Local role:
 Guarded dictionary wrapper used in mutable fields of [ModelObject](/ometeotl/documentation/class-reference/model/base/model-object/).
