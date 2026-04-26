@@ -111,6 +111,15 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 The project is no longer limited to a model/perception/sensor skeleton. It now contains a broader functional V1-incremental core with tested model, projection, strategy, teleology/utility, game-layer ranking, and authority/runtime boundaries.
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundation`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
 ### Implemented and tested now
 
 1. Core object model in `src/ometeotl_core/model/`:
@@ -161,7 +170,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 12. Minimum interfaces in `src/ometeotl_core/model/interfaces.py`:
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Quality gate:
-    - Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
+    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/`, and `tests/ometeotl_core/validation/`.
     - Current baseline: `307` collected tests.
 
 ### Present but still incomplete or scaffolded
@@ -174,6 +183,8 @@ The following layers remain incomplete relative to the target architecture and r
 - `src/ometeotl_core/examples/` for reference worlds and end-to-end demonstrations.
 
 ### Current source layout
+
+
 
 ```
 ometeotl/
@@ -216,7 +227,7 @@ ometeotl/
 │           ├── strategies.py
 │           ├── utility.py
 │           └── world.py
-└── tests/
+└── tests/ometeotl_core/
     ├── core/
     ├── game/
     └── model/

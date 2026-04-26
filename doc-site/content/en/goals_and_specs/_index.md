@@ -111,6 +111,16 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 The repository now contains a broader functional V1-incremental core spanning model, perception, projection, strategy, and authority/runtime boundaries.
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundation`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
+
 ### Implemented and tested now
 
 1. Core object model in `src/ometeotl_core/model/`:
@@ -146,7 +156,7 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- Policy profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
 	- Diagnostics and repair suggestions.
 10. Quality gate:
-	- Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
+	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/`, and `tests/ometeotl_core/validation/`.
 	- Current baseline: `307` collected tests.
 
 ### Still incomplete or planned

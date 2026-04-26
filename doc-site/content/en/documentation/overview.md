@@ -7,6 +7,15 @@ This page explains the internal workings of Ometeotl/ometeotl_core at three dept
 
 For API-level details, use [Class Reference](/ometeotl/documentation/class-reference/).
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundation`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
 ## Beginner View
 
 Ometeotl/ometeotl_core is a modeling library where everything starts from a generic object, then becomes more specific.
@@ -89,11 +98,11 @@ This separation prevents layer mixing and aligns with the architecture constrain
 
 The test suite follows the same layer separation as the source tree:
 
-- `tests/model/`: tests for `ometeotl_core.model.*`
-- `tests/core/`: tests for `ometeotl_core.core.*`
-- `tests/validation/`: tests for `ometeotl_core.validation.*`
-- `tests/game/`: tests for `ometeotl_core.game.*`
-- `tests/io/`: tests for `ometeotl_core.io.*`
+- `tests/ometeotl_core/model/`: tests for `ometeotl_core.model.*`
+- `tests/ometeotl_core/core/`: tests for `ometeotl_core.core.*`
+- `tests/ometeotl_core/validation/`: tests for `ometeotl_core.validation.*`
+- `tests/ometeotl_core/game/`: tests for `ometeotl_core.game.*`
+- `tests/ometeotl_core/io/`: tests for `ometeotl_core.io.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 

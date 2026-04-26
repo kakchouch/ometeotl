@@ -112,6 +112,16 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 
 Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, la téléologie/utilité, le ranking game, ainsi que la frontière d'autorité/runtime.
 
+**25/04/26 - refonte architecturale majeure :**
+Les tests locaux révèlent que l’architecture actuelle est trop abstraite pour toute implémentation pratique. Il a été décidé de :
+
+- conserver le code actuel dans un module central `ometeotl_core`, qui doit rester abstrait ;
+- ajouter une couche principale de spécialisation `ometeotl_foundation`, incluant :
+    - spatial : première couche d’implémentation spatiale de `ometeotl_core` ;
+    - networks : première couche d’implémentation en théorie des graphes de `ometeotl_core` ;
+    - ...
+- ajouter enfin une couche d’adaptateurs `ometeotl_adapters`, qui implémente chaque couche de spécialisation avec une bibliothèque reconnue.
+
 ### Implémenté et testé aujourd'hui
 
 1. Modèle d'objets dans `src/ometeotl_core/model/` :
@@ -162,7 +172,7 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
 12. Interfaces minimales dans `src/ometeotl_core/model/interfaces.py` :
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Contrôle qualité :
-    - Tests automatisés dans `tests/model/`, `tests/core/`, `tests/game/` et `tests/validation/`.
+    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/` et `tests/ometeotl_core/validation/`.
     - Base actuelle : `307` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
@@ -217,7 +227,7 @@ ometeotl/
 │           ├── strategies.py
 │           ├── utility.py
 │           └── world.py
-└── tests/
+└── tests/ometeotl_core/
     ├── core/
     ├── game/
     └── model/
