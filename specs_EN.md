@@ -230,7 +230,9 @@ ometeotl/
 └── tests/ometeotl_core/
     ├── generic/
     ├── game/
-    └── model/
+    ├── io/
+    ├── model/
+    └── validation/
 ```
 
 ### Practical V1 interpretation
