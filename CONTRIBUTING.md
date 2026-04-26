@@ -56,7 +56,7 @@ J’apprécie vivement les retours d’universitaires et de spécialistes, en pa
 
 ### Architecture des tests (obligatoire)
 - Organiser les tests par couche et par module.
-- Utiliser `tests/ometeotl_core/model/` pour la couche model et `tests/ometeotl_core/core/` pour la couche core.
+- Utiliser `tests/ometeotl_core/model/` pour la couche model et `tests/ometeotl_core/generic/` pour la couche core.
 - Utiliser un fichier par module, nommé `test_<module>.py` (exemple : `test_world.py`, `test_actions.py`).
 - Eviter les nouveaux fichiers de tests monolithiques melangeant plusieurs modules.
 - Verifier que toute la suite se lance en une seule commande depuis la racine du depot avec `pytest`.
