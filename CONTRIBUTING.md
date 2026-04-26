@@ -21,7 +21,7 @@ I greatly value feedback from academics and specialists, especially when it brin
 
 ### Test architecture (required)
 - Keep tests organized by layer and module.
-- Use `tests/ometeotl_core/model/` for model-layer tests and `tests/ometeotl_core/core/` for core-layer tests.
+- Use `tests/ometeotl_core/model/` for model-layer tests and `tests/ometeotl_core/generic/` for core-layer tests.
 - Use one file per module, named `test_<module>.py` (example: `test_world.py`, `test_actions.py`).
 - Avoid new monolithic test files mixing many modules.
 - Ensure the full suite runs in one go from the repository root with `pytest`.
