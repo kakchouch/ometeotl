@@ -57,7 +57,7 @@ As of April 2026, the repository includes:
 The implemented architecture follows the separation defined in `specs_EN.md`:
 
 - `src/ometeotl_core/model/` contains domain behavior and the canonical object graph.
-- `src/ometeotl_core/core/` contains runtime and authority infrastructure, not domain rules.
+- `src/ometeotl_core/generic/` contains runtime and authority infrastructure, not domain rules.
 - Ontological state lives in `World`, `WorldModelRegistry`, `SpaceObjectGraph`, and `SpaceRelationGraph`.
 - Epistemic state lives in `Perception` and its perceived wrappers.
 - Projection derives successor perceived states from actions without mutating ontological truth directly.
