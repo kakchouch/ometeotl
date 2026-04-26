@@ -228,7 +228,7 @@ ometeotl/
 │           ├── utility.py
 │           └── world.py
 └── tests/ometeotl_core/
-    ├── core/
+    ├── generic/
     ├── game/
     └── model/
 ```
