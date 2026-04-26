@@ -170,7 +170,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 12. Minimum interfaces in `src/ometeotl_core/model/interfaces.py`:
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Quality gate:
-    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/`, and `tests/ometeotl_core/validation/`.
+    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
     - Current baseline: `307` collected tests.
 
 ### Present but still incomplete or scaffolded
