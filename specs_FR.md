@@ -160,7 +160,7 @@ Les tests locaux révèlent que l’architecture actuelle est trop abstraite pou
     - `UtilityFunction`, `UtilityFrame`.
 9. Couche utilité/ranking game dans `src/ometeotl_core/game/` :
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
-10. Infrastructure runtime dans `src/ometeotl_core/core/` :
+10. Infrastructure runtime dans `src/ometeotl_core/generic/` :
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
     - Mode autoritaire optionnel pour les mutations possédées par le serveur.
