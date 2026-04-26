@@ -99,7 +99,7 @@ This separation prevents layer mixing and aligns with the architecture constrain
 The test suite follows the same layer separation as the source tree:
 
 - `tests/ometeotl_core/model/`: tests for `ometeotl_core.model.*`
-- `tests/ometeotl_core/core/`: tests for `ometeotl_core.core.*`
+- `tests/ometeotl_core/generic/`: tests for `ometeotl_core.generic.*`
 - `tests/ometeotl_core/validation/`: tests for `ometeotl_core.validation.*`
 - `tests/ometeotl_core/game/`: tests for `ometeotl_core.game.*`
 - `tests/ometeotl_core/io/`: tests for `ometeotl_core.io.*`

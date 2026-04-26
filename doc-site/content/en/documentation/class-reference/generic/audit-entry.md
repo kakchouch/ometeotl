@@ -9,7 +9,7 @@ Local role:
 Immutable audit row recording one command decision.
 
 Big-picture role:
-Traceability primitive for authoritative command boundaries enforced by [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+Traceability primitive for authoritative command boundaries enforced by [AuthorityCommandHandler](/ometeotl/documentation/class-reference/generic/authority-command-handler/).
 
 Inheritance:
 - frozen dataclass
@@ -28,5 +28,5 @@ Methods:
 - no custom methods
 
 See also:
-- [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/)
-- [CommandResult](/ometeotl/documentation/class-reference/core/command-result/)
+- [CommandEnvelope](/ometeotl/documentation/class-reference/generic/command-envelope/)
+- [CommandResult](/ometeotl/documentation/class-reference/generic/command-result/)
