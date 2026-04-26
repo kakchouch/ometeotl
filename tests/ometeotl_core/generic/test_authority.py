@@ -1,4 +1,4 @@
-"""Tests for ometeotl_core.core.authority and world authority boundaries."""
+"""Tests for ometeotl_core.generic.authority and world authority boundaries."""
 
 import pytest
 
