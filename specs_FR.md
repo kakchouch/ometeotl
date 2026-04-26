@@ -228,9 +228,11 @@ ometeotl/
 │           ├── utility.py
 │           └── world.py
 └── tests/ometeotl_core/
-    ├── core/
+    ├── generic/
     ├── game/
-    └── model/
+    ├── io/
+    ├── model/
+    └── validation/
 ```
 
 ### Lecture pratique de la V1
