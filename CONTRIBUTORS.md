@@ -5,10 +5,11 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 32
+- **Merged PRs:** 33
 
 #### Merged Pull Requests
 
+- [#98 Feature/io module](https://github.com/kakchouch/ometeotl/pull/98)
 - [#91 Feature/validation layer](https://github.com/kakchouch/ometeotl/pull/91)
 - [#88 Refactor/dry before validation layer](https://github.com/kakchouch/ometeotl/pull/88)
 - [#85 Feature/goals](https://github.com/kakchouch/ometeotl/pull/85)
