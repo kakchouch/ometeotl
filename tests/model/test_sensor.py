@@ -1,16 +1,16 @@
-"""Tests for masm.model.sensor."""
+"""Tests for ometeotl_core.model.sensor."""
 
 import pytest
 
-from masm.model.sensor import (
+from ometeotl_core.model.sensor import (
     CoverageRule,
     IdentityNoiseRule,
     NoiseRule,
     Sensor,
 )
-from masm.model.space_relations import SpaceRelation
-from masm.model.spaces import Space
-from masm.model.world import World
+from ometeotl_core.model.space_relations import SpaceRelation
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.world import World
 
 
 def _build_world(world_id: str = "w") -> World:

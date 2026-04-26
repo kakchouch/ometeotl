@@ -3,7 +3,7 @@ title: "UtilityFrame"
 ---
 
 Source:
-- [src/masm/model/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/utility.py)
+- [src/ometeotl_core/model/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/utility.py)
 
 Local role:
 Typed wrapper for scalar or vector utility evaluation results.

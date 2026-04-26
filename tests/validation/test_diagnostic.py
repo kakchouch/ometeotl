@@ -1,11 +1,11 @@
-"""Tests for masm.validation.diagnostic."""
+"""Tests for ometeotl_core.validation.diagnostic."""
 
-from masm.validation.base import (
+from ometeotl_core.validation.base import (
     SEVERITY_ERROR,
     ValidationIssue,
     ValidationResult,
 )
-from masm.validation.diagnostic import DiagnosticBuilder
+from ometeotl_core.validation.diagnostic import DiagnosticBuilder
 
 
 def test_diagnostic_builder_keeps_summary_and_stage():

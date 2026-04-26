@@ -1,8 +1,8 @@
-"""Tests for masm.validation.structural."""
+"""Tests for ometeotl_core.validation.structural."""
 
-from masm.model.goals import Goal, GoalDecompositionTree
-from masm.validation.base import ValidationContext
-from masm.validation.structural import StructuralValidator
+from ometeotl_core.model.goals import Goal, GoalDecompositionTree
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.structural import StructuralValidator
 
 
 def test_structural_validator_accepts_minimal_model_payload():

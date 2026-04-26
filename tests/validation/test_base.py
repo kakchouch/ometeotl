@@ -1,8 +1,8 @@
-"""Tests for masm.validation.base."""
+"""Tests for ometeotl_core.validation.base."""
 
 import pytest
 
-from masm.validation.base import (
+from ometeotl_core.validation.base import (
     SEVERITY_ERROR,
     SEVERITY_INFO,
     SEVERITY_WARNING,

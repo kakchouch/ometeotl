@@ -1,13 +1,13 @@
-"""Tests for masm.model.world."""
+"""Tests for ometeotl_core.model.world."""
 
 import pytest
 
-from masm.model.actors import Actor
-from masm.model.registry import MinimalModelRegistry
-from masm.model.resources import Resource
-from masm.model.space_relations import SpaceRelation
-from masm.model.spaces import Space
-from masm.model.world import World
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.registry import MinimalModelRegistry
+from ometeotl_core.model.resources import Resource
+from ometeotl_core.model.space_relations import SpaceRelation
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.world import World
 
 
 def test_world_instantiation():

@@ -1,16 +1,16 @@
-"""Tests for abstract actor behavior in masm.model.actors."""
+"""Tests for abstract actor behavior in ometeotl_core.model.actors."""
 
 import pytest
 
-from masm.model.actors import (
+from ometeotl_core.model.actors import (
     Actor,
     is_abstract_composite,
     get_concrete_components,
     get_real_world_base,
 )
-from masm.model.registry import WorldModelRegistry
-from masm.model.spaces import Space
-from masm.model.world import World
+from ometeotl_core.model.registry import WorldModelRegistry
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.world import World
 
 
 def _make_registry(*actors: Actor) -> WorldModelRegistry:

@@ -5,19 +5,19 @@ import json
 import pytest
 import yaml
 
-from masm.io import (
+from ometeotl_core.io import (
     world_from_json,
     world_from_mapping,
     world_from_yaml,
     world_to_json,
     world_to_yaml,
 )
-from masm.model.actors import Actor
-from masm.model.resources import Resource
-from masm.model.space_relations import SpaceRelation
-from masm.model.spaces import Space
-from masm.model.world import World
-from masm.validation import (
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.resources import Resource
+from ometeotl_core.model.space_relations import SpaceRelation
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.world import World
+from ometeotl_core.validation import (
     StructuralValidator,
     SyntacticValidator,
     ValidationException,

@@ -3,13 +3,13 @@ title: "World import"
 ---
 
 Source:
-- [src/masm/io/importers.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/io/importers.py)
+- [src/ometeotl_core/io/importers.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/io/importers.py)
 
 Local role:
 Validated reconstruction of a `World` from JSON text, YAML text, or an already-parsed mapping.
 
 Big-picture role:
-The import pipeline composes the existing `SyntacticValidator`, `StructuralValidator`, and `ValidationPipeline` from `masm.validation` with `World.from_dict` from `masm.model`. It keeps parse, validate, and reconstruct as separate internal steps so each failure mode is individually diagnosable. Business logic and serialization rules remain in `model`; validation rules remain in `validation`; IO only orchestrates.
+The import pipeline composes the existing `SyntacticValidator`, `StructuralValidator`, and `ValidationPipeline` from `ometeotl_core.validation` with `World.from_dict` from `ometeotl_core.model`. It keeps parse, validate, and reconstruct as separate internal steps so each failure mode is individually diagnosable. Business logic and serialization rules remain in `model`; validation rules remain in `validation`; IO only orchestrates.
 
 ## `WorldImportResult`
 

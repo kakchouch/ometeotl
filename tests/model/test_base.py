@@ -1,8 +1,8 @@
-"""Tests for masm.model.base."""
+"""Tests for ometeotl_core.model.base."""
 
 import pytest
 
-from masm.model.base import ModelObject
+from ometeotl_core.model.base import ModelObject
 
 
 def test_model_object_instantiation():

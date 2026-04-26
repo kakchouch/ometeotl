@@ -3,7 +3,7 @@ title: "CommandEnvelope"
 ---
 
 Source:
-- [src/masm/core/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/core/authority.py)
+- [src/ometeotl_core/core/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/authority.py)
 
 Local role:
 Canonical command payload consumed by [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).

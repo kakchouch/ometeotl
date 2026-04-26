@@ -1,14 +1,14 @@
-"""Tests for masm.model.actors."""
+"""Tests for ometeotl_core.model.actors."""
 
 import pytest
 
-from masm.model.actors import (
+from ometeotl_core.model.actors import (
     Actor,
     detect_composition_cycle,
     find_parent_composites,
     resolve_component_tree,
 )
-from masm.model.registry import WorldModelRegistry
+from ometeotl_core.model.registry import WorldModelRegistry
 
 
 def test_actor_instantiation():

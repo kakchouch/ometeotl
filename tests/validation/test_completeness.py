@@ -1,7 +1,7 @@
-"""Tests for masm.validation.completeness."""
+"""Tests for ometeotl_core.validation.completeness."""
 
-from masm.validation.base import ValidationContext
-from masm.validation.completeness import (
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.completeness import (
     LEVEL_FULL,
     LEVEL_MINIMAL,
     LEVEL_RECOMMENDED,

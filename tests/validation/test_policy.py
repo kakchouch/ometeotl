@@ -1,8 +1,8 @@
-"""Tests for masm.validation.policy."""
+"""Tests for ometeotl.validation.policy."""
 
 import pytest
 
-from masm.validation import (
+from ometeotl_core.validation import (
     MODE_STRICT,
     PROFILE_ENFORCE_DOMAIN,
     PROFILE_ENFORCE_STRUCTURE,

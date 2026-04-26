@@ -1,10 +1,10 @@
-"""Tests for masm.model.utility."""
+"""Tests for ometeotl_core.model.utility."""
 
 import pytest
 
-from masm.model.utility import UtilityFunction, UtilityFrame
-from masm.model.perception import Perception
-from masm.model.actors import Actor
+from ometeotl_core.model.utility import UtilityFunction, UtilityFrame
+from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.actors import Actor
 
 
 def test_utility_frame_scalar_instantiation():

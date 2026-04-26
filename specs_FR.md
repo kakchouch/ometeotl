@@ -114,7 +114,7 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
 
 ### Implémenté et testé aujourd'hui
 
-1. Modèle d'objets dans `src/masm/model/` :
+1. Modèle d'objets dans `src/ometeotl_core/model/` :
     - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
     - `WorldModelRegistry` et helpers de reconstruction.
 2. Structures spatiales :
@@ -148,18 +148,18 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
     - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
     - `UtilityFunction`, `UtilityFrame`.
-9. Couche utilité/ranking game dans `src/masm/game/` :
+9. Couche utilité/ranking game dans `src/ometeotl_core/game/` :
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
-10. Infrastructure runtime dans `src/masm/core/` :
+10. Infrastructure runtime dans `src/ometeotl_core/core/` :
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
     - Mode autoritaire optionnel pour les mutations possédées par le serveur.
-11. Couche validation dans `src/masm/validation/` :
+11. Couche validation dans `src/ometeotl_core/validation/` :
     - Contrats de validation (`ValidationIssue`, `ValidationContext`, `ValidationResult`, `ValidationException`) et `ValidationPipeline` par étapes.
     - Familles de validateurs : syntaxique, structurel, temporel, spatial, admissibilité, épistémique, complétude.
     - Profils de durcissement : `observe_only`, `enforce_structure`, `enforce_domain`.
     - Diagnostics et suggestions de réparation via `DiagnosticBuilder`.
-12. Interfaces minimales dans `src/masm/model/interfaces.py` :
+12. Interfaces minimales dans `src/ometeotl_core/model/interfaces.py` :
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Contrôle qualité :
     - Tests automatisés dans `tests/model/`, `tests/core/`, `tests/game/` et `tests/validation/`.
@@ -169,17 +169,17 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/masm/io/` pour les workflows dédiés d'import/export.
-- `src/masm/generation/` pour la construction contextuelle ou assistée par LLM.
-- `src/masm/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
-- `src/masm/examples/` pour les mondes de référence et démonstrations de bout en bout.
+- `src/ometeotl_core/io/` pour les workflows dédiés d'import/export.
+- `src/ometeotl_core/generation/` pour la construction contextuelle ou assistée par LLM.
+- `src/ometeotl_core/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
+- `src/ometeotl_core/examples/` pour les mondes de référence et démonstrations de bout en bout.
 
 ### Arborescence source actuelle
 
 ```
 ometeotl/
 ├── src/
-│   └── masm/
+│   └── ometeotl_core/
 │       ├── core/
 │       │   ├── authority.py
 │       │   └── runtime.py

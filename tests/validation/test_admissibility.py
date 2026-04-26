@@ -1,10 +1,10 @@
-"""Tests for masm.validation.admissibility."""
+"""Tests for ometeotl_core.validation.admissibility."""
 
-from masm.model.actors import Actor
-from masm.model.goals import Goal
-from masm.model.perception import Perception
-from masm.validation.admissibility import AdmissibilityValidator
-from masm.validation.base import ValidationContext
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.goals import Goal
+from ometeotl_core.model.perception import Perception
+from ometeotl_core.validation.admissibility import AdmissibilityValidator
+from ometeotl_core.validation.base import ValidationContext
 
 
 def test_admissibility_validator_accepts_admissible_goal():

@@ -1,8 +1,8 @@
-"""Tests for masm.model.space_relations."""
+"""Tests for ometeotl_core.model.space_relations."""
 
 import pytest
 
-from masm.model.space_relations import (
+from ometeotl_core.model.space_relations import (
     SpaceRelation,
     SpaceRelationGraph,
 )

@@ -3,7 +3,7 @@ title: "CommandResult"
 ---
 
 Source:
-- [src/masm/core/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/core/authority.py)
+- [src/ometeotl_core/core/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/authority.py)
 
 Local role:
 Outcome container returned by [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/) after processing a [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/).

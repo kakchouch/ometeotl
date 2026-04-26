@@ -1,18 +1,18 @@
-"""Tests for masm.model.projection."""
+"""Tests for ometeotl_core.model.projection."""
 
 import pytest
 
-from masm.model.actions import (
+from ometeotl_core.model.actions import (
     Action,
     ActionPrerequisite,
     ResourceEffect,
 )
-from masm.model.perception import (
+from ometeotl_core.model.perception import (
     PerceivedComponentLink,
     PerceivedMembership,
     Perception,
 )
-from masm.model.projection import (
+from ometeotl_core.model.projection import (
     ActionProjection,
     DefaultProjectionTool,
     ProjectedPerceptionChange,
@@ -21,10 +21,10 @@ from masm.model.projection import (
     ProjectionBatch,
     project_actions,
 )
-from masm.model.resources import Resource
-from masm.model.sensor import Sensor
-from masm.model.spaces import Space, SpaceObjectMembership
-from masm.model.world import World
+from ometeotl_core.model.resources import Resource
+from ometeotl_core.model.sensor import Sensor
+from ometeotl_core.model.spaces import Space, SpaceObjectMembership
+from ometeotl_core.model.world import World
 
 
 def _build_projection_action() -> Action:
@@ -267,7 +267,7 @@ def test_projection_assumption_from_dict_rejects_non_boolean_satisfied():
 
 def test_projection_appends_component_link_as_projected():
     """Component links appended to a projection are marked as projected."""
-    from masm.model.projection import (
+    from ometeotl_core.model.projection import (
         _append_projected_component_link,
     )
 
@@ -296,7 +296,7 @@ def test_projection_appends_component_link_as_projected():
 
 def test_projection_removes_component_link():
     """Component links can be removed from a projection."""
-    from masm.model.projection import (
+    from ometeotl_core.model.projection import (
         _append_projected_component_link,
         _remove_projected_component_link,
     )
@@ -333,7 +333,7 @@ def test_projection_removes_component_link():
 
 def test_projected_component_link_has_projected_epistemic_status():
     """Projected component links maintain epistemic_status = 'projected'."""
-    from masm.model.projection import (
+    from ometeotl_core.model.projection import (
         _mark_perception_as_projected,
     )
 

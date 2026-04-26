@@ -3,7 +3,7 @@ title: "StrategyNode"
 ---
 
 Source:
-- [src/masm/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py)
+- [src/ometeotl_core/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py)
 
 Local role:
 Strategy node that binds one action id to one input perception and one projected successor perceived state.

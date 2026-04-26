@@ -1,6 +1,6 @@
-"""Tests for masm.model.resources."""
+"""Tests for ometeotl_core.model.resources."""
 
-from masm.model.resources import Resource
+from ometeotl_core.model.resources import Resource
 
 
 def test_resource_instantiation():

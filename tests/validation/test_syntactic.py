@@ -1,7 +1,7 @@
-"""Tests for masm.validation.syntactic."""
+"""Tests for ometeotl_core.validation.syntactic."""
 
-from masm.validation.base import ValidationContext
-from masm.validation.syntactic import SyntacticValidator
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.syntactic import SyntacticValidator
 
 
 def test_syntactic_validator_accepts_valid_json_payload():

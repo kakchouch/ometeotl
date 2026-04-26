@@ -1,11 +1,11 @@
-"""Tests for masm.model.strategies."""
+"""Tests for ometeotl_core.model.strategies."""
 
 import pytest
 
-from masm.model.actions import Action
-from masm.model.perception import Perception
-from masm.model.projection import DefaultProjectionTool
-from masm.model.strategies import (
+from ometeotl_core.model.actions import Action
+from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.projection import DefaultProjectionTool
+from ometeotl_core.model.strategies import (
     Strategy,
     StrategyBuildStep,
     StrategyNode,

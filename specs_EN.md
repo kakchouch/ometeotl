@@ -113,7 +113,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 
 ### Implemented and tested now
 
-1. Core object model in `src/masm/model/`:
+1. Core object model in `src/ometeotl_core/model/`:
     - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
     - `WorldModelRegistry` and reconstruction helpers.
 2. Spatial structures:
@@ -147,18 +147,18 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
     - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
     - `UtilityFunction`, `UtilityFrame`.
-9. Game utility/ranking layer in `src/masm/game/`:
+9. Game utility/ranking layer in `src/ometeotl_core/game/`:
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
-10. Core runtime infrastructure in `src/masm/core/`:
+10. Core runtime infrastructure in `src/ometeotl_core/core/`:
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` and `build_runtime(...)`.
     - Optional authority mode for server-owned mutation boundaries.
-11. Validation layer in `src/masm/validation/`:
+11. Validation layer in `src/ometeotl_core/validation/`:
     - Validation contracts (`ValidationIssue`, `ValidationContext`, `ValidationResult`, `ValidationException`) and staged `ValidationPipeline`.
     - Validator families: syntactic, structural, temporal, spatial, admissibility, epistemic, completeness.
     - Policy hardening profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
     - Diagnostic and repair suggestions through `DiagnosticBuilder`.
-12. Minimum interfaces in `src/masm/model/interfaces.py`:
+12. Minimum interfaces in `src/ometeotl_core/model/interfaces.py`:
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Quality gate:
     - Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
@@ -168,17 +168,17 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 
 The following layers remain incomplete relative to the target architecture and roadmap:
 
-- `src/masm/io/` for dedicated import/export workflows.
-- `src/masm/generation/` for contextual or LLM-assisted construction.
-- `src/masm/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
-- `src/masm/examples/` for reference worlds and end-to-end demonstrations.
+- `src/ometeotl_core/io/` for dedicated import/export workflows.
+- `src/ometeotl_core/generation/` for contextual or LLM-assisted construction.
+- `src/ometeotl_core/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
+- `src/ometeotl_core/examples/` for reference worlds and end-to-end demonstrations.
 
 ### Current source layout
 
 ```
 ometeotl/
 ├── src/
-│   └── masm/
+│   └── ometeotl_core/
 │       ├── core/
 │       │   ├── authority.py
 │       │   └── runtime.py

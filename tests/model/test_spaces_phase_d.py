@@ -1,8 +1,8 @@
-"""Tests for abstract space behavior in masm.model.spaces."""
+"""Tests for abstract space behavior in ometeotl_core.model.spaces."""
 
 import pytest
 
-from masm.model.spaces import Space
+from ometeotl_core.model.spaces import Space
 
 
 def test_space_is_abstract_defaults_false():

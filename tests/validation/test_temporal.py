@@ -1,8 +1,8 @@
-"""Tests for masm.validation.temporal."""
+"""Tests for ometeotl_core.validation.temporal."""
 
-from masm.model.actions import Action
-from masm.validation.base import ValidationContext
-from masm.validation.temporal import TemporalValidator
+from ometeotl_core.model.actions import Action
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.temporal import TemporalValidator
 
 
 def test_temporal_validator_rejects_outside_validity_window():

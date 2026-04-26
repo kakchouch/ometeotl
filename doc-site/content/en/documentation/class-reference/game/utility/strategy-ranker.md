@@ -3,7 +3,7 @@ title: "StrategyRanker"
 ---
 
 Source:
-- [src/masm/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/game/utility.py)
+- [src/ometeotl_core/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/game/utility.py)
 
 Local role:
 Ranks strategies by evaluating projected terminal nodes with a utility function.

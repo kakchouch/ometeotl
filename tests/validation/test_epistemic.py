@@ -1,7 +1,7 @@
-"""Tests for masm.validation.epistemic."""
+"""Tests for ometeotl_core.validation.epistemic."""
 
-from masm.validation.base import ValidationContext
-from masm.validation.epistemic import EpistemicValidator
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.epistemic import EpistemicValidator
 
 
 def test_epistemic_validator_accepts_valid_statuses():

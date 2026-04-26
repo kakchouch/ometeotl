@@ -1,8 +1,8 @@
-"""Tests for masm.model.goals."""
+"""Tests for ometeotl_core.model.goals."""
 
 import pytest
 
-from masm.model.goals import (
+from ometeotl_core.model.goals import (
     Goal,
     GoalBuildStep,
     GoalDecompositionTree,

@@ -3,7 +3,7 @@ title: "ProjectionBatch"
 ---
 
 Source:
-- [src/masm/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/projection.py)
+- [src/ometeotl_core/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/projection.py)
 
 Local role:
 Deterministic batch of [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/) instances for one actor/perception context.

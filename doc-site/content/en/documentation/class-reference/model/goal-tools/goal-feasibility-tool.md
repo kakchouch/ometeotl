@@ -3,7 +3,7 @@ title: "GoalFeasibilityTool"
 ---
 
 Source:
-- [src/masm/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goal_tools.py)
+- [src/ometeotl_core/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goal_tools.py)
 
 Local role:
 Abstract contract for evaluating whether a projected perception can satisfy a goal.

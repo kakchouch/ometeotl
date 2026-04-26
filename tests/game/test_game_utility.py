@@ -1,15 +1,15 @@
-"""Tests for masm.game.utility."""
+"""Tests for ometeotl_core.game.utility."""
 
-from masm.game.utility import (
+from ometeotl_core.game.utility import (
     LexicographicUtility,
     StrategyRanker,
     WeightedSumUtility,
 )
-from masm.model.actions import Action
-from masm.model.actors import Actor
-from masm.model.perception import Perception
-from masm.model.projection import ProjectedPerceptionState
-from masm.model.strategies import (
+from ometeotl_core.model.actions import Action
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.projection import ProjectedPerceptionState
+from ometeotl_core.model.strategies import (
     Strategy,
     StrategyNode,
     StrategyOutcomeBranch,

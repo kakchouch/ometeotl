@@ -3,7 +3,7 @@ title: "GoalBuildStep"
 ---
 
 Source:
-- [src/masm/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goals.py)
+- [src/ometeotl_core/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goals.py)
 
 Local role:
 Recursive declarative node used to build goal hierarchies.

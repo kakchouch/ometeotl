@@ -3,7 +3,7 @@ title: "ModelObject"
 ---
 
 Source:
-- [src/masm/model/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/base.py)
+- [src/ometeotl_core/model/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/base.py)
 
 Local role:
 Universal schema root for core model entities.

@@ -1,8 +1,8 @@
-"""Tests for masm.model.perception."""
+"""Tests for ometeotl_core.model.perception."""
 
 import pytest
 
-from masm.model.perception import (
+from ometeotl_core.model.perception import (
     VALID_EPISTEMIC_STATUSES,
     PerceivedComponentLink,
     PerceivedMembership,
@@ -10,8 +10,8 @@ from masm.model.perception import (
     PerceivedSpace,
     Perception,
 )
-from masm.model.space_relations import SpaceRelation
-from masm.model.spaces import Space, SpaceObjectMembership
+from ometeotl_core.model.space_relations import SpaceRelation
+from ometeotl_core.model.spaces import Space, SpaceObjectMembership
 
 
 def test_perception_instantiation():

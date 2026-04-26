@@ -30,7 +30,7 @@ This project is **actively under development**. The current codebase already imp
 
 As of April 2026, the repository includes:
 
-- A full model core in `src/masm/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
+- A full model core in `src/ometeotl_core/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
 - Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
 - Composite and abstract actor support with explicit `component` links, composition modes, cycle detection, hierarchy traversal, and abstract-space helpers.
 - A perception layer with `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, and `PerceivedComponentLink`.
@@ -47,8 +47,8 @@ As of April 2026, the repository includes:
 
 The implemented architecture follows the separation defined in `specs_EN.md`:
 
-- `src/masm/model/` contains domain behavior and the canonical object graph.
-- `src/masm/core/` contains runtime and authority infrastructure, not domain rules.
+- `src/ometeotl_core/model/` contains domain behavior and the canonical object graph.
+- `src/ometeotl_core/core/` contains runtime and authority infrastructure, not domain rules.
 - Ontological state lives in `World`, `WorldModelRegistry`, `SpaceObjectGraph`, and `SpaceRelationGraph`.
 - Epistemic state lives in `Perception` and its perceived wrappers.
 - Projection derives successor perceived states from actions without mutating ontological truth directly.

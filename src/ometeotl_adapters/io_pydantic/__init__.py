@@ -1,0 +1,1 @@
+# Adapter: IO using Pydantic

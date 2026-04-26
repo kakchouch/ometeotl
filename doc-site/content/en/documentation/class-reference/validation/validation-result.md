@@ -3,7 +3,7 @@ title: "ValidationResult"
 ---
 
 Source:
-- [src/masm/validation/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/base.py)
+- [src/ometeotl_core/validation/base.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/base.py)
 
 Local role:
 Aggregated result of one validator stage or full pipeline execution.

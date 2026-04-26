@@ -3,7 +3,7 @@ title: "RuntimeContext"
 ---
 
 Source:
-- [src/masm/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/core/runtime.py)
+- [src/ometeotl_core/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/runtime.py)
 
 Local role:
 Context manager that bundles one [World](/ometeotl/documentation/class-reference/model/world/world/) with optional [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
@@ -25,7 +25,7 @@ Methods:
 - `close() -> None`
 
 Related function:
-- `build_runtime(...)` in [src/masm/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/core/runtime.py)
+- `build_runtime(...)` in [src/ometeotl_core/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/runtime.py)
 
 Runtime policy options passed through `build_runtime(...)`:
 - `validation_soft_gate`

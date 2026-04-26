@@ -1,14 +1,14 @@
-"""Tests for masm.validation.pipeline."""
+"""Tests for ometeotl_core.validation.pipeline."""
 
 import pytest
 
-from masm.validation.base import (
+from ometeotl_core.validation.base import (
     SEVERITY_ERROR,
     ValidationContext,
     ValidationIssue,
     ValidationResult,
 )
-from masm.validation.pipeline import (
+from ometeotl_core.validation.pipeline import (
     MODE_STRICT,
     MODE_WARN_ONLY,
     ValidationException,

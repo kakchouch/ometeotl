@@ -1,10 +1,10 @@
 ---
 title: "Class Reference"
-description: "One class per page reference for Ometeotl/MASM"
+description: "One class per page reference for Ometeotl/ometeotl_core"
 ---
 
 This section contains one page per implemented class.
-The filetree mirrors the repository architecture in `src/masm/core`, `src/masm/model`, `src/masm/game`, and `src/masm/validation`.
+The filetree mirrors the repository architecture in `src/ometeotl_core/core`, `src/ometeotl_core/model`, `src/ometeotl_core/game`, and `src/ometeotl_core/validation`.
 
 Repository source:
 - [GitHub repository](https://github.com/kakchouch/ometeotl)

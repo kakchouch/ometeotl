@@ -3,7 +3,7 @@ title: "StrategyOutcomeBranch"
 ---
 
 Source:
-- [src/masm/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py)
+- [src/ometeotl_core/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py)
 
 Local role:
 One branch edge leaving a [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) toward an optional child node.

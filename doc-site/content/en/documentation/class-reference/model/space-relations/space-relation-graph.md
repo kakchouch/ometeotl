@@ -3,7 +3,7 @@ title: "SpaceRelationGraph"
 ---
 
 Source:
-- [src/masm/model/space_relations.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/space_relations.py)
+- [src/ometeotl_core/model/space_relations.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/space_relations.py)
 
 Local role:
 Validated relation graph over spaces.

@@ -3,7 +3,7 @@ title: "WorldModelRegistry"
 ---
 
 Source:
-- [src/masm/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/registry.py)
+- [src/ometeotl_core/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/registry.py)
 
 Local role:
 World-scoped in-memory registry of [ModelObject](/ometeotl/documentation/class-reference/model/base/model-object/) instances.

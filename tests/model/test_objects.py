@@ -1,7 +1,7 @@
-"""Tests for masm.model.objects."""
+"""Tests for ometeotl_core.model.objects."""
 
-from masm.model.objects import GenericObject
-from masm.model.spaces import Space, SpaceObjectGraph
+from ometeotl_core.model.objects import GenericObject
+from ometeotl_core.model.spaces import Space, SpaceObjectGraph
 
 
 def test_generic_object_label_and_description():

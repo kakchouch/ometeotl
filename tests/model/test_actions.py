@@ -1,8 +1,8 @@
-"""Tests for masm.model.actions."""
+"""Tests for ometeotl_core.model.actions."""
 
 import pytest
 
-from masm.model.actions import (
+from ometeotl_core.model.actions import (
     Action,
     ActionPrerequisite,
     ResourceEffect,

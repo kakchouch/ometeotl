@@ -1,16 +1,16 @@
-"""Tests for masm.model.registry (WorldModelRegistry, MinimalModelRegistry, reconstruct_model_object)."""
+"""Tests for ometeotl_core.model.registry (WorldModelRegistry, MinimalModelRegistry, reconstruct_model_object)."""
 
 import pytest
 
-from masm.model.actors import Actor
-from masm.model.goals import Goal
-from masm.model.registry import (
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.goals import Goal
+from ometeotl_core.model.registry import (
     MinimalModelRegistry,
     WorldModelRegistry,
     reconstruct_model_object,
 )
-from masm.model.resources import Resource
-from masm.model.spaces import Space
+from ometeotl_core.model.resources import Resource
+from ometeotl_core.model.spaces import Space
 
 # ---------------------------------------------------------------------------
 # WorldModelRegistry
@@ -232,7 +232,7 @@ def test_reconstruct_model_object_custom_factory():
 
 def test_reconstruct_model_object_default_factories_cached():
     """Default factories are reused across calls (cache is consistent)."""
-    from masm.model import registry as reg_module
+    from ometeotl_core.model import registry as reg_module
 
     # Prime the cache
     reg_module._DEFAULT_FACTORIES = None

@@ -1,11 +1,11 @@
-"""Tests for masm.validation.spatial."""
+"""Tests for ometeotl_core.validation.spatial."""
 
-from masm.model.actions import Action
-from masm.model.actors import Actor
-from masm.model.spaces import Space
-from masm.model.world import World
-from masm.validation.base import ValidationContext
-from masm.validation.spatial import SpatialValidator
+from ometeotl_core.model.actions import Action
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.world import World
+from ometeotl_core.validation.base import ValidationContext
+from ometeotl_core.validation.spatial import SpatialValidator
 
 
 def _build_world() -> World:

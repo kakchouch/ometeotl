@@ -1,6 +1,6 @@
 """Tests for model interface exports required by F-26."""
 
-from masm.model import (
+from ometeotl_core.model import (
     ContextualBuildable,
     LLMExportable,
     Serializable,

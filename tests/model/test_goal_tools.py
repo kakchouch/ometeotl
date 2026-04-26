@@ -1,18 +1,18 @@
-"""Tests for masm.model.goal_tools."""
+"""Tests for ometeotl_core.model.goal_tools."""
 
 from __future__ import annotations
 
-from masm.model.actions import Action
-from masm.model.actors import Actor
-from masm.model.goal_tools import (
+from ometeotl_core.model.actions import Action
+from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.goal_tools import (
     DefaultGoalFeasibilityTool,
     GoalAdmissibilityChecker,
     GoalAdmissibilityResult,
     GoalFeasibilityResult,
 )
-from masm.model.goals import Goal
-from masm.model.perception import Perception
-from masm.model.projection import DefaultProjectionTool
+from ometeotl_core.model.goals import Goal
+from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.projection import DefaultProjectionTool
 
 
 def _build_projected_state(*, actor_id: str = "actor-1"):

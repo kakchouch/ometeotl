@@ -1,8 +1,8 @@
-"""Tests for masm.model.spaces."""
+"""Tests for ometeotl_core.model.spaces."""
 
 import pytest
 
-from masm.model.spaces import (
+from ometeotl_core.model.spaces import (
     Space,
     SpaceObjectGraph,
     SpaceObjectMembership,
