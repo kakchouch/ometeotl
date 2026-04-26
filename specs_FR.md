@@ -116,7 +116,7 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
 Les tests locaux révèlent que l’architecture actuelle est trop abstraite pour toute implémentation pratique. Il a été décidé de :
 
 - conserver le code actuel dans un module central `ometeotl_core`, qui doit rester abstrait ;
-- ajouter une couche principale de spécialisation `ometeotl_foundation`, incluant :
+- ajouter une couche principale de spécialisation `ometeotl_foundations`, incluant :
     - spatial : première couche d’implémentation spatiale de `ometeotl_core` ;
     - networks : première couche d’implémentation en théorie des graphes de `ometeotl_core` ;
     - ...
@@ -190,7 +190,7 @@ Les couches suivantes restent incomplètes au regard de l'architecture cible et 
 ometeotl/
 ├── src/
 │   └── ometeotl_core/
-│       ├── core/
+│       ├── generic/
 │       │   ├── authority.py
 │       │   └── runtime.py
 │       ├── io/                 # prévu / scaffold partiel

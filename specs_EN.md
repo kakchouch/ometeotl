@@ -114,7 +114,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
 **04/25/26 - major architectural overhaul:**
   Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
   - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
-  - to add a primary layer of specialization `ometeotl_foundation`, including  :
+  - to add a primary layer of specialization `ometeotl_foundations`, including  :
     - spatial: primary layer of spatial implementation of `ometeotl_core`;
     - networks: primary layer of graph theory implementation of `ometeotl_core`
     - ...
@@ -190,7 +190,7 @@ The following layers remain incomplete relative to the target architecture and r
 ometeotl/
 ├── src/
 │   └── ometeotl_core/
-│       ├── core/
+│       ├── generic/
 │       │   ├── authority.py
 │       │   └── runtime.py
 │       ├── io/                 # planned / partial scaffold
