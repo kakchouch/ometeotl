@@ -50,7 +50,7 @@ As of April 2026, the repository includes:
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
 - A dedicated validation layer with syntactic, structural, temporal, spatial, admissibility, epistemic, and completeness validators, plus policy-based hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`) and diagnostics.
-- A test suite currently collecting `307` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/`, and `tests/ometeotl_core/validation/`.
+- A test suite currently collecting `307` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, and `tests/ometeotl_core/validation/`.
 
 ## Current Architecture
 
