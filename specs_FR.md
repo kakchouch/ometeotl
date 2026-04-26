@@ -172,7 +172,7 @@ Les tests locaux révèlent que l’architecture actuelle est trop abstraite pou
 12. Interfaces minimales dans `src/ometeotl_core/model/interfaces.py` :
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Contrôle qualité :
-    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/core/`, `tests/ometeotl_core/game/` et `tests/ometeotl_core/validation/`.
+    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/` et `tests/ometeotl_core/validation/`.
     - Base actuelle : `307` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
