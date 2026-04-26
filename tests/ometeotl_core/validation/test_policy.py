@@ -1,4 +1,4 @@
-"""Tests for ometeotl.validation.policy."""
+"""Tests for ometeotl_core.validation.policy."""
 
 import pytest
 
