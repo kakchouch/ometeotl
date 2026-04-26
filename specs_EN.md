@@ -158,7 +158,7 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
     - `UtilityFunction`, `UtilityFrame`.
 9. Game utility/ranking layer in `src/ometeotl_core/game/`:
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
-10. Core runtime infrastructure in `src/ometeotl_core/core/`:
+10. Core runtime infrastructure in `src/ometeotl_core/generic/`:
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` and `build_runtime(...)`.
     - Optional authority mode for server-owned mutation boundaries.
