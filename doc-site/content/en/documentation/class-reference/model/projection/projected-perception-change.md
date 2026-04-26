@@ -3,7 +3,7 @@ title: "ProjectedPerceptionChange"
 ---
 
 Source:
-- [src/masm/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/projection.py)
+- [src/ometeotl_core/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/projection.py)
 
 Local role:
 One explicit change applied while deriving a successor perceived state from an action projection.

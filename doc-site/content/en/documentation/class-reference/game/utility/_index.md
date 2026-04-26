@@ -2,7 +2,7 @@
 title: "Game utility.py"
 ---
 
-Classes defined in `src/masm/game/utility.py`.
+Classes defined in `src/ometeotl_core/game/utility.py`.
 
 - [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/)
 - [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/)

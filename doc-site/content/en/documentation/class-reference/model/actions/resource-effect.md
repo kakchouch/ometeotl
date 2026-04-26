@@ -3,7 +3,7 @@ title: "ResourceEffect"
 ---
 
 Source:
-- [src/masm/model/actions.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/actions.py)
+- [src/ometeotl_core/model/actions.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/actions.py)
 
 Local role:
 Describes one resource effect of one [Action](/ometeotl/documentation/class-reference/model/actions/action/).

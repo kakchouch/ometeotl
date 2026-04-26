@@ -3,7 +3,7 @@ title: "DefaultProjectionTool"
 ---
 
 Source:
-- [src/masm/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/projection.py)
+- [src/ometeotl_core/model/projection.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/projection.py)
 
 Local role:
 Minimal concrete [ProjectionTool](/ometeotl/documentation/class-reference/model/projection/projection-tool/) that turns action/perception/resource inputs into explicit assumptions and one projected successor perceived state without executing actions or building strategy nodes.
@@ -27,7 +27,7 @@ Resource projection modes:
 - **Stock** (`resource_mode == "stock"` and `quantity != 1.0`): writes a cumulative delta to `perception.context["projected_stock_deltas"]` instead of changing memberships.
 
 Related module-level function:
-- [`reconstruct_model_object`](/ometeotl/documentation/class-reference/model/registry/reconstruct-model-object/) in [src/masm/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/registry.py)
+- [`reconstruct_model_object`](/ometeotl/documentation/class-reference/model/registry/reconstruct-model-object/) in [src/ometeotl_core/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/registry.py)
 
 See also:
 - [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/)

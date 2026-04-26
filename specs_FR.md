@@ -112,9 +112,19 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 
 Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, la téléologie/utilité, le ranking game, ainsi que la frontière d'autorité/runtime.
 
+**25/04/26 - refonte architecturale majeure :**
+Les tests locaux révèlent que l’architecture actuelle est trop abstraite pour toute implémentation pratique. Il a été décidé de :
+
+- conserver le code actuel dans un module central `ometeotl_core`, qui doit rester abstrait ;
+- ajouter une couche principale de spécialisation `ometeotl_foundations`, incluant :
+    - spatial : première couche d’implémentation spatiale de `ometeotl_core` ;
+    - networks : première couche d’implémentation en théorie des graphes de `ometeotl_core` ;
+    - ...
+- ajouter enfin une couche d’adaptateurs `ometeotl_adapters`, qui implémente chaque couche de spécialisation avec une bibliothèque reconnue.
+
 ### Implémenté et testé aujourd'hui
 
-1. Modèle d'objets dans `src/masm/model/` :
+1. Modèle d'objets dans `src/ometeotl_core/model/` :
     - `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
     - `WorldModelRegistry` et helpers de reconstruction.
 2. Structures spatiales :
@@ -148,39 +158,39 @@ Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dis
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
     - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
     - `UtilityFunction`, `UtilityFrame`.
-9. Couche utilité/ranking game dans `src/masm/game/` :
+9. Couche utilité/ranking game dans `src/ometeotl_core/game/` :
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
-10. Infrastructure runtime dans `src/masm/core/` :
+10. Infrastructure runtime dans `src/ometeotl_core/generic/` :
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
     - Mode autoritaire optionnel pour les mutations possédées par le serveur.
-11. Couche validation dans `src/masm/validation/` :
+11. Couche validation dans `src/ometeotl_core/validation/` :
     - Contrats de validation (`ValidationIssue`, `ValidationContext`, `ValidationResult`, `ValidationException`) et `ValidationPipeline` par étapes.
     - Familles de validateurs : syntaxique, structurel, temporel, spatial, admissibilité, épistémique, complétude.
     - Profils de durcissement : `observe_only`, `enforce_structure`, `enforce_domain`.
     - Diagnostics et suggestions de réparation via `DiagnosticBuilder`.
-12. Interfaces minimales dans `src/masm/model/interfaces.py` :
+12. Interfaces minimales dans `src/ometeotl_core/model/interfaces.py` :
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
 13. Contrôle qualité :
-    - Tests automatisés dans `tests/model/`, `tests/core/`, `tests/game/` et `tests/validation/`.
-    - Base actuelle : `307` tests collectés.
+    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/` et `tests/ometeotl_core/validation/`.
+    - Base actuelle : `317` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/masm/io/` pour les workflows dédiés d'import/export.
-- `src/masm/generation/` pour la construction contextuelle ou assistée par LLM.
-- `src/masm/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
-- `src/masm/examples/` pour les mondes de référence et démonstrations de bout en bout.
+- `src/ometeotl_core/io/` pour les workflows dédiés d'import/export.
+- `src/ometeotl_core/generation/` pour la construction contextuelle ou assistée par LLM.
+- `src/ometeotl_core/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
+- `src/ometeotl_core/examples/` pour les mondes de référence et démonstrations de bout en bout.
 
 ### Arborescence source actuelle
 
 ```
 ometeotl/
 ├── src/
-│   └── masm/
-│       ├── core/
+│   └── ometeotl_core/
+│       ├── generic/
 │       │   ├── authority.py
 │       │   └── runtime.py
 │       ├── io/                 # prévu / scaffold partiel
@@ -217,10 +227,12 @@ ometeotl/
 │           ├── strategies.py
 │           ├── utility.py
 │           └── world.py
-└── tests/
-    ├── core/
+└── tests/ometeotl_core/
+    ├── generic/
     ├── game/
-    └── model/
+    ├── io/
+    ├── model/
+    └── validation/
 ```
 
 ### Lecture pratique de la V1

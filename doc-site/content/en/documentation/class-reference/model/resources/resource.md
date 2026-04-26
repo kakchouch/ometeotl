@@ -3,7 +3,7 @@ title: "Resource"
 ---
 
 Source:
-- [src/masm/model/resources.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/resources.py)
+- [src/ometeotl_core/model/resources.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/resources.py)
 
 Local role:
 Represents modeled resources with rivalry and transferability semantics.

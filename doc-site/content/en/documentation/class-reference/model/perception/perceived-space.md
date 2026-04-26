@@ -3,7 +3,7 @@ title: "PerceivedSpace"
 ---
 
 Source:
-- [src/masm/model/perception.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/perception.py)
+- [src/ometeotl_core/model/perception.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/perception.py)
 
 Local role:
 Epistemic wrapper around one copied [Space](/ometeotl/documentation/class-reference/model/spaces/space/).

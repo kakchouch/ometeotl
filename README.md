@@ -28,9 +28,18 @@ This project is **actively under development**. The current codebase already imp
 
 ## Current Implementation Status
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundations`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
 As of April 2026, the repository includes:
 
-- A full model core in `src/masm/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
+- A full model core in `src/ometeotl_core/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
 - Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
 - Composite and abstract actor support with explicit `component` links, composition modes, cycle detection, hierarchy traversal, and abstract-space helpers.
 - A perception layer with `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, and `PerceivedComponentLink`.
@@ -41,14 +50,14 @@ As of April 2026, the repository includes:
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
 - A dedicated validation layer with syntactic, structural, temporal, spatial, admissibility, epistemic, and completeness validators, plus policy-based hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`) and diagnostics.
-- A test suite currently collecting `307` tests across `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
+- A test suite currently collecting `317` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
 
 ## Current Architecture
 
 The implemented architecture follows the separation defined in `specs_EN.md`:
 
-- `src/masm/model/` contains domain behavior and the canonical object graph.
-- `src/masm/core/` contains runtime and authority infrastructure, not domain rules.
+- `src/ometeotl_core/model/` contains domain behavior and the canonical object graph.
+- `src/ometeotl_core/generic/` contains runtime and authority infrastructure, not domain rules.
 - Ontological state lives in `World`, `WorldModelRegistry`, `SpaceObjectGraph`, and `SpaceRelationGraph`.
 - Epistemic state lives in `Perception` and its perceived wrappers.
 - Projection derives successor perceived states from actions without mutating ontological truth directly.

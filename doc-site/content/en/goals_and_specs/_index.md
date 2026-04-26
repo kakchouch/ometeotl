@@ -111,9 +111,19 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 
 The repository now contains a broader functional V1-incremental core spanning model, perception, projection, strategy, and authority/runtime boundaries.
 
+**04/25/26 - major architectural overhaul:**
+  Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
+  - to keep the current code in a core module `ometeotl_core`, which is intended to remain abstract;
+  - to add a primary layer of specialization `ometeotl_foundations`, including  :
+    - spatial: primary layer of spatial implementation of `ometeotl_core`;
+    - networks: primary layer of graph theory implementation of `ometeotl_core`
+    - ...
+  - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
+
+
 ### Implemented and tested now
 
-1. Core object model in `src/masm/model/`:
+1. Core object model in `src/ometeotl_core/model/`:
 	- `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`.
 	- `WorldModelRegistry` and reconstruction helpers.
 2. Spatial structures:
@@ -140,21 +150,21 @@ The repository now contains a broader functional V1-incremental core spanning mo
 8. Core runtime infrastructure:
 	- `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
 	- `RuntimeContext` and `build_runtime(...)`.
-9. Validation layer in `src/masm/validation/`:
+9. Validation layer in `src/ometeotl_core/validation/`:
 	- Validation contracts and staged pipeline.
 	- Validator families: syntactic, structural, temporal, spatial, admissibility, epistemic, completeness.
 	- Policy profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
 	- Diagnostics and repair suggestions.
 10. Quality gate:
-	- Automated tests in `tests/model/`, `tests/core/`, `tests/game/`, and `tests/validation/`.
-	- Current baseline: `307` collected tests.
+	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
+	- Current baseline: `317` collected tests.
 
 ### Still incomplete or planned
 
-- `src/masm/io/` for dedicated import/export workflows.
-- `src/masm/generation/` for contextual construction and repair.
-- `src/masm/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
-- `src/masm/examples/` for reference worlds and end-to-end demos.
+- `src/ometeotl_core/io/` for dedicated import/export workflows.
+- `src/ometeotl_core/generation/` for contextual construction and repair.
+- `src/ometeotl_core/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
+- `src/ometeotl_core/examples/` for reference worlds and end-to-end demos.
 
 ### Current TODO priorities
 
@@ -163,4 +173,4 @@ The repository now contains a broader functional V1-incremental core spanning mo
 3. Implement the game layer.
 4. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
 5. Add examples and end-to-end demonstrations.
-- `src/masm/examples/`
+- `src/ometeotl_core/examples/`

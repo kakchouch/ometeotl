@@ -3,13 +3,13 @@ title: "Validators Overview"
 ---
 
 Sources:
-- [src/masm/validation/syntactic.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/syntactic.py)
-- [src/masm/validation/structural.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/structural.py)
-- [src/masm/validation/temporal.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/temporal.py)
-- [src/masm/validation/spatial.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/spatial.py)
-- [src/masm/validation/admissibility.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/admissibility.py)
-- [src/masm/validation/epistemic.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/epistemic.py)
-- [src/masm/validation/completeness.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/completeness.py)
+- [src/ometeotl_core/validation/syntactic.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/syntactic.py)
+- [src/ometeotl_core/validation/structural.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/structural.py)
+- [src/ometeotl_core/validation/temporal.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/temporal.py)
+- [src/ometeotl_core/validation/spatial.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/spatial.py)
+- [src/ometeotl_core/validation/admissibility.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/admissibility.py)
+- [src/ometeotl_core/validation/epistemic.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/epistemic.py)
+- [src/ometeotl_core/validation/completeness.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/completeness.py)
 
 Implemented validator families:
 - `SyntacticValidator`: JSON/YAML payload parse validity.

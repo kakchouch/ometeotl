@@ -3,7 +3,7 @@ title: "DiagnosticBuilder"
 ---
 
 Source:
-- [src/masm/validation/diagnostic.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/validation/diagnostic.py)
+- [src/ometeotl_core/validation/diagnostic.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/validation/diagnostic.py)
 
 Local role:
 Builds user-facing diagnostics from `ValidationResult`.

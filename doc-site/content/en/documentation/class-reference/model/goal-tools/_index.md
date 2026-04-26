@@ -2,7 +2,7 @@
 title: "Model goal_tools.py"
 ---
 
-Classes defined in `src/masm/model/goal_tools.py`.
+Classes defined in `src/ometeotl_core/model/goal_tools.py`.
 
 - [GoalFeasibilityResult](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-result/)
 - [GoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-tool/)

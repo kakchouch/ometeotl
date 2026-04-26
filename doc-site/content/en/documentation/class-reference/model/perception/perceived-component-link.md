@@ -3,7 +3,7 @@ title: "PerceivedComponentLink"
 ---
 
 Source:
-- [src/masm/model/perception.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/perception.py)
+- [src/ometeotl_core/model/perception.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/perception.py)
 
 Local role:
 Epistemic wrapper for one perceived composition edge between a composite actor and one component actor.

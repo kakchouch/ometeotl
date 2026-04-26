@@ -3,7 +3,7 @@ title: "CoverageRule"
 ---
 
 Source:
-- [src/masm/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/sensor.py)
+- [src/ometeotl_core/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/sensor.py)
 
 Local role:
 Abstract visibility policy.

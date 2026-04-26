@@ -3,7 +3,7 @@ title: "Strategy"
 ---
 
 Source:
-- [src/masm/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/strategies.py)
+- [src/ometeotl_core/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py)
 
 Local role:
 Declarative strategy tree composed of [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) objects and their [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/) links.

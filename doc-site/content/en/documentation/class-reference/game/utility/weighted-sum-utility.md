@@ -3,7 +3,7 @@ title: "WeightedSumUtility"
 ---
 
 Source:
-- [src/masm/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/game/utility.py)
+- [src/ometeotl_core/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/game/utility.py)
 
 Local role:
 Scalar utility combinator that computes weighted linear sums over metrics.

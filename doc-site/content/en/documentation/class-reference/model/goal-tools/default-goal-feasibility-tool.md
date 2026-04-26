@@ -3,7 +3,7 @@ title: "DefaultGoalFeasibilityTool"
 ---
 
 Source:
-- [src/masm/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goal_tools.py)
+- [src/ometeotl_core/model/goal_tools.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goal_tools.py)
 
 Local role:
 Default implementation of [GoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/goal-feasibility-tool/) based on deterministic condition-key matching.

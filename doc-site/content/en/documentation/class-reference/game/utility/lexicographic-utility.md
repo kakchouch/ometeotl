@@ -3,7 +3,7 @@ title: "LexicographicUtility"
 ---
 
 Source:
-- [src/masm/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/game/utility.py)
+- [src/ometeotl_core/game/utility.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/game/utility.py)
 
 Local role:
 Vector-valued utility combinator with explicit criterion ordering and direction.

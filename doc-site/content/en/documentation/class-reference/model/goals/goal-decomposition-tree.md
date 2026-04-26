@@ -3,7 +3,7 @@ title: "GoalDecompositionTree"
 ---
 
 Source:
-- [src/masm/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/goals.py)
+- [src/ometeotl_core/model/goals.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/goals.py)
 
 Local role:
 Container for one goal hierarchy rooted at a single goal id.

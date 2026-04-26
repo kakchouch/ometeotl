@@ -3,7 +3,7 @@ title: "Sensor"
 ---
 
 Source:
-- [src/masm/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/masm/model/sensor.py)
+- [src/ometeotl_core/model/sensor.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/sensor.py)
 
 Local role:
 Builds one [Perception](/ometeotl/documentation/class-reference/model/perception/perception/) for one actor from one [World](/ometeotl/documentation/class-reference/model/world/world/).
