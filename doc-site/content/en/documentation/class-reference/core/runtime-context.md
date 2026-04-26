@@ -3,7 +3,7 @@ title: "RuntimeContext"
 ---
 
 Source:
-- [src/ometeotl_core/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/runtime.py)
+- [src/ometeotl_core/generic/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/generic/runtime.py)
 
 Local role:
 Context manager that bundles one [World](/ometeotl/documentation/class-reference/model/world/world/) with optional [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
