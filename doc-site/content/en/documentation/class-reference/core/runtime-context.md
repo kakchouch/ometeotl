@@ -25,7 +25,7 @@ Methods:
 - `close() -> None`
 
 Related function:
-- `build_runtime(...)` in [src/ometeotl_core/core/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/runtime.py)
+- `build_runtime(...)` in [src/ometeotl_core/generic/runtime.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/generic/runtime.py)
 
 Runtime policy options passed through `build_runtime(...)`:
 - `validation_soft_gate`
