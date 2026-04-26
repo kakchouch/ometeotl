@@ -1,4 +1,4 @@
-"""Tests for ometeotl_core.core.runtime."""
+"""Tests for ometeotl_core.generic.runtime."""
 
 import pytest
 
