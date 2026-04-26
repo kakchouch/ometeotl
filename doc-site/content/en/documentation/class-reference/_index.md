@@ -4,7 +4,7 @@ description: "One class per page reference for Ometeotl/ometeotl_core"
 ---
 
 This section contains one page per implemented class.
-The filetree mirrors the repository architecture in `src/ometeotl_core/core`, `src/ometeotl_core/model`, `src/ometeotl_core/game`, and `src/ometeotl_core/validation`.
+The filetree mirrors the repository architecture in `src/ometeotl_core/generic`, `src/ometeotl_core/model`, `src/ometeotl_core/game`, and `src/ometeotl_core/validation`.
 
 Repository source:
 - [GitHub repository](https://github.com/kakchouch/ometeotl)
