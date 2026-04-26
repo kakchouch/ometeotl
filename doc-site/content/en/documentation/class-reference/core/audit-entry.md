@@ -3,7 +3,7 @@ title: "AuditEntry"
 ---
 
 Source:
-- [src/ometeotl_core/core/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/core/authority.py)
+- [src/ometeotl_core/generic/authority.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/generic/authority.py)
 
 Local role:
 Immutable audit row recording one command decision.
