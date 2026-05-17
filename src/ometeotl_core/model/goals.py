@@ -19,6 +19,8 @@ from typing import Any, List, Mapping, Optional
 
 from .base import (
     _base_kwargs_from_typed_payload,
+    _dict_from_data,
+    _str_from_data,
     JsonMap,
     ModelObject,
     ObjectId,
@@ -79,9 +81,7 @@ class Goal(ModelObject):
     actor_id: ObjectId = ""
     kind: str = "final"  # "final" or "intermediate"
     priority: float = 1.0
-    status: str = (
-        "active"  # "active", "achieved", "abandoned", "blocked"
-    )
+    status: str = "active"  # "active", "achieved", "abandoned", "blocked"
     horizon: JsonMap = field(default_factory=dict)
     target_condition: JsonMap = field(default_factory=dict)
     target_perception_id: Optional[ObjectId] = None
@@ -93,9 +93,7 @@ class Goal(ModelObject):
         if self.object_type != "goal":
             self.object_type = "goal"
         _require_non_empty(self.id, "Goal id cannot be empty")
-        _require_non_empty(
-            self.actor_id, "Goal actor_id cannot be empty"
-        )
+        _require_non_empty(self.actor_id, "Goal actor_id cannot be empty")
         _require_in(
             self.kind,
             ("final", "intermediate"),
@@ -115,33 +113,21 @@ class Goal(ModelObject):
         """Register a child goal, maintaining sorted unique list."""
         _require_non_empty(goal_id, "goal_id cannot be empty")
         if goal_id not in self.child_goal_ids:
-            self.child_goal_ids = sorted(
-                list(set(self.child_goal_ids) | {goal_id})
-            )
+            self.child_goal_ids = sorted(list(set(self.child_goal_ids) | {goal_id}))
 
     def remove_child_goal(self, goal_id: ObjectId) -> None:
         """Remove a child goal from the list."""
-        self.child_goal_ids = [
-            gid for gid in self.child_goal_ids if gid != goal_id
-        ]
+        self.child_goal_ids = [gid for gid in self.child_goal_ids if gid != goal_id]
 
     def add_strategy(self, strategy_id: ObjectId) -> None:
         """Register a strategy aimed at this goal, maintaining sorted unique list."""
-        _require_non_empty(
-            strategy_id, "strategy_id cannot be empty"
-        )
+        _require_non_empty(strategy_id, "strategy_id cannot be empty")
         if strategy_id not in self.strategy_ids:
-            self.strategy_ids = sorted(
-                list(set(self.strategy_ids) | {strategy_id})
-            )
+            self.strategy_ids = sorted(list(set(self.strategy_ids) | {strategy_id}))
 
     def remove_strategy(self, strategy_id: ObjectId) -> None:
         """Remove a strategy from the list."""
-        self.strategy_ids = [
-            sid
-            for sid in self.strategy_ids
-            if sid != strategy_id
-        ]
+        self.strategy_ids = [sid for sid in self.strategy_ids if sid != strategy_id]
 
     def to_dict(self) -> JsonMap:
         """Canonical serialization of the goal."""
@@ -153,9 +139,7 @@ class Goal(ModelObject):
                 "priority": float(self.priority),
                 "status": self.status,
                 "horizon": _canonical_json_map(self.horizon),
-                "target_condition": _canonical_json_map(
-                    self.target_condition
-                ),
+                "target_condition": _canonical_json_map(self.target_condition),
                 "target_perception_id": self.target_perception_id,
                 "parent_goal_id": self.parent_goal_id,
                 "child_goal_ids": sorted(self.child_goal_ids),
@@ -170,31 +154,21 @@ class Goal(ModelObject):
         return cls(
             **_base_kwargs_from_typed_payload(data, "goal"),
             actor_id=_require_non_null_string(data, "actor_id"),
-            kind=str(data.get("kind") or "final"),
+            kind=_str_from_data(data, "kind", "final"),
             priority=float(data.get("priority") or 1.0),
-            status=str(data.get("status") or "active"),
-            horizon=dict(data.get("horizon") or {}),
-            target_condition=dict(
-                data.get("target_condition") or {}
-            ),
+            status=_str_from_data(data, "status", "active"),
+            horizon=_dict_from_data(data, "horizon"),
+            target_condition=_dict_from_data(data, "target_condition"),
             target_perception_id=(
                 str(data["target_perception_id"])
                 if data.get("target_perception_id")
                 else None
             ),
             parent_goal_id=(
-                str(data["parent_goal_id"])
-                if data.get("parent_goal_id")
-                else None
+                str(data["parent_goal_id"]) if data.get("parent_goal_id") else None
             ),
-            child_goal_ids=[
-                str(gid)
-                for gid in (data.get("child_goal_ids") or [])
-            ],
-            strategy_ids=[
-                str(sid)
-                for sid in (data.get("strategy_ids") or [])
-            ],
+            child_goal_ids=[str(gid) for gid in (data.get("child_goal_ids") or [])],
+            strategy_ids=[str(sid) for sid in (data.get("strategy_ids") or [])],
         )
 
 
@@ -300,28 +274,21 @@ class GoalDecompositionTree:
             return False
 
         if has_cycle_from(self.root_goal_id):
-            raise ValueError(
-                "GoalDecompositionTree contains a cycle"
-            )
+            raise ValueError("GoalDecompositionTree contains a cycle")
 
     def to_dict(self) -> JsonMap:
         """Canonical serialization of the tree."""
         return {
             "root_goal_id": self.root_goal_id,
             "goals": {
-                goal_id: goal.to_dict()
-                for goal_id, goal in sorted(self.goals.items())
+                goal_id: goal.to_dict() for goal_id, goal in sorted(self.goals.items())
             },
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "GoalDecompositionTree":
+    def from_dict(cls, data: Mapping[str, Any]) -> "GoalDecompositionTree":
         """Reconstruct a goal decomposition tree from mapping data."""
-        root_goal_id = _require_non_null_string(
-            data, "root_goal_id"
-        )
+        root_goal_id = _require_non_null_string(data, "root_goal_id")
         goals_data = data.get("goals") or {}
         goals = {
             goal_id: Goal.from_dict(goal_data)
@@ -332,9 +299,7 @@ class GoalDecompositionTree:
         return tree
 
 
-def _default_goal_id(
-    index: int, actor_id: ObjectId, kind: str
-) -> ObjectId:
+def _default_goal_id(index: int, actor_id: ObjectId, kind: str) -> ObjectId:
     """Generate a deterministic goal ID."""
     return f"goal-{index:04d}-{actor_id}-{kind}"
 
@@ -376,9 +341,7 @@ def build_goal_hierarchy(
 
         Returns: (root_goal_from_step, all_goals_including_descendants)
         """
-        goal_id = _default_hierarchy_goal_id(
-            path, step.actor_id, step.kind
-        )
+        goal_id = _default_hierarchy_goal_id(path, step.actor_id, step.kind)
         goal = Goal(
             id=goal_id,
             actor_id=step.actor_id,
@@ -396,15 +359,11 @@ def build_goal_hierarchy(
         all_goals: list[Goal] = [goal]
         child_goal_ids: list[ObjectId] = []
 
-        for child_index, child_step in enumerate(
-            step.children, start=1
-        ):
-            child_goal, descendant_goals = (
-                _build_goals_from_step(
-                    child_step,
-                    path + (child_index,),
-                    parent_goal_id=goal_id,
-                )
+        for child_index, child_step in enumerate(step.children, start=1):
+            child_goal, descendant_goals = _build_goals_from_step(
+                child_step,
+                path + (child_index,),
+                parent_goal_id=goal_id,
             )
             all_goals.extend(descendant_goals)
             child_goal_ids.append(child_goal.id)
@@ -414,14 +373,10 @@ def build_goal_hierarchy(
 
         return goal, all_goals
 
-    root_goal, all_goals = _build_goals_from_step(
-        root_step, (1,), parent_goal_id=None
-    )
+    root_goal, all_goals = _build_goals_from_step(root_step, (1,), parent_goal_id=None)
 
     # Assemble the tree
     goals_dict = {goal.id: goal for goal in all_goals}
-    tree = GoalDecompositionTree(
-        root_goal_id=root_goal.id, goals=goals_dict
-    )
+    tree = GoalDecompositionTree(root_goal_id=root_goal.id, goals=goals_dict)
     tree.validate_tree()
     return tree
