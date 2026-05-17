@@ -401,8 +401,9 @@ def _str_from_data(
         A string with the extracted value or the provided default
     """
     value = data.get(key)
-    if value is None:
+    if value is None or value == "":
         return default
+
     return str(value)
 
 
