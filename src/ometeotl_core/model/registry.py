@@ -7,9 +7,10 @@ but only those considered minimal for the simulation.
 """
 
 from __future__ import annotations
+
 from typing import Any, Callable, Dict, Mapping, Optional
 
-from .base import JsonMap, ModelObject, ObjectId
+from .base import JsonMap, ModelObject, ObjectId, _dict_from_data, _str_from_data
 
 ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
 
@@ -44,15 +45,11 @@ def _get_default_factories() -> Dict[str, ObjectFactory]:
 
 def reconstruct_model_object(
     raw_object: Mapping[str, Any],
-    object_factories: Optional[
-        Mapping[str, ObjectFactory]
-    ] = None,
+    object_factories: Optional[Mapping[str, ObjectFactory]] = None,
 ) -> ModelObject:
     """Reconstruct a model object from its canonical serialized form."""
     if object_factories:
-        factories: Dict[str, ObjectFactory] = dict(
-            _get_default_factories()
-        )
+        factories: Dict[str, ObjectFactory] = dict(_get_default_factories())
         factories.update(
             {
                 str(type_name).lower(): factory
@@ -63,9 +60,7 @@ def reconstruct_model_object(
         factories = _get_default_factories()
 
     object_payload = dict(raw_object)
-    object_type = str(
-        object_payload.get("object_type") or ""
-    ).lower()
+    object_type = _str_from_data(object_payload, "object_type", "").lower()
     factory = factories.get(object_type, ModelObject.from_dict)
     return factory(object_payload)
 
@@ -79,9 +74,7 @@ class WorldModelRegistry:
 
     def __init__(self) -> None:
         self._instances: Dict[ObjectId, ModelObject] = {}
-        self._mutation_guard: Optional[
-            Callable[[Optional[str]], None]
-        ] = None
+        self._mutation_guard: Optional[Callable[[Optional[str]], None]] = None
 
     def set_mutation_guard(
         self,
@@ -93,9 +86,7 @@ class WorldModelRegistry:
         """
         self._mutation_guard = guard
 
-    def _assert_mutation_allowed(
-        self, authority_token: Optional[str]
-    ) -> None:
+    def _assert_mutation_allowed(self, authority_token: Optional[str]) -> None:
         if self._mutation_guard is None:
             return
         self._mutation_guard(authority_token)
@@ -109,9 +100,7 @@ class WorldModelRegistry:
         self._assert_mutation_allowed(authority_token)
         existing = self._instances.get(obj.id)
         if existing is not None and existing is not obj:
-            raise ValueError(
-                f"Duplicate model object id: {obj.id}"
-            )
+            raise ValueError(f"Duplicate model object id: {obj.id}")
         self._instances[obj.id] = obj
 
     def unregister(
@@ -131,9 +120,7 @@ class WorldModelRegistry:
         """Return the registered object for the given ID, if any."""
         return self._instances.get(obj_id)
 
-    def clear(
-        self, authority_token: Optional[str] = None
-    ) -> None:
+    def clear(self, authority_token: Optional[str] = None) -> None:
         """Clear the registry."""
         self._assert_mutation_allowed(authority_token)
         self._instances.clear()
@@ -147,21 +134,15 @@ class WorldModelRegistry:
         return {
             "objects": {
                 object_id: obj.to_dict()
-                for object_id, obj in sorted(
-                    self._instances.items()
-                )
+                for object_id, obj in sorted(self._instances.items())
             }
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "WorldModelRegistry":
+    def from_dict(cls, data: Mapping[str, Any]) -> "WorldModelRegistry":
         """Reconstruct a registry from canonical serialized objects."""
         registry = cls()
-        for object_id, raw_object in sorted(
-            dict(data.get("objects") or {}).items()
-        ):
+        for object_id, raw_object in sorted(_dict_from_data(data, "objects").items()):
             obj = reconstruct_model_object(raw_object)
             if obj.id != str(object_id):
                 raise ValueError(
@@ -193,9 +174,7 @@ class MinimalModelRegistry:
         """
         existing = cls._instances.get(obj.id)
         if existing is not None and existing is not obj:
-            raise ValueError(
-                f"Duplicate model object id: {obj.id}"
-            )
+            raise ValueError(f"Duplicate model object id: {obj.id}")
         cls._instances[obj.id] = obj
 
     @classmethod

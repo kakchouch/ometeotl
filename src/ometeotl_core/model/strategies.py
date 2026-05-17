@@ -25,6 +25,8 @@ from typing import Any, Iterable, List, Mapping, Optional
 
 from .base import (
     _base_kwargs_from_typed_payload,
+    _dict_from_data,
+    _str_from_data,
     JsonMap,
     ModelObject,
     ObjectId,
@@ -49,9 +51,7 @@ class StrategyBuildStep:
     """Recursive specification used by the minimal strategy builders."""
 
     action: Action
-    children: list["StrategyBuildStep"] = field(
-        default_factory=list
-    )
+    children: list["StrategyBuildStep"] = field(default_factory=list)
     branch_label: str = "success"
     branch_probability: Optional[float] = None
     branch_condition: JsonMap = field(default_factory=dict)
@@ -108,28 +108,20 @@ class StrategyOutcomeBranch:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "StrategyOutcomeBranch":
+    def from_dict(cls, data: Mapping[str, Any]) -> "StrategyOutcomeBranch":
         """Deserialize a branch from mapping data."""
         probability_raw = data.get("probability")
         return cls(
-            branch_id=_require_non_null_string(
-                data, "branch_id"
-            ),
-            label=str(data.get("label") or "success"),
+            branch_id=_require_non_null_string(data, "branch_id"),
+            label=_str_from_data(data, "label", "success"),
             child_node_id=(
-                str(data["child_node_id"])
-                if data.get("child_node_id")
-                else None
+                str(data["child_node_id"]) if data.get("child_node_id") else None
             ),
             probability=(
-                float(probability_raw)
-                if probability_raw is not None
-                else None
+                float(probability_raw) if probability_raw is not None else None
             ),
-            condition=dict(data.get("condition") or {}),
-            metadata=dict(data.get("metadata") or {}),
+            condition=_dict_from_data(data, "condition"),
+            metadata=_dict_from_data(data, "metadata"),
         )
 
 
@@ -147,42 +139,25 @@ class StrategyNode:
     action_id: ObjectId
     source_perception_id: Optional[ObjectId] = None
     projected_state: Optional[ProjectedPerceptionState] = None
-    outcome_branches: List[StrategyOutcomeBranch] = field(
-        default_factory=list
-    )
+    outcome_branches: List[StrategyOutcomeBranch] = field(default_factory=list)
     metadata: JsonMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        _require_non_empty(
-            self.node_id, "StrategyNode node_id cannot be empty"
-        )
+        _require_non_empty(self.node_id, "StrategyNode node_id cannot be empty")
         _require_non_empty(
             self.action_id,
             "StrategyNode action_id cannot be empty",
         )
-        if (
-            self.source_perception_id is not None
-            and not self.source_perception_id
-        ):
-            raise ValueError(
-                "StrategyNode source_perception_id cannot be empty"
-            )
+        if self.source_perception_id is not None and not self.source_perception_id:
+            raise ValueError("StrategyNode source_perception_id cannot be empty")
         if self.projected_state is not None:
-            if (
-                self.projected_state.generating_action_id
-                != self.action_id
-            ):
+            if self.projected_state.generating_action_id != self.action_id:
                 raise ValueError(
                     "StrategyNode projected_state must match the node action_id"
                 )
             if self.source_perception_id is None:
-                self.source_perception_id = (
-                    self.projected_state.source_perception_id
-                )
-            elif (
-                self.source_perception_id
-                != self.projected_state.source_perception_id
-            ):
+                self.source_perception_id = self.projected_state.source_perception_id
+            elif self.source_perception_id != self.projected_state.source_perception_id:
                 raise ValueError(
                     "StrategyNode source_perception_id must match the projected_state source"
                 )
@@ -223,34 +198,26 @@ class StrategyNode:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "StrategyNode":
+    def from_dict(cls, data: Mapping[str, Any]) -> "StrategyNode":
         """Deserialize a strategy node from mapping data."""
         return cls(
             node_id=_require_non_null_string(data, "node_id"),
-            action_id=_require_non_null_string(
-                data, "action_id"
-            ),
+            action_id=_require_non_null_string(data, "action_id"),
             source_perception_id=(
                 str(data["source_perception_id"])
                 if data.get("source_perception_id")
                 else None
             ),
             projected_state=(
-                ProjectedPerceptionState.from_dict(
-                    data["projected_state"]
-                )
+                ProjectedPerceptionState.from_dict(data["projected_state"])
                 if data.get("projected_state") is not None
                 else None
             ),
             outcome_branches=[
                 StrategyOutcomeBranch.from_dict(raw_branch)
-                for raw_branch in (
-                    data.get("outcome_branches") or []
-                )
+                for raw_branch in (data.get("outcome_branches") or [])
             ],
-            metadata=dict(data.get("metadata") or {}),
+            metadata=_dict_from_data(data, "metadata"),
         )
 
 
@@ -268,12 +235,8 @@ class Strategy(ModelObject):
     def __post_init__(self) -> None:
         if self.object_type != "strategy":
             self.object_type = "strategy"
-        _require_non_empty(
-            self.id, "Strategy id cannot be empty"
-        )
-        _require_non_empty(
-            self.actor_id, "Strategy actor_id cannot be empty"
-        )
+        _require_non_empty(self.id, "Strategy id cannot be empty")
+        _require_non_empty(self.actor_id, "Strategy actor_id cannot be empty")
         _require_non_empty(
             self.root_node_id,
             "Strategy root_node_id cannot be empty",
@@ -285,18 +248,11 @@ class Strategy(ModelObject):
 
     def add_node(self, node: StrategyNode) -> None:
         """Add a node while preserving unique node IDs."""
-        if any(
-            existing.node_id == node.node_id
-            for existing in self.nodes
-        ):
-            raise ValueError(
-                f"Duplicate strategy node id: {node.node_id}"
-            )
+        if any(existing.node_id == node.node_id for existing in self.nodes):
+            raise ValueError(f"Duplicate strategy node id: {node.node_id}")
         self.nodes.append(node)
 
-    def get_node(
-        self, node_id: ObjectId
-    ) -> Optional[StrategyNode]:
+    def get_node(self, node_id: ObjectId) -> Optional[StrategyNode]:
         """Return a strategy node by ID, if present."""
         for node in self.nodes:
             if node.node_id == node_id:
@@ -308,9 +264,7 @@ class Strategy(ModelObject):
         node_ids = {node.node_id for node in self.nodes}
         node_index = {node.node_id: node for node in self.nodes}
         if self.root_node_id not in node_ids:
-            raise ValueError(
-                "Strategy root_node_id must reference an existing node"
-            )
+            raise ValueError("Strategy root_node_id must reference an existing node")
 
         for node in self.nodes:
             seen_branches: set[str] = set()
@@ -320,10 +274,7 @@ class Strategy(ModelObject):
                         f"Duplicate branch id '{branch.branch_id}' in node '{node.node_id}'"
                     )
                 seen_branches.add(branch.branch_id)
-                if (
-                    branch.child_node_id
-                    and branch.child_node_id not in node_ids
-                ):
+                if branch.child_node_id and branch.child_node_id not in node_ids:
                     raise ValueError(
                         "Strategy branch child_node_id must reference an existing node"
                     )
@@ -334,19 +285,14 @@ class Strategy(ModelObject):
                 if node.projected_state is None:
                     continue
 
-                expected_source_perception_id = (
-                    node.successor_perception_id
-                )
+                expected_source_perception_id = node.successor_perception_id
                 if expected_source_perception_id is None:
                     continue
                 if child_node.source_perception_id is None:
                     raise ValueError(
                         "Strategy child node must declare the parent projected perception"
                     )
-                if (
-                    child_node.source_perception_id
-                    != expected_source_perception_id
-                ):
+                if child_node.source_perception_id != expected_source_perception_id:
                     raise ValueError(
                         "Strategy child node must consume the parent projected perception"
                     )
@@ -361,9 +307,7 @@ class Strategy(ModelObject):
                 "root_node_id": self.root_node_id,
                 "nodes": [
                     node.to_dict()
-                    for node in sorted(
-                        self.nodes, key=lambda node: node.node_id
-                    )
+                    for node in sorted(self.nodes, key=lambda node: node.node_id)
                 ],
                 "projection_policy": self.projection_policy,
             }
@@ -376,28 +320,19 @@ class Strategy(ModelObject):
         return cls(
             **_base_kwargs_from_typed_payload(data, "strategy"),
             actor_id=_require_non_null_string(data, "actor_id"),
-            goal_id=(
-                str(data["goal_id"])
-                if data.get("goal_id")
-                else None
-            ),
-            root_node_id=_require_non_null_string(
-                data, "root_node_id"
-            ),
+            goal_id=(str(data["goal_id"]) if data.get("goal_id") else None),
+            root_node_id=_require_non_null_string(data, "root_node_id"),
             nodes=[
                 StrategyNode.from_dict(raw_node)
                 for raw_node in (data.get("nodes") or [])
             ],
-            projection_policy=str(
-                data.get("projection_policy")
-                or "perception_first"
+            projection_policy=_str_from_data(
+                data, "projection_policy", "perception_first"
             ),
         )
 
 
-def _default_strategy_node_id(
-    index: int, action: Action
-) -> ObjectId:
+def _default_strategy_node_id(index: int, action: Action) -> ObjectId:
     return f"node-{index:04d}-{action.id}"
 
 
@@ -428,11 +363,7 @@ def _project_strategy_action(
         )
     return (
         projected_state,
-        {
-            "projection_basis": projection.metadata.get(
-                "projection_basis"
-            )
-        },
+        {"projection_basis": projection.metadata.get("projection_basis")},
         projection.status,
     )
 
@@ -444,32 +375,24 @@ def _build_branching_nodes_from_step(
     projection_tool: ProjectionTool,
     resources: list[Resource],
 ) -> tuple[StrategyNode, list[StrategyNode]]:
-    node_id = _default_branching_strategy_node_id(
-        path, step.action
-    )
-    projected_state, projection_metadata, projection_status = (
-        _project_strategy_action(
-            step.action,
-            perception,
-            projection_tool,
-            resources,
-            builder_name="build_branching_strategy",
-        )
+    node_id = _default_branching_strategy_node_id(path, step.action)
+    projected_state, projection_metadata, projection_status = _project_strategy_action(
+        step.action,
+        perception,
+        projection_tool,
+        resources,
+        builder_name="build_branching_strategy",
     )
 
     child_nodes: list[StrategyNode] = []
     outcome_branches: list[StrategyOutcomeBranch] = []
-    for child_index, child_step in enumerate(
-        step.children, start=1
-    ):
-        child_node, descendant_nodes = (
-            _build_branching_nodes_from_step(
-                child_step,
-                projected_state.perception,
-                path + (child_index,),
-                projection_tool,
-                resources,
-            )
+    for child_index, child_step in enumerate(step.children, start=1):
+        child_node, descendant_nodes = _build_branching_nodes_from_step(
+            child_step,
+            projected_state.perception,
+            path + (child_index,),
+            projection_tool,
+            resources,
         )
         child_nodes.extend(descendant_nodes)
         outcome_branches.append(
@@ -478,12 +401,8 @@ def _build_branching_nodes_from_step(
                 label=child_step.branch_label,
                 child_node_id=child_node.node_id,
                 probability=child_step.branch_probability,
-                condition=_canonical_json_map(
-                    child_step.branch_condition
-                ),
-                metadata=_canonical_json_map(
-                    child_step.branch_metadata
-                ),
+                condition=_canonical_json_map(child_step.branch_condition),
+                metadata=_canonical_json_map(child_step.branch_metadata),
             )
         )
 
@@ -511,9 +430,7 @@ def build_branching_strategy(
     projection_policy: str = "perception_first",
 ) -> Strategy:
     """Build a minimal strategy tree from a recursive step specification."""
-    resolved_projection_tool = (
-        projection_tool or DefaultProjectionTool()
-    )
+    resolved_projection_tool = projection_tool or DefaultProjectionTool()
     resource_list = list(resources)
     root_node, nodes = _build_branching_nodes_from_step(
         root_step,
@@ -550,13 +467,9 @@ def build_linear_strategy(
     """
     ordered_actions = list(actions)
     if not ordered_actions:
-        raise ValueError(
-            "build_linear_strategy requires at least one action"
-        )
+        raise ValueError("build_linear_strategy requires at least one action")
 
-    resolved_projection_tool = (
-        projection_tool or DefaultProjectionTool()
-    )
+    resolved_projection_tool = projection_tool or DefaultProjectionTool()
     resource_list = list(resources)
     current_perception = initial_perception
     nodes: list[StrategyNode] = []
@@ -579,9 +492,7 @@ def build_linear_strategy(
         )
 
         next_node_id = (
-            planned_node_ids[index + 1]
-            if index + 1 < len(planned_node_ids)
-            else None
+            planned_node_ids[index + 1] if index + 1 < len(planned_node_ids) else None
         )
         outcome_branches = []
         if next_node_id is not None:
@@ -590,9 +501,7 @@ def build_linear_strategy(
                     branch_id=f"{planned_node_ids[index]}:success",
                     label="success",
                     child_node_id=next_node_id,
-                    metadata={
-                        "projection_status": projection_status
-                    },
+                    metadata={"projection_status": projection_status},
                 )
             )
 

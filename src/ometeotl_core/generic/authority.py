@@ -19,6 +19,8 @@ from ometeotl_core.model.base import (
     ModelObject,
     ObjectId,
     _require_non_empty,
+    _dict_from_data,
+    _str_from_data,
 )
 from ometeotl_core.model.registry import reconstruct_model_object
 from ometeotl_core.model.space_relations import SpaceRelation
@@ -43,9 +45,7 @@ from ometeotl_core.validation import (
 )
 
 ObjectFactory = Callable[[Mapping[str, Any]], ModelObject]
-CommandHandler = Callable[
-    ["CommandEnvelope", World, str], JsonMap
-]
+CommandHandler = Callable[["CommandEnvelope", World, str], JsonMap]
 
 
 def _utc_now_iso() -> str:
@@ -75,44 +75,28 @@ class CommandEnvelope:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "CommandEnvelope":
+    def from_dict(cls, data: Mapping[str, Any]) -> "CommandEnvelope":
         """Build a command envelope from mapping data."""
-        command_id = str(data.get("command_id") or "")
-        actor_id = str(data.get("actor_id") or "")
-        command_type = str(data.get("command_type") or "")
-        _require_non_empty(
-            command_id, "Command id cannot be empty"
-        )
+        command_id = _str_from_data(data, "command_id", "")
+        actor_id = _str_from_data(data, "actor_id", "")
+        command_type = _str_from_data(data, "command_type", "")
+        _require_non_empty(command_id, "Command id cannot be empty")
         _require_non_empty(actor_id, "Actor id cannot be empty")
-        _require_non_empty(
-            command_type, "Command type cannot be empty"
-        )
+        _require_non_empty(command_type, "Command type cannot be empty")
         sequence_raw = data.get("sequence", 0)
         try:
-            sequence = (
-                int(sequence_raw)
-                if sequence_raw is not None
-                else 0
-            )
+            sequence = int(sequence_raw) if sequence_raw is not None else 0
         except (TypeError, ValueError) as exc:
-            raise ValueError(
-                "Command sequence must be a valid integer"
-            ) from exc
+            raise ValueError("Command sequence must be a valid integer") from exc
         if sequence < 0:
-            raise ValueError(
-                "Command sequence cannot be negative"
-            )
+            raise ValueError("Command sequence cannot be negative")
         return cls(
             command_id=command_id,
             actor_id=actor_id,
             command_type=command_type,
-            payload=dict(data.get("payload") or {}),
+            payload=_dict_from_data(data, "payload"),
             sequence=sequence,
-            issued_at=str(
-                data.get("issued_at") or _utc_now_iso()
-            ),
+            issued_at=_str_from_data(data, "issued_at", _utc_now_iso()),
         )
 
 
@@ -164,46 +148,26 @@ class AuthorityCommandHandler:
         self,
         world: World,
         allowed_command_types: Optional[Sequence[str]] = None,
-        custom_command_handlers: Optional[
-            Mapping[str, CommandHandler]
-        ] = None,
-        object_factories: Optional[
-            Mapping[str, ObjectFactory]
-        ] = None,
+        custom_command_handlers: Optional[Mapping[str, CommandHandler]] = None,
+        object_factories: Optional[Mapping[str, ObjectFactory]] = None,
         audit_log_maxlen: int = 1000,
         processed_ids_maxlen: int = 10000,
         sequence_tracker_max_actors: Optional[int] = 1000,
         sequence_history_max_actors: Optional[int] = None,
         validation_soft_gate: bool = True,
         validation_policy_profile: str = PROFILE_OBSERVE_ONLY,
-        validation_stage_mode_overrides: Optional[
-            Mapping[str, str]
-        ] = None,
+        validation_stage_mode_overrides: Optional[Mapping[str, str]] = None,
         validation_block_on_error: bool = False,
         validation_completeness_level: str = LEVEL_RECOMMENDED,
     ) -> None:
         if audit_log_maxlen <= 0:
-            raise ValueError(
-                "audit_log_maxlen must be greater than 0"
-            )
+            raise ValueError("audit_log_maxlen must be greater than 0")
         if processed_ids_maxlen <= 0:
-            raise ValueError(
-                "processed_ids_maxlen must be greater than 0"
-            )
-        if (
-            sequence_tracker_max_actors is not None
-            and sequence_tracker_max_actors <= 0
-        ):
-            raise ValueError(
-                "sequence_tracker_max_actors must be greater than 0"
-            )
-        if (
-            sequence_history_max_actors is not None
-            and sequence_history_max_actors <= 0
-        ):
-            raise ValueError(
-                "sequence_history_max_actors must be greater than 0"
-            )
+            raise ValueError("processed_ids_maxlen must be greater than 0")
+        if sequence_tracker_max_actors is not None and sequence_tracker_max_actors <= 0:
+            raise ValueError("sequence_tracker_max_actors must be greater than 0")
+        if sequence_history_max_actors is not None and sequence_history_max_actors <= 0:
+            raise ValueError("sequence_history_max_actors must be greater than 0")
 
         resolved_sequence_history_max_actors = (
             sequence_history_max_actors
@@ -212,8 +176,7 @@ class AuthorityCommandHandler:
         )
         if (
             sequence_tracker_max_actors is not None
-            and sequence_tracker_max_actors
-            > resolved_sequence_history_max_actors
+            and sequence_tracker_max_actors > resolved_sequence_history_max_actors
         ):
             raise ValueError(
                 "sequence_tracker_max_actors cannot exceed "
@@ -230,9 +193,7 @@ class AuthorityCommandHandler:
             "unregister_object": self._handle_unregister_object,
         }
         if custom_command_handlers:
-            self._command_handlers.update(
-                custom_command_handlers
-            )
+            self._command_handlers.update(custom_command_handlers)
         self.allowed_command_types = tuple(
             allowed_command_types
             if allowed_command_types is not None
@@ -244,36 +205,23 @@ class AuthorityCommandHandler:
             if command_type not in self._command_handlers
         ]
         if unsupported_allowed_types:
-            unsupported = ", ".join(
-                sorted(unsupported_allowed_types)
-            )
+            unsupported = ", ".join(sorted(unsupported_allowed_types))
             raise ValueError(
-                "Allowed command type has no registered handler: "
-                f"{unsupported}"
+                "Allowed command type has no registered handler: " f"{unsupported}"
             )
         self._object_factories: dict[str, ObjectFactory] = {
             str(type_name).lower(): factory
-            for type_name, factory in (
-                object_factories or {}
-            ).items()
+            for type_name, factory in (object_factories or {}).items()
         }
-        self._audit_log: deque[AuditEntry] = deque(
-            maxlen=audit_log_maxlen
-        )
+        self._audit_log: deque[AuditEntry] = deque(maxlen=audit_log_maxlen)
         self._processed_ids_maxlen = processed_ids_maxlen
-        self._sequence_tracker_max_actors = (
-            sequence_tracker_max_actors
-        )
-        self._sequence_history_max_actors = (
-            resolved_sequence_history_max_actors
-        )
+        self._sequence_tracker_max_actors = sequence_tracker_max_actors
+        self._sequence_history_max_actors = resolved_sequence_history_max_actors
         self._processed_command_ids: set[str] = set()
         self._processed_command_order: deque[str] = deque()
         # First-come tracker: existing actors keep their sequence slot.
         self._last_sequence_by_actor: dict[ObjectId, int] = {}
-        self._retired_sequence_by_actor: OrderedDict[
-            ObjectId, int
-        ] = OrderedDict()
+        self._retired_sequence_by_actor: OrderedDict[ObjectId, int] = OrderedDict()
         self._active_tracked_actor_ids: set[ObjectId] = set()
         self._lock = threading.Lock()
         self._closed = False
@@ -282,15 +230,11 @@ class AuthorityCommandHandler:
             policy_profile=validation_policy_profile,
             stage_mode_overrides=validation_stage_mode_overrides,
         )
-        self._validation_block_on_error = bool(
-            validation_block_on_error
-        )
+        self._validation_block_on_error = bool(validation_block_on_error)
         self._validation_completeness_level = str(
             validation_completeness_level or LEVEL_RECOMMENDED
         )
-        self._validation_pipeline: Optional[
-            ValidationPipeline
-        ] = None
+        self._validation_pipeline: Optional[ValidationPipeline] = None
         if self._validation_soft_gate:
             self._validation_pipeline = ValidationPipeline(
                 validators=[
@@ -324,25 +268,14 @@ class AuthorityCommandHandler:
         """Validate minimal structure and apply an allowlisted command."""
         with self._lock:
             if self._closed:
-                return self._reject(
-                    command, "Command handler is closed"
-                )
+                return self._reject(command, "Command handler is closed")
 
-            duplicate = (
-                command.command_id in self._processed_command_ids
-            )
+            duplicate = command.command_id in self._processed_command_ids
             if duplicate:
-                return self._reject(
-                    command, "Duplicate command id"
-                )
+                return self._reject(command, "Duplicate command id")
 
-            if (
-                command.command_type
-                not in self.allowed_command_types
-            ):
-                return self._reject(
-                    command, "Command type is not allowlisted"
-                )
+            if command.command_type not in self.allowed_command_types:
+                return self._reject(command, "Command type is not allowlisted")
 
             if not self._actor_exists(command.actor_id):
                 return self._reject(
@@ -350,9 +283,7 @@ class AuthorityCommandHandler:
                     "Actor id is unknown to this world registry",
                 )
 
-            if not self._is_sequence_valid(
-                command.actor_id, command.sequence
-            ):
+            if not self._is_sequence_valid(command.actor_id, command.sequence):
                 return self._reject(
                     command,
                     "Command sequence is not strictly increasing",
@@ -364,40 +295,23 @@ class AuthorityCommandHandler:
                     "Sequence tracker capacity reached for new actor",
                 )
 
-            validation_payload = (
-                self._validation_payload_for_command(command)
-            )
-            validation_result = self._run_soft_validation(
-                command, validation_payload
-            )
-            validation_export = (
-                self._serialize_validation_result(
-                    validation_result
-                )
-            )
-            if (
-                self._validation_block_on_error
-                and not validation_result.valid
-            ):
+            validation_payload = self._validation_payload_for_command(command)
+            validation_result = self._run_soft_validation(command, validation_payload)
+            validation_export = self._serialize_validation_result(validation_result)
+            if self._validation_block_on_error and not validation_result.valid:
                 return self._reject(
                     command,
                     "Validation policy rejected command",
-                    validation_summary=validation_export[
-                        "summary"
-                    ],
+                    validation_summary=validation_export["summary"],
                 )
 
             try:
                 applied = self._apply_command(command)
             except (KeyError, TypeError, ValueError) as exc:
-                return self._reject(
-                    command, f"Invalid command payload: {exc}"
-                )
+                return self._reject(command, f"Invalid command payload: {exc}")
 
             self._mark_processed(command.command_id)
-            self._set_last_sequence(
-                command.actor_id, command.sequence
-            )
+            self._set_last_sequence(command.actor_id, command.sequence)
             self._append_audit(
                 AuditEntry(
                     command_id=command.command_id,
@@ -406,9 +320,7 @@ class AuthorityCommandHandler:
                     sequence=command.sequence,
                     accepted=True,
                     reason="accepted",
-                    validation_summary=validation_export[
-                        "summary"
-                    ],
+                    validation_summary=validation_export["summary"],
                 )
             )
             return CommandResult(
@@ -431,25 +343,19 @@ class AuthorityCommandHandler:
                 sequence=command.sequence,
                 accepted=False,
                 reason=reason,
-                validation_summary=dict(
-                    validation_summary or {}
-                ),
+                validation_summary=dict(validation_summary or {}),
             )
         )
         validation_payload: JsonMap = {}
         if validation_summary:
-            validation_payload = {
-                "summary": dict(validation_summary)
-            }
+            validation_payload = {"summary": dict(validation_summary)}
         return CommandResult(
             accepted=False,
             reason=reason,
             validation=validation_payload,
         )
 
-    def _validation_payload_for_command(
-        self, command: CommandEnvelope
-    ) -> Any:
+    def _validation_payload_for_command(self, command: CommandEnvelope) -> Any:
         payload = command.payload
         if command.command_type == "add_space":
             return payload.get("space")
@@ -467,10 +373,7 @@ class AuthorityCommandHandler:
         command: CommandEnvelope,
         payload: Any,
     ) -> ValidationResult:
-        if (
-            not self._validation_soft_gate
-            or self._validation_pipeline is None
-        ):
+        if not self._validation_soft_gate or self._validation_pipeline is None:
             return ValidationResult(
                 stage="authority.soft_gate",
                 policy_mode=MODE_WARN_ONLY,
@@ -487,9 +390,7 @@ class AuthorityCommandHandler:
                             "soft-gate checks skipped"
                         ),
                         object_id=command.command_id,
-                        context={
-                            "command_type": command.command_type
-                        },
+                        context={"command_type": command.command_type},
                     )
                 ],
                 stage="authority.soft_gate",
@@ -516,9 +417,7 @@ class AuthorityCommandHandler:
             raise_on_error=False,
         )
 
-    def _serialize_validation_result(
-        self, result: ValidationResult
-    ) -> JsonMap:
+    def _serialize_validation_result(self, result: ValidationResult) -> JsonMap:
         serialized_issues = [
             {
                 "code": issue.code,
@@ -543,18 +442,10 @@ class AuthorityCommandHandler:
             return True
         return self.world.model_registry.exists(actor_id)
 
-    def _is_sequence_valid(
-        self, actor_id: ObjectId, sequence: int
-    ) -> bool:
-        last_active_sequence = self._last_sequence_by_actor.get(
-            actor_id, -1
-        )
-        last_retired_sequence = (
-            self._retired_sequence_by_actor.get(actor_id, -1)
-        )
-        return sequence > max(
-            last_active_sequence, last_retired_sequence
-        )
+    def _is_sequence_valid(self, actor_id: ObjectId, sequence: int) -> bool:
+        last_active_sequence = self._last_sequence_by_actor.get(actor_id, -1)
+        last_retired_sequence = self._retired_sequence_by_actor.get(actor_id, -1)
+        return sequence > max(last_active_sequence, last_retired_sequence)
 
     def _has_sequence_capacity(self, actor_id: ObjectId) -> bool:
         if actor_id == self.SYSTEM_ACTOR_ID:
@@ -563,10 +454,7 @@ class AuthorityCommandHandler:
             return True
 
         limit = self._sequence_tracker_max_actors
-        if (
-            limit is not None
-            and len(self._active_tracked_actor_ids) >= limit
-        ):
+        if limit is not None and len(self._active_tracked_actor_ids) >= limit:
             return False
 
         if actor_id in self._last_sequence_by_actor:
@@ -574,28 +462,16 @@ class AuthorityCommandHandler:
         if actor_id in self._retired_sequence_by_actor:
             return True
 
-        return (
-            self._sequence_entry_count()
-            < self._sequence_history_max_actors
-        )
+        return self._sequence_entry_count() < self._sequence_history_max_actors
 
     def _mark_processed(self, command_id: str) -> None:
         self._processed_command_ids.add(command_id)
         self._processed_command_order.append(command_id)
-        while (
-            len(self._processed_command_order)
-            > self._processed_ids_maxlen
-        ):
-            expired_command_id = (
-                self._processed_command_order.popleft()
-            )
-            self._processed_command_ids.discard(
-                expired_command_id
-            )
+        while len(self._processed_command_order) > self._processed_ids_maxlen:
+            expired_command_id = self._processed_command_order.popleft()
+            self._processed_command_ids.discard(expired_command_id)
 
-    def _set_last_sequence(
-        self, actor_id: ObjectId, sequence: int
-    ) -> None:
+    def _set_last_sequence(self, actor_id: ObjectId, sequence: int) -> None:
         self._retired_sequence_by_actor.pop(actor_id, None)
         if actor_id in self._last_sequence_by_actor:
             self._last_sequence_by_actor[actor_id] = sequence
@@ -607,37 +483,22 @@ class AuthorityCommandHandler:
             self._active_tracked_actor_ids.add(actor_id)
 
     def _sequence_entry_count(self) -> int:
-        return len(self._last_sequence_by_actor) + len(
-            self._retired_sequence_by_actor
-        )
+        return len(self._last_sequence_by_actor) + len(self._retired_sequence_by_actor)
 
-    def _remember_retired_sequence(
-        self, actor_id: ObjectId, sequence: int
-    ) -> None:
+    def _remember_retired_sequence(self, actor_id: ObjectId, sequence: int) -> None:
         self._retired_sequence_by_actor.pop(actor_id, None)
         self._retired_sequence_by_actor[actor_id] = sequence
-        while (
-            self._sequence_entry_count()
-            > self._sequence_history_max_actors
-        ):
+        while self._sequence_entry_count() > self._sequence_history_max_actors:
             self._retired_sequence_by_actor.popitem(last=False)
 
     def _append_audit(self, entry: AuditEntry) -> None:
         self._audit_log.append(entry)
 
-    def _apply_command(
-        self, command: CommandEnvelope
-    ) -> JsonMap:
-        command_handler = self._command_handlers.get(
-            command.command_type
-        )
+    def _apply_command(self, command: CommandEnvelope) -> JsonMap:
+        command_handler = self._command_handlers.get(command.command_type)
         if command_handler is None:
-            raise ValueError(
-                f"Unsupported command type: {command.command_type}"
-            )
-        return command_handler(
-            command, self.world, self._authority_token
-        )
+            raise ValueError(f"Unsupported command type: {command.command_type}")
+        return command_handler(command, self.world, self._authority_token)
 
     def _handle_add_space(
         self,
@@ -645,16 +506,11 @@ class AuthorityCommandHandler:
         world: World,
         authority_token: str,
     ) -> JsonMap:
-        payload = self._require_payload_fields(
-            command.payload, ("space",)
-        )
-        space = self._reconstruct_registered_object(
-            payload["space"]
-        )
+        payload = self._require_payload_fields(command.payload, ("space",))
+        space = self._reconstruct_registered_object(payload["space"])
         if not isinstance(space, Space):
             raise ValueError(
-                "Payload does not describe a Space "
-                f"(got {type(space).__name__})"
+                "Payload does not describe a Space " f"(got {type(space).__name__})"
             )
         world.add_space(space, authority_token=authority_token)
         return {"space_id": space.id}
@@ -665,13 +521,9 @@ class AuthorityCommandHandler:
         world: World,
         authority_token: str,
     ) -> JsonMap:
-        payload = self._require_payload_fields(
-            command.payload, ("relation",)
-        )
+        payload = self._require_payload_fields(command.payload, ("relation",))
         relation = SpaceRelation.from_dict(payload["relation"])
-        world.add_space_relation(
-            relation, authority_token=authority_token
-        )
+        world.add_space_relation(relation, authority_token=authority_token)
         return {
             "source_space_id": relation.source_space_id,
             "target_space_id": relation.target_space_id,
@@ -707,23 +559,15 @@ class AuthorityCommandHandler:
         world: World,
         authority_token: str,
     ) -> JsonMap:
-        payload = self._require_payload_fields(
-            command.payload, ("object",)
-        )
-        obj = self._reconstruct_registered_object(
-            payload["object"]
-        )
-        world.register_object(
-            obj, authority_token=authority_token
-        )
+        payload = self._require_payload_fields(command.payload, ("object",))
+        obj = self._reconstruct_registered_object(payload["object"])
+        world.register_object(obj, authority_token=authority_token)
         return {"object_id": obj.id}
 
     def _reconstruct_registered_object(
         self, raw_object: Mapping[str, Any]
     ) -> ModelObject:
-        return reconstruct_model_object(
-            raw_object, self._object_factories
-        )
+        return reconstruct_model_object(raw_object, self._object_factories)
 
     def _handle_unregister_object(
         self,
@@ -731,20 +575,12 @@ class AuthorityCommandHandler:
         world: World,
         authority_token: str,
     ) -> JsonMap:
-        payload = self._require_payload_fields(
-            command.payload, ("object_id",)
-        )
+        payload = self._require_payload_fields(command.payload, ("object_id",))
         object_id = str(payload["object_id"])
-        last_sequence = self._last_sequence_by_actor.pop(
-            object_id, None
-        )
+        last_sequence = self._last_sequence_by_actor.pop(object_id, None)
         if last_sequence is not None:
-            self._remember_retired_sequence(
-                object_id, last_sequence
-            )
-        world.unregister_object(
-            object_id, authority_token=authority_token
-        )
+            self._remember_retired_sequence(object_id, last_sequence)
+        world.unregister_object(object_id, authority_token=authority_token)
         self._active_tracked_actor_ids.discard(object_id)
         return {"object_id": object_id}
 
@@ -754,13 +590,9 @@ class AuthorityCommandHandler:
         fields: Sequence[str],
     ) -> JsonMap:
         missing = [
-            field_name
-            for field_name in fields
-            if payload.get(field_name) is None
+            field_name for field_name in fields if payload.get(field_name) is None
         ]
         if missing:
             missing_str = ", ".join(sorted(missing))
-            raise ValueError(
-                f"Missing required payload field(s): {missing_str}"
-            )
+            raise ValueError(f"Missing required payload field(s): {missing_str}")
         return dict(payload)

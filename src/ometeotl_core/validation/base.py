@@ -5,6 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol
 
+from ometeotl_core.model.base import (
+    _dict_from_data,
+    _str_from_data,
+)
+
 SEVERITY_ERROR = "error"
 SEVERITY_WARNING = "warning"
 SEVERITY_INFO = "info"
@@ -28,17 +33,13 @@ class ValidationIssue:
 
     def __post_init__(self) -> None:
         if not self.code:
-            raise ValueError(
-                "ValidationIssue code cannot be empty"
-            )
+            raise ValueError("ValidationIssue code cannot be empty")
         if self.severity not in VALID_SEVERITIES:
             raise ValueError(
                 f"ValidationIssue severity must be one of {sorted(VALID_SEVERITIES)}"
             )
         if not self.message:
-            raise ValueError(
-                "ValidationIssue message cannot be empty"
-            )
+            raise ValueError("ValidationIssue message cannot be empty")
 
 
 @dataclass(frozen=True)
@@ -63,27 +64,15 @@ class ValidationResult:
 
     @property
     def errors(self) -> list[ValidationIssue]:
-        return [
-            issue
-            for issue in self.issues
-            if issue.severity == SEVERITY_ERROR
-        ]
+        return [issue for issue in self.issues if issue.severity == SEVERITY_ERROR]
 
     @property
     def warnings(self) -> list[ValidationIssue]:
-        return [
-            issue
-            for issue in self.issues
-            if issue.severity == SEVERITY_WARNING
-        ]
+        return [issue for issue in self.issues if issue.severity == SEVERITY_WARNING]
 
     @property
     def infos(self) -> list[ValidationIssue]:
-        return [
-            issue
-            for issue in self.issues
-            if issue.severity == SEVERITY_INFO
-        ]
+        return [issue for issue in self.issues if issue.severity == SEVERITY_INFO]
 
     @property
     def valid(self) -> bool:
@@ -98,9 +87,7 @@ class ValidationResult:
             "total": len(self.issues),
         }
 
-    def merged_with(
-        self, other: "ValidationResult"
-    ) -> "ValidationResult":
+    def merged_with(self, other: "ValidationResult") -> "ValidationResult":
         """Return a deterministic merge of two validation results."""
         merged_issues = list(self.issues) + list(other.issues)
         merged_stage = other.stage or self.stage
@@ -132,11 +119,11 @@ class Validator(Protocol):
     @property
     def name(self) -> str:
         """Stable stage name for reporting and diagnostics."""
+        ...
 
-    def validate(
-        self, obj: Any, context: ValidationContext
-    ) -> ValidationResult:
+    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
         """Validate one object with the provided context."""
+        ...
 
 
 def issue_from_mapping(
@@ -144,11 +131,11 @@ def issue_from_mapping(
 ) -> ValidationIssue:
     """Construct a ValidationIssue from mapping data."""
     return ValidationIssue(
-        code=str(data.get("code") or ""),
-        severity=str(data.get("severity") or SEVERITY_ERROR),
-        message=str(data.get("message") or ""),
-        object_id=str(data.get("object_id") or ""),
-        path=str(data.get("path") or ""),
-        suggestion=str(data.get("suggestion") or ""),
-        context=dict(data.get("context") or {}),
+        code=_str_from_data(data, "code", ""),
+        severity=_str_from_data(data, "severity", SEVERITY_ERROR),
+        message=_str_from_data(data, "message", ""),
+        object_id=_str_from_data(data, "object_id", ""),
+        path=_str_from_data(data, "path", ""),
+        suggestion=_str_from_data(data, "suggestion", ""),
+        context=_dict_from_data(data, "context"),
     )

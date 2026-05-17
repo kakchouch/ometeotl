@@ -2,7 +2,11 @@
 
 import pytest
 
-from ometeotl_core.model.base import ModelObject
+from ometeotl_core.model.base import (
+    ModelObject,
+    _dict_from_data,
+    _str_from_data,
+)
 
 
 def test_model_object_instantiation():
@@ -68,13 +72,9 @@ def test_model_object_from_dict_null_optional_maps_defaults_empty():
 def test_model_object_from_dict_null_required_raises():
     """ModelObject.from_dict should reject null required identity fields."""
     with pytest.raises(ValueError):
-        ModelObject.from_dict(
-            {"id": None, "object_type": "generic"}
-        )
+        ModelObject.from_dict({"id": None, "object_type": "generic"})
     with pytest.raises(ValueError):
-        ModelObject.from_dict(
-            {"id": "obj-1", "object_type": None}
-        )
+        ModelObject.from_dict({"id": "obj-1", "object_type": None})
 
 
 def test_model_object_from_dict_rejects_unsupported_schema_version():
@@ -87,3 +87,32 @@ def test_model_object_from_dict_rejects_unsupported_schema_version():
                 "schema_version": "2.0",
             }
         )
+
+
+def test_str_from_data_empty_string_uses_default() -> None:
+    """_str_from_data should treat empty strings like missing values."""
+    payload = {"status": ""}
+    assert _str_from_data(payload, "status", "active") == "active"
+
+
+def test_str_from_data_zero_is_preserved() -> None:
+    """_str_from_data should preserve non-empty falsy values by coercion."""
+    payload = {"priority": 0}
+    assert _str_from_data(payload, "priority", "1") == "0"
+
+
+def test_dict_from_data_returns_copied_default_mapping() -> None:
+    """_dict_from_data should return a copy of default mapping, not alias it."""
+    default_map = {"k": "v"}
+    extracted = _dict_from_data({}, "metadata", default_map)
+    extracted["k"] = "changed"
+    assert default_map == {"k": "v"}
+    assert extracted == {"k": "changed"}
+
+
+def test_dict_from_data_invalid_value_falls_back_to_default_copy() -> None:
+    """_dict_from_data should use default mapping for non-mapping input."""
+    default_map = {"safe": True}
+    extracted = _dict_from_data({"metadata": 42}, "metadata", default_map)
+    assert extracted == {"safe": True}
+    assert extracted is not default_map

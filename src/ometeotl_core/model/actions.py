@@ -19,6 +19,8 @@ from typing import Any, List, Mapping, Optional
 
 from .base import (
     _base_kwargs_from_typed_payload,
+    _dict_from_data,
+    _str_from_data,
     ModelObject,
     ObjectId,
     JsonMap,
@@ -42,12 +44,8 @@ class ResourceEffect:
     resource_id: ObjectId
     effect_type: str  # "consume", "produce", "transfer"
     quantity: float = 1.0
-    source_id: Optional[ObjectId] = (
-        None  # originating location or actor
-    )
-    target_id: Optional[ObjectId] = (
-        None  # destination location or actor
-    )
+    source_id: Optional[ObjectId] = None  # originating location or actor
+    target_id: Optional[ObjectId] = None  # destination location or actor
     metadata: JsonMap = field(default_factory=dict)
 
     def to_dict(self) -> JsonMap:
@@ -62,33 +60,17 @@ class ResourceEffect:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "ResourceEffect":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ResourceEffect":
         """Deserialize a resource effect."""
         return cls(
-            resource_id=_require_non_null_string(
-                data, "resource_id"
-            ),
-            effect_type=str(
-                data.get("effect_type") or "consume"
-            ),
+            resource_id=_require_non_null_string(data, "resource_id"),
+            effect_type=_str_from_data(data, "effect_type", "consume"),
             quantity=(
-                float(data["quantity"])
-                if data.get("quantity") is not None
-                else 1.0
+                float(data["quantity"]) if data.get("quantity") is not None else 1.0
             ),
-            source_id=(
-                str(data["source_id"])
-                if data.get("source_id")
-                else None
-            ),
-            target_id=(
-                str(data["target_id"])
-                if data.get("target_id")
-                else None
-            ),
-            metadata=dict(data.get("metadata") or {}),
+            source_id=(str(data["source_id"]) if data.get("source_id") else None),
+            target_id=(str(data["target_id"]) if data.get("target_id") else None),
+            metadata=_dict_from_data(data, "metadata"),
         )
 
 
@@ -105,9 +87,7 @@ class ActionPrerequisite:
 
     prerequisite_type: str  # "resource", "perception", "space_rule", "capability"
     field_name: str  # which attribute or condition
-    required_value: Any = (
-        None  # required quantity, perceived state, etc.
-    )
+    required_value: Any = None  # required quantity, perceived state, etc.
     metadata: JsonMap = field(default_factory=dict)
 
     def to_dict(self) -> JsonMap:
@@ -120,19 +100,13 @@ class ActionPrerequisite:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "ActionPrerequisite":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ActionPrerequisite":
         """Deserialize a prerequisite."""
         return cls(
-            prerequisite_type=str(
-                data.get("prerequisite_type") or "resource"
-            ),
-            field_name=_require_non_null_string(
-                data, "field_name"
-            ),
+            prerequisite_type=_str_from_data(data, "prerequisite_type", "resource"),
+            field_name=_require_non_null_string(data, "field_name"),
             required_value=data.get("required_value"),
-            metadata=dict(data.get("metadata") or {}),
+            metadata=_dict_from_data(data, "metadata"),
         )
 
 
@@ -157,38 +131,20 @@ class Action(ModelObject):
     actor_id: ObjectId = ""
     world_id: ObjectId = ""
     space_id: ObjectId = ""
-    action_type: str = (
-        "generic"  # e.g., "move", "consume", "interact", "transform"
-    )
-    resource_effects: List[ResourceEffect] = field(
-        default_factory=list
-    )
-    prerequisites: List[ActionPrerequisite] = field(
-        default_factory=list
-    )
-    outcome_description: str = (
-        ""  # human-readable description of what the action does
-    )
-    state_changes: JsonMap = field(
-        default_factory=dict
-    )  # modifications to state
+    action_type: str = "generic"  # e.g., "move", "consume", "interact", "transform"
+    resource_effects: List[ResourceEffect] = field(default_factory=list)
+    prerequisites: List[ActionPrerequisite] = field(default_factory=list)
+    outcome_description: str = ""  # human-readable description of what the action does
+    state_changes: JsonMap = field(default_factory=dict)  # modifications to state
 
     def __post_init__(self) -> None:
         if self.object_type != "action":
             self.object_type = "action"
         _require_non_empty(self.id, "Action id cannot be empty")
-        _require_non_empty(
-            self.actor_id, "Action actor_id cannot be empty"
-        )
-        _require_non_empty(
-            self.world_id, "Action world_id cannot be empty"
-        )
-        _require_non_empty(
-            self.space_id, "Action space_id cannot be empty"
-        )
-        _require_non_empty(
-            self.action_type, "Action type cannot be empty"
-        )
+        _require_non_empty(self.actor_id, "Action actor_id cannot be empty")
+        _require_non_empty(self.world_id, "Action world_id cannot be empty")
+        _require_non_empty(self.space_id, "Action space_id cannot be empty")
+        _require_non_empty(self.action_type, "Action type cannot be empty")
 
     def to_dict(self) -> JsonMap:
         """Canonical serialization of the action."""
@@ -226,9 +182,7 @@ class Action(ModelObject):
                     )
                 ],
                 "outcome_description": self.outcome_description,
-                "state_changes": _canonical_json_map(
-                    self.state_changes
-                ),
+                "state_changes": _canonical_json_map(self.state_changes),
             }
         )
         return base
@@ -241,40 +195,28 @@ class Action(ModelObject):
             actor_id=_require_non_null_string(data, "actor_id"),
             world_id=_require_non_null_string(data, "world_id"),
             space_id=_require_non_null_string(data, "space_id"),
-            action_type=str(
-                data.get("action_type") or "generic"
-            ),
+            action_type=_str_from_data(data, "action_type", "generic"),
             resource_effects=[
                 ResourceEffect.from_dict(re_data)
-                for re_data in (
-                    data.get("resource_effects") or []
-                )
+                for re_data in (data.get("resource_effects") or [])
             ],
             prerequisites=[
                 ActionPrerequisite.from_dict(p_data)
                 for p_data in (data.get("prerequisites") or [])
             ],
-            outcome_description=str(
-                data.get("outcome_description") or ""
-            ),
-            state_changes=dict(data.get("state_changes") or {}),
+            outcome_description=_str_from_data(data, "outcome_description", ""),
+            state_changes=_dict_from_data(data, "state_changes"),
         )
 
-    def add_resource_effect(
-        self, effect: ResourceEffect
-    ) -> None:
+    def add_resource_effect(self, effect: ResourceEffect) -> None:
         """Add a resource effect to this action."""
         self.resource_effects.append(effect)
 
-    def add_prerequisite(
-        self, prerequisite: ActionPrerequisite
-    ) -> None:
+    def add_prerequisite(self, prerequisite: ActionPrerequisite) -> None:
         """Add a prerequisite to this action."""
         self.prerequisites.append(prerequisite)
 
     def set_state_change(self, key: str, value: Any) -> None:
         """Set a state change for this action."""
-        _require_non_empty(
-            key, "State change key cannot be empty"
-        )
+        _require_non_empty(key, "State change key cannot be empty")
         self.state_changes[key] = value

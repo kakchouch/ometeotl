@@ -25,6 +25,8 @@ from .base import (
     ObjectId,
     JsonMap,
     _canonical_json_map,
+    _dict_from_data,
+    _str_from_data,
     _require_non_null_mapping,
     _require_non_null_string,
     _validate_schema_version,
@@ -72,26 +74,16 @@ class PerceivedSpace:
         return {
             "space": self.space.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": _canonical_json_map(
-                self.noise_metadata
-            ),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "PerceivedSpace":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedSpace":
         """Reconstruct a PerceivedSpace from its canonical representation."""
         return cls(
-            space=Space.from_dict(
-                _require_non_null_mapping(data, "space")
-            ),
-            epistemic_status=str(
-                data.get("epistemic_status") or "certain"
-            ),
-            noise_metadata=dict(
-                data.get("noise_metadata") or {}
-            ),
+            space=Space.from_dict(_require_non_null_mapping(data, "space")),
+            epistemic_status=_str_from_data(data, "epistemic_status", "certain"),
+            noise_metadata=_dict_from_data(data, "noise_metadata"),
         )
 
 
@@ -111,26 +103,18 @@ class PerceivedMembership:
         return {
             "membership": self.membership.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": _canonical_json_map(
-                self.noise_metadata
-            ),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "PerceivedMembership":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedMembership":
         """Reconstruct a PerceivedMembership from its canonical representation."""
         return cls(
             membership=SpaceObjectMembership.from_dict(
                 _require_non_null_mapping(data, "membership")
             ),
-            epistemic_status=str(
-                data.get("epistemic_status") or "certain"
-            ),
-            noise_metadata=dict(
-                data.get("noise_metadata") or {}
-            ),
+            epistemic_status=_str_from_data(data, "epistemic_status", "certain"),
+            noise_metadata=_dict_from_data(data, "noise_metadata"),
         )
 
 
@@ -150,26 +134,18 @@ class PerceivedRelation:
         return {
             "relation": self.relation.to_dict(),
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": _canonical_json_map(
-                self.noise_metadata
-            ),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "PerceivedRelation":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedRelation":
         """Reconstruct a PerceivedRelation from its canonical representation."""
         return cls(
             relation=SpaceRelation.from_dict(
                 _require_non_null_mapping(data, "relation")
             ),
-            epistemic_status=str(
-                data.get("epistemic_status") or "certain"
-            ),
-            noise_metadata=dict(
-                data.get("noise_metadata") or {}
-            ),
+            epistemic_status=_str_from_data(data, "epistemic_status", "certain"),
+            noise_metadata=_dict_from_data(data, "noise_metadata"),
         )
 
 
@@ -198,30 +174,18 @@ class PerceivedComponentLink:
             "composite_id": self.composite_id,
             "component_id": self.component_id,
             "epistemic_status": self.epistemic_status,
-            "noise_metadata": _canonical_json_map(
-                self.noise_metadata
-            ),
+            "noise_metadata": _canonical_json_map(self.noise_metadata),
         }
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, Any]
-    ) -> "PerceivedComponentLink":
+    def from_dict(cls, data: Mapping[str, Any]) -> "PerceivedComponentLink":
         """Reconstruct a PerceivedComponentLink from its canonical representation."""
         return cls(
             link_id=_require_non_null_string(data, "link_id"),
-            composite_id=_require_non_null_string(
-                data, "composite_id"
-            ),
-            component_id=_require_non_null_string(
-                data, "component_id"
-            ),
-            epistemic_status=str(
-                data.get("epistemic_status") or "certain"
-            ),
-            noise_metadata=dict(
-                data.get("noise_metadata") or {}
-            ),
+            composite_id=_require_non_null_string(data, "composite_id"),
+            component_id=_require_non_null_string(data, "component_id"),
+            epistemic_status=_str_from_data(data, "epistemic_status", "certain"),
+            noise_metadata=_dict_from_data(data, "noise_metadata"),
         )
 
 
@@ -249,17 +213,11 @@ class Perception:
     source_id: ObjectId  # ID of the world or space this perception is derived from
     schema_version: str = "1.0"
     timestamp: Optional[Union[int, float, str]] = None
-    perceived_spaces: Dict[SpaceId, PerceivedSpace] = field(
-        default_factory=dict
-    )
-    perceived_memberships: List[PerceivedMembership] = field(
+    perceived_spaces: Dict[SpaceId, PerceivedSpace] = field(default_factory=dict)
+    perceived_memberships: List[PerceivedMembership] = field(default_factory=list)
+    perceived_relations: List[PerceivedRelation] = field(default_factory=list)
+    perceived_component_links: List[PerceivedComponentLink] = field(
         default_factory=list
-    )
-    perceived_relations: List[PerceivedRelation] = field(
-        default_factory=list
-    )
-    perceived_component_links: List[PerceivedComponentLink] = (
-        field(default_factory=list)
     )
     context: JsonMap = field(default_factory=dict)
     provenance: JsonMap = field(default_factory=dict)
@@ -274,15 +232,11 @@ class Perception:
 
     # --- Query API ----------------------------------------------------------
 
-    def get_perceived_space(
-        self, space_id: SpaceId
-    ) -> Optional[PerceivedSpace]:
+    def get_perceived_space(self, space_id: SpaceId) -> Optional[PerceivedSpace]:
         """Return the perceived version of a space, or None if not perceived."""
         return self.perceived_spaces.get(space_id)
 
-    def memberships_for_object(
-        self, object_id: ObjectId
-    ) -> List[PerceivedMembership]:
+    def memberships_for_object(self, object_id: ObjectId) -> List[PerceivedMembership]:
         """Return all perceived memberships associated with a given object ID."""
         return [
             pm
@@ -290,9 +244,7 @@ class Perception:
             if pm.membership.object_id == object_id
         ]
 
-    def memberships_in_space(
-        self, space_id: SpaceId
-    ) -> List[PerceivedMembership]:
+    def memberships_in_space(self, space_id: SpaceId) -> List[PerceivedMembership]:
         """Return all perceived memberships whose space is the given space ID."""
         return [
             pm
@@ -300,9 +252,7 @@ class Perception:
             if pm.membership.space_id == space_id
         ]
 
-    def relations_for_space(
-        self, space_id: SpaceId
-    ) -> List[PerceivedRelation]:
+    def relations_for_space(self, space_id: SpaceId) -> List[PerceivedRelation]:
         """Return all perceived relations involving the given space ID."""
         return [
             pr
@@ -346,9 +296,7 @@ class Perception:
             "timestamp": self.timestamp,
             "perceived_spaces": {
                 space_id: ps.to_dict()
-                for space_id, ps in sorted(
-                    self.perceived_spaces.items()
-                )
+                for space_id, ps in sorted(self.perceived_spaces.items())
             },
             "perceived_memberships": [
                 pm.to_dict()
@@ -390,40 +338,28 @@ class Perception:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Perception":
         """Reconstruct a Perception from its canonical dictionary representation."""
-        return cls(
+        return Perception(
             id=_require_non_null_string(data, "id"),
             actor_id=_require_non_null_string(data, "actor_id"),
-            source_id=_require_non_null_string(
-                data, "source_id"
-            ),
-            schema_version=_validate_schema_version(
-                data.get("schema_version")
-            ),
+            source_id=_require_non_null_string(data, "source_id"),
+            schema_version=_validate_schema_version(data.get("schema_version")),
             timestamp=data.get("timestamp"),
             perceived_spaces={
                 space_id: PerceivedSpace.from_dict(ps_data)
-                for space_id, ps_data in (
-                    data.get("perceived_spaces") or {}
-                ).items()
+                for space_id, ps_data in (data.get("perceived_spaces") or {}).items()
             },
             perceived_memberships=[
                 PerceivedMembership.from_dict(pm_data)
-                for pm_data in (
-                    data.get("perceived_memberships") or []
-                )
+                for pm_data in (data.get("perceived_memberships") or [])
             ],
             perceived_relations=[
                 PerceivedRelation.from_dict(pr_data)
-                for pr_data in (
-                    data.get("perceived_relations") or []
-                )
+                for pr_data in (data.get("perceived_relations") or [])
             ],
             perceived_component_links=[
                 PerceivedComponentLink.from_dict(pcl_data)
-                for pcl_data in (
-                    data.get("perceived_component_links") or []
-                )
+                for pcl_data in (data.get("perceived_component_links") or [])
             ],
-            context=dict(data.get("context") or {}),
-            provenance=dict(data.get("provenance") or {}),
+            context=_dict_from_data(data, "context"),
+            provenance=_dict_from_data(data, "provenance"),
         )
