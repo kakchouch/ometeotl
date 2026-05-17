@@ -369,10 +369,9 @@ def _dict_from_data(
         A JsonMap (dict[str, Any]) with the extracted value or safe default
     """
     value = data.get(key)
-    if value is None:
-        return default if isinstance(default, dict) else {}
-    if not isinstance(value, Mapping):
-        return default if isinstance(default, dict) else {}
+    if value is None or not isinstance(value, Mapping):
+        return dict(default) if isinstance(default, Mapping) else {}
+
     return dict(value)
 
 
