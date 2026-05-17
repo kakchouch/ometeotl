@@ -151,12 +151,13 @@ class Goal(ModelObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Goal":
         """Reconstruct a goal from its canonical representation."""
+        raw_priority = data.get("priority")
+        priority_value = float(raw_priority) if raw_priority not in (None, "") else 1.0
         return cls(
             **_base_kwargs_from_typed_payload(data, "goal"),
             actor_id=_require_non_null_string(data, "actor_id"),
             kind=_str_from_data(data, "kind", "final"),
-            priority=float(data.get("priority") if data.get("priority") not in (None, "") else 1.0),
-
+            priority=priority_value,
             status=_str_from_data(data, "status", "active"),
             horizon=_dict_from_data(data, "horizon"),
             target_condition=_dict_from_data(data, "target_condition"),
