@@ -155,7 +155,8 @@ class Goal(ModelObject):
             **_base_kwargs_from_typed_payload(data, "goal"),
             actor_id=_require_non_null_string(data, "actor_id"),
             kind=_str_from_data(data, "kind", "final"),
-            priority=float(data.get("priority") or 1.0),
+            priority=float(data.get("priority") if data.get("priority") not in (None, "") else 1.0),
+
             status=_str_from_data(data, "status", "active"),
             horizon=_dict_from_data(data, "horizon"),
             target_condition=_dict_from_data(data, "target_condition"),
