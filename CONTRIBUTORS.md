@@ -5,10 +5,11 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 35
+- **Merged PRs:** 36
 
 #### Merged Pull Requests
 
+- [#101 Feature/llm export](https://github.com/kakchouch/ometeotl/pull/101)
 - [#100 added the _str_from_data helper, propagated the refactor](https://github.com/kakchouch/ometeotl/pull/100)
 - [#99 Overhaul/architecture](https://github.com/kakchouch/ometeotl/pull/99)
 - [#98 Feature/io module](https://github.com/kakchouch/ometeotl/pull/98)
