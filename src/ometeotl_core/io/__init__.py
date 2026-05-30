@@ -15,6 +15,13 @@ from .importers import (
     world_from_mapping,
     world_from_yaml,
 )
+from .llm_export import (
+    LLMViewBuilder,
+    LLMViewContext,
+    actor_to_llm_view,
+    world_to_llm_view,
+    perception_to_llm_view,
+)
 
 __all__ = [
     "WorldImportResult",
@@ -28,4 +35,9 @@ __all__ = [
     "world_from_yaml",
     "read_world_json",
     "read_world_yaml",
+    "LLMViewBuilder",
+    "LLMViewContext",
+    "actor_to_llm_view",
+    "world_to_llm_view",
+    "perception_to_llm_view",
 ]

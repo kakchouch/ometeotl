@@ -6,16 +6,28 @@ import pytest
 import yaml
 
 from ometeotl_core.io import (
+    world_to_llm_view,
     world_from_json,
     world_from_mapping,
     world_from_yaml,
     world_to_json,
     world_to_yaml,
 )
+from ometeotl_core.model.actions import Action
 from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.base import ModelObject
+from ometeotl_core.model.goals import Goal
+from ometeotl_core.model.perception import (
+    Perception,
+    PerceivedComponentLink,
+    PerceivedMembership,
+    PerceivedRelation,
+    PerceivedSpace,
+)
 from ometeotl_core.model.resources import Resource
 from ometeotl_core.model.space_relations import SpaceRelation
-from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.spaces import Space, SpaceObjectMembership
+from ometeotl_core.model.strategies import Strategy, StrategyNode
 from ometeotl_core.model.world import World
 from ometeotl_core.validation import (
     StructuralValidator,
@@ -46,6 +58,78 @@ def _build_world() -> World:
     world.register_object(actor)
     world.register_object(resource)
     return world
+
+
+def _build_strategy() -> Strategy:
+    strategy = Strategy(
+        id="strategy-io-1",
+        actor_id="actor-1",
+        goal_id="goal-1",
+        root_node_id="node-1",
+        nodes=[
+            StrategyNode(
+                node_id="node-1",
+                action_id="action-1",
+            )
+        ],
+    )
+    strategy.add_relation("action", "action-1")
+    return strategy
+
+
+def _build_goal() -> Goal:
+    goal = Goal(
+        id="goal-io-1",
+        actor_id="actor-1",
+        kind="final",
+        priority=0.5,
+        status="active",
+        target_condition={"kind": "sample"},
+    )
+    goal.add_relation("actor", "actor-1")
+    goal.add_relation("target_space", "zone-a")
+    return goal
+
+
+def _build_perception() -> Perception:
+    return Perception(
+        id="perception-io-1",
+        actor_id="actor-1",
+        source_id="world-io-1",
+        perceived_spaces={
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"),
+                epistemic_status="certain",
+            )
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                ),
+                epistemic_status="believed",
+            )
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            )
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-1",
+                composite_id="actor-1",
+                component_id="actor-2",
+                epistemic_status="projected",
+            )
+        ],
+    )
 
 
 def test_world_to_json_is_deterministic():
@@ -195,3 +279,267 @@ def test_world_json_and_yaml_exports_describe_same_payload():
     yaml_payload = yaml.safe_load(world_to_yaml(world))
 
     assert json_payload == yaml_payload == world.to_dict()
+
+
+def test_world_to_llm_view_summarizes_registry_members_without_error():
+    """LLM export should summarize registered objects using the real registry API."""
+    world = _build_world()
+
+    view = world_to_llm_view(world)
+
+    assert view["id"] == "world-io-1"
+    assert view["type"] == "world"
+    assert view["members_summary"] == {
+        "total_actors": 1,
+        "total_spaces": 0,
+        "total_resources": 1,
+    }
+    assert view["members"] == {
+        "actors": ["actor-registered"],
+        "spaces": [],
+        "resources": ["resource-registered"],
+    }
+
+
+def test_world_to_llm_view_sorts_member_ids_deterministically():
+    """LLM export must sort registry member IDs regardless of registration order."""
+    world = World(id="world-io-sorted-members")
+    world.register_object(Actor(id="actor-z"))
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Resource(id="resource-z"))
+    world.register_object(Resource(id="resource-a"))
+    world.register_object(Space(id="space-z"))
+    world.register_object(Space(id="space-a"))
+
+    view = world_to_llm_view(world)
+
+    assert view["members"]["actors"] == ["actor-a", "actor-z"]
+    assert view["members"]["resources"] == ["resource-a", "resource-z"]
+    assert view["members"]["spaces"] == ["space-a", "space-z"]
+
+
+def test_model_objects_expose_to_llm_view_directly():
+    """Model objects should expose the LLM view through the shared base API."""
+    world = _build_world()
+    actor = world.model_registry.get("actor-registered")
+
+    assert actor is not None
+
+    world_view = world.to_llm_view()
+    actor_view = actor.to_llm_view()
+
+    assert world_view["type"] == "world"
+    assert world_view["members_summary"]["total_actors"] == 1
+    assert actor_view["type"] == "actor"
+    assert actor_view["kind"] == "generic"
+
+
+def test_strategy_goal_and_perception_expose_direct_llm_views():
+    """Strategy, goal, and perception objects should expose direct LLM views."""
+    strategy = _build_strategy()
+    goal = _build_goal()
+    perception = _build_perception()
+
+    strategy_view = strategy.to_llm_view()
+    goal_view = goal.to_llm_view()
+    perception_view = perception.to_llm_view()
+
+    assert strategy_view["type"] == "strategy"
+    assert strategy_view["structure"]["action"] == ["action-1"]
+    assert strategy_view["reality"]["relations"]["action"] == ["action-1"]
+    assert strategy_view["perception"] is None
+    assert strategy_view["epistemic"]["has_perception"] is False
+
+    assert goal_view["type"] == "goal"
+    assert goal_view["structure"]["actor"] == ["actor-1"]
+    assert goal_view["structure"]["target_space"] == ["zone-a"]
+    assert goal_view["reality"]["relations"]["actor"] == ["actor-1"]
+    assert goal_view["perception"] is None
+    assert goal_view["epistemic"]["status"] == "certain"
+
+    assert perception_view["type"] == "perception"
+    assert perception_view["reality"]["actor_id"] == "actor-1"
+    assert perception_view["perception"]["perceived_spaces"]["zone-a"]["epistemic_status"] == "certain"
+    assert perception_view["epistemic_statuses"]["certain"][0]["kind"] == "space"
+    assert perception_view["epistemic_statuses"]["believed"][0]["kind"] == "membership"
+    assert perception_view["epistemic_statuses"]["hypothesis"][0]["kind"] == "relation"
+    assert perception_view["epistemic_statuses"]["projected"][0]["kind"] == "component_link"
+    assert perception_view["epistemic"]["has_perception"] is True
+
+
+def test_perception_llm_view_is_stable_across_insertion_order():
+    """Perception LLM export must be deterministic across insertion orders."""
+    perception_a = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
+            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    perception_b = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
+            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    view_a = perception_a.to_llm_view()
+    view_b = perception_b.to_llm_view()
+
+    assert view_a["perception"] == view_b["perception"]
+    assert view_a["epistemic_statuses"] == view_b["epistemic_statuses"]
+
+
+def test_space_and_resource_expose_direct_llm_views():
+    """Space and resource objects should also use the shared direct LLM view API."""
+    space = Space(id="space-llm-1")
+    resource = Resource(id="resource-llm-1")
+    resource.kind = "material"
+
+    space_view = space.to_llm_view()
+    resource_view = resource.to_llm_view()
+
+    assert space_view["type"] == "space"
+    assert space_view["reality"]["attributes"]["kind"] == "abstract"
+    assert space_view["perception"] is None
+    assert space_view["epistemic"]["status"] == "certain"
+
+    assert resource_view["type"] == "resource"
+    assert resource_view["reality"]["attributes"]["kind"] == "material"
+    assert resource_view["perception"] is None
+    assert resource_view["epistemic"]["has_perception"] is False
+
+
+def test_action_and_generic_model_object_expose_direct_llm_views():
+    """Action and plain model objects should use the generic LLM fallback."""
+    action = Action(
+        id="action-llm-1",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+    )
+    generic = ModelObject(
+        id="generic-llm-1",
+        object_type="custom-object",
+    )
+    generic.set_attribute("label", "Generic Object")
+
+    action_view = action.to_llm_view()
+    generic_view = generic.to_llm_view()
+
+    assert action_view["type"] == "action"
+    assert action_view["reality"]["attributes"] == {}
+    assert action_view["reality"]["relations"] == {}
+    assert action_view["perception"] is None
+    assert action_view["epistemic"]["has_perception"] is False
+
+    assert generic_view["type"] == "custom-object"
+    assert generic_view["reality"]["attributes"]["label"] == "Generic Object"
+    assert generic_view["perception"] is None
+    assert generic_view["epistemic"]["status"] == "certain"

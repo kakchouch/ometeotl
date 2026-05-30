@@ -363,3 +363,10 @@ class Perception:
             context=_dict_from_data(data, "context"),
             provenance=_dict_from_data(data, "provenance"),
         )
+
+    def to_llm_view(self) -> JsonMap:
+        """Return an LLM-oriented view of this perception."""
+        from ometeotl_core.io.llm_export import LLMViewBuilder, LLMViewContext
+
+        builder = LLMViewBuilder()
+        return builder.perception_view(self, context=LLMViewContext())
