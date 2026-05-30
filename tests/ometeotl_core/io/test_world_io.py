@@ -216,3 +216,19 @@ def test_world_to_llm_view_summarizes_registry_members_without_error():
         "spaces": [],
         "resources": ["resource-registered"],
     }
+
+
+def test_model_objects_expose_to_llm_view_directly():
+    """Model objects should expose the LLM view through the shared base API."""
+    world = _build_world()
+    actor = world.model_registry.get("actor-registered")
+
+    assert actor is not None
+
+    world_view = world.to_llm_view()
+    actor_view = actor.to_llm_view()
+
+    assert world_view["type"] == "world"
+    assert world_view["members_summary"]["total_actors"] == 1
+    assert actor_view["type"] == "actor"
+    assert actor_view["kind"] == "generic"

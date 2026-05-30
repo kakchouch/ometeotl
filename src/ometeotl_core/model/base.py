@@ -535,6 +535,47 @@ class ModelObject:
             "provenance": _canonical_json_map(self.provenance),
         }
 
+    def to_llm_view(self) -> JsonMap:
+        """Return a language-model-oriented view of this object.
+
+        The implementation is intentionally centralized here so subclasses can
+        inherit a consistent export surface while the specialized formatting
+        remains in the dedicated IO layer.
+        """
+        from ometeotl_core.io.llm_export import LLMViewBuilder, LLMViewContext
+
+        builder = LLMViewBuilder()
+        context = LLMViewContext()
+
+        object_type = str(self.object_type).lower()
+        if object_type == "world":
+            return builder.world_view(self, context=context)
+        if object_type == "actor":
+            return builder.actor_view(self, context=context)
+        if object_type == "space":
+            return builder.space_view(self, context=context)
+        if object_type == "strategy":
+            return builder.strategy_view(self, context=context)
+        if object_type == "goal":
+            return builder.goal_view(self, context=context)
+        if object_type == "perception":
+            return builder.perception_view(self, context=context)
+
+        view = {
+            "id": self.id,
+            "type": object_type,
+        }
+        if self.attributes:
+            view["attributes"] = _canonical_json_map(self.attributes)
+        if self.state:
+            view["state"] = _canonical_json_map(self.state)
+        if self.relations:
+            view["relations"] = {
+                key: sorted(str(value) for value in values)
+                for key, values in sorted(self.relations.items())
+            }
+        return view
+
     def _base_kwargs(self) -> "JsonMap":
         """Return the base keyword arguments shared by all ModelObject subclasses.
 
