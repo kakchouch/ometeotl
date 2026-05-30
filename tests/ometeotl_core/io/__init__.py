@@ -9,20 +9,28 @@ collection.
 
 from __future__ import annotations
 
-import importlib.util
-import sysconfig
+import importlib
+import sys
 from pathlib import Path
 
 
 def _load_stdlib_io() -> object:
-	stdlib_path = Path(sysconfig.get_path("stdlib")) / "io.py"
-	spec = importlib.util.spec_from_file_location("_stdlib_io", stdlib_path)
-	if spec is None or spec.loader is None:
-		raise ImportError(f"Unable to load stdlib io module from {stdlib_path}")
+	original_path = list(sys.path)
+	original_io = sys.modules.pop("io", None)
 
-	module = importlib.util.module_from_spec(spec)
-	spec.loader.exec_module(module)
-	return module
+	tests_root = Path(__file__).resolve().parents[3]
+
+	try:
+		sys.path = [
+			path
+			for path in original_path
+			if path and tests_root.as_posix() not in Path(path).as_posix()
+		]
+		return importlib.import_module("io")
+	finally:
+		sys.path = original_path
+		if original_io is not None:
+			sys.modules["io"] = original_io
 
 
 _stdlib_io = _load_stdlib_io()

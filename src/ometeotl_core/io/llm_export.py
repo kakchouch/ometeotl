@@ -227,15 +227,36 @@ class LLMViewBuilder:
             },
             "perceived_memberships": [
                 membership.to_dict()
-                for membership in getattr(perception, "perceived_memberships", [])
+                for membership in sorted(
+                    getattr(perception, "perceived_memberships", []),
+                    key=lambda x: (
+                        x.membership.space_id,
+                        x.membership.object_id,
+                        x.membership.role,
+                    ),
+                )
             ],
             "perceived_relations": [
                 relation.to_dict()
-                for relation in getattr(perception, "perceived_relations", [])
+                for relation in sorted(
+                    getattr(perception, "perceived_relations", []),
+                    key=lambda x: (
+                        x.relation.source_space_id,
+                        x.relation.target_space_id,
+                        x.relation.relation_type,
+                    ),
+                )
             ],
             "perceived_component_links": [
                 link.to_dict()
-                for link in getattr(perception, "perceived_component_links", [])
+                for link in sorted(
+                    getattr(perception, "perceived_component_links", []),
+                    key=lambda x: (
+                        x.composite_id,
+                        x.component_id,
+                        x.link_id,
+                    ),
+                )
             ],
         }
 
@@ -243,12 +264,21 @@ class LLMViewBuilder:
         """Group perceived items by epistemic status for stable LLM output."""
         grouped: dict[str, list[dict[str, Any]]] = {}
 
-        for space_id, space_view in getattr(perception, "perceived_spaces", {}).items():
+        for space_id, space_view in sorted(
+            getattr(perception, "perceived_spaces", {}).items()
+        ):
             grouped.setdefault(space_view.epistemic_status, []).append(
                 {"kind": "space", "id": space_id}
             )
 
-        for membership in getattr(perception, "perceived_memberships", []):
+        for membership in sorted(
+            getattr(perception, "perceived_memberships", []),
+            key=lambda x: (
+                x.membership.space_id,
+                x.membership.object_id,
+                x.membership.role,
+            ),
+        ):
             grouped.setdefault(membership.epistemic_status, []).append(
                 {
                     "kind": "membership",
@@ -257,7 +287,14 @@ class LLMViewBuilder:
                 }
             )
 
-        for relation in getattr(perception, "perceived_relations", []):
+        for relation in sorted(
+            getattr(perception, "perceived_relations", []),
+            key=lambda x: (
+                x.relation.source_space_id,
+                x.relation.target_space_id,
+                x.relation.relation_type,
+            ),
+        ):
             grouped.setdefault(relation.epistemic_status, []).append(
                 {
                     "kind": "relation",
@@ -266,7 +303,14 @@ class LLMViewBuilder:
                 }
             )
 
-        for link in getattr(perception, "perceived_component_links", []):
+        for link in sorted(
+            getattr(perception, "perceived_component_links", []),
+            key=lambda x: (
+                x.composite_id,
+                x.component_id,
+                x.link_id,
+            ),
+        ):
             grouped.setdefault(link.epistemic_status, []).append(
                 {
                     "kind": "component_link",
@@ -275,7 +319,10 @@ class LLMViewBuilder:
                 }
             )
 
-        return grouped
+        return {
+            status: grouped[status]
+            for status in sorted(grouped)
+        }
 
     def world_view(
         self,
@@ -343,11 +390,15 @@ class LLMViewBuilder:
                 1 for obj in registered_objects if obj.object_type == "resource"
             )
 
-            actors = [obj.id for obj in registered_objects if obj.object_type == "actor"]
-            spaces = [obj.id for obj in registered_objects if obj.object_type == "space"]
-            resources = [
+            actors = sorted(
+                obj.id for obj in registered_objects if obj.object_type == "actor"
+            )
+            spaces = sorted(
+                obj.id for obj in registered_objects if obj.object_type == "space"
+            )
+            resources = sorted(
                 obj.id for obj in registered_objects if obj.object_type == "resource"
-            ]
+            )
 
             # Include member IDs
             view["members"] = {

@@ -301,6 +301,23 @@ def test_world_to_llm_view_summarizes_registry_members_without_error():
     }
 
 
+def test_world_to_llm_view_sorts_member_ids_deterministically():
+    """LLM export must sort registry member IDs regardless of registration order."""
+    world = World(id="world-io-sorted-members")
+    world.register_object(Actor(id="actor-z"))
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Resource(id="resource-z"))
+    world.register_object(Resource(id="resource-a"))
+    world.register_object(Space(id="space-z"))
+    world.register_object(Space(id="space-a"))
+
+    view = world_to_llm_view(world)
+
+    assert view["members"]["actors"] == ["actor-a", "actor-z"]
+    assert view["members"]["resources"] == ["resource-a", "resource-z"]
+    assert view["members"]["spaces"] == ["space-a", "space-z"]
+
+
 def test_model_objects_expose_to_llm_view_directly():
     """Model objects should expose the LLM view through the shared base API."""
     world = _build_world()
@@ -348,6 +365,135 @@ def test_strategy_goal_and_perception_expose_direct_llm_views():
     assert perception_view["epistemic_statuses"]["hypothesis"][0]["kind"] == "relation"
     assert perception_view["epistemic_statuses"]["projected"][0]["kind"] == "component_link"
     assert perception_view["epistemic"]["has_perception"] is True
+
+
+def test_perception_llm_view_is_stable_across_insertion_order():
+    """Perception LLM export must be deterministic across insertion orders."""
+    perception_a = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
+            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    perception_b = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
+            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    view_a = perception_a.to_llm_view()
+    view_b = perception_b.to_llm_view()
+
+    assert view_a["perception"] == view_b["perception"]
+    assert view_a["epistemic_statuses"] == view_b["epistemic_statuses"]
 
 
 def test_space_and_resource_expose_direct_llm_views():
