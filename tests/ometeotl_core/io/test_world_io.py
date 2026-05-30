@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from ometeotl_core.io import (
+    world_to_llm_view,
     world_from_json,
     world_from_mapping,
     world_from_yaml,
@@ -195,3 +196,23 @@ def test_world_json_and_yaml_exports_describe_same_payload():
     yaml_payload = yaml.safe_load(world_to_yaml(world))
 
     assert json_payload == yaml_payload == world.to_dict()
+
+
+def test_world_to_llm_view_summarizes_registry_members_without_error():
+    """LLM export should summarize registered objects using the real registry API."""
+    world = _build_world()
+
+    view = world_to_llm_view(world)
+
+    assert view["id"] == "world-io-1"
+    assert view["type"] == "world"
+    assert view["members_summary"] == {
+        "total_actors": 1,
+        "total_spaces": 0,
+        "total_resources": 1,
+    }
+    assert view["members"] == {
+        "actors": ["actor-registered"],
+        "spaces": [],
+        "resources": ["resource-registered"],
+    }
