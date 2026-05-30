@@ -138,6 +138,145 @@ class LLMViewBuilder:
 
         return view
 
+    def _build_reality_block(
+        self,
+        data: Mapping[str, Any],
+        context: LLMViewContext,
+    ) -> dict[str, Any]:
+        """Build the ontological slice of a model object."""
+        reality: dict[str, Any] = {}
+
+        if context.include_attributes:
+            attributes = data.get("attributes", {})
+            if attributes:
+                reality["attributes"] = dict(attributes)
+
+        if context.include_state:
+            state = data.get("state", {})
+            if state:
+                reality["state"] = dict(state)
+
+        if context.include_relations:
+            relations = data.get("relations", {})
+            if relations:
+                reality["relations"] = {
+                    key: sorted(str(rel_id) for rel_id in rel_ids)
+                    for key, rel_ids in relations.items()
+                    if rel_ids
+                }
+
+        if context.include_provenance:
+            provenance = data.get("provenance", {})
+            if provenance:
+                reality["provenance"] = dict(provenance)
+
+        if context.include_context:
+            ctx = data.get("context", {})
+            if ctx:
+                reality["context"] = dict(ctx)
+
+        return reality
+
+    def _build_epistemic_block(
+        self,
+        status: str,
+        meaning: str,
+        has_perception: bool = False,
+    ) -> dict[str, Any]:
+        return {
+            "status": status,
+            "meaning": meaning,
+            "distinctions": [
+                "reality",
+                "perception",
+                "belief",
+                "hypothesis",
+                "projection",
+            ],
+            "has_perception": has_perception,
+        }
+
+    def _attach_standard_blocks(
+        self,
+        view: dict[str, Any],
+        *,
+        reality: Mapping[str, Any],
+        epistemic_status: str,
+        epistemic_meaning: str,
+        has_perception: bool = False,
+        perception: Any = None,
+    ) -> dict[str, Any]:
+        """Attach the standard LLM blocks to a view and return it."""
+        view["reality"] = dict(reality)
+        view["perception"] = perception
+        view["epistemic"] = self._build_epistemic_block(
+            status=epistemic_status,
+            meaning=epistemic_meaning,
+            has_perception=has_perception,
+        )
+        return view
+
+    def _build_perception_payload(self, perception: Any) -> dict[str, Any]:
+        """Build the raw perceived structures for LLM consumption."""
+        return {
+            "perceived_spaces": {
+                space_id: space_view.to_dict()
+                for space_id, space_view in sorted(
+                    getattr(perception, "perceived_spaces", {}).items()
+                )
+            },
+            "perceived_memberships": [
+                membership.to_dict()
+                for membership in getattr(perception, "perceived_memberships", [])
+            ],
+            "perceived_relations": [
+                relation.to_dict()
+                for relation in getattr(perception, "perceived_relations", [])
+            ],
+            "perceived_component_links": [
+                link.to_dict()
+                for link in getattr(perception, "perceived_component_links", [])
+            ],
+        }
+
+    def _build_epistemic_status_groups(self, perception: Any) -> dict[str, list[dict[str, Any]]]:
+        """Group perceived items by epistemic status for stable LLM output."""
+        grouped: dict[str, list[dict[str, Any]]] = {}
+
+        for space_id, space_view in getattr(perception, "perceived_spaces", {}).items():
+            grouped.setdefault(space_view.epistemic_status, []).append(
+                {"kind": "space", "id": space_id}
+            )
+
+        for membership in getattr(perception, "perceived_memberships", []):
+            grouped.setdefault(membership.epistemic_status, []).append(
+                {
+                    "kind": "membership",
+                    "object_id": membership.membership.object_id,
+                    "space_id": membership.membership.space_id,
+                }
+            )
+
+        for relation in getattr(perception, "perceived_relations", []):
+            grouped.setdefault(relation.epistemic_status, []).append(
+                {
+                    "kind": "relation",
+                    "source_space_id": relation.relation.source_space_id,
+                    "target_space_id": relation.relation.target_space_id,
+                }
+            )
+
+        for link in getattr(perception, "perceived_component_links", []):
+            grouped.setdefault(link.epistemic_status, []).append(
+                {
+                    "kind": "component_link",
+                    "composite_id": link.composite_id,
+                    "component_id": link.component_id,
+                }
+            )
+
+        return grouped
+
     def world_view(
         self,
         world: Any,
@@ -169,6 +308,12 @@ class LLMViewBuilder:
             "world",
             world_dict,
             context,
+        )
+        self._attach_standard_blocks(
+            view,
+            reality=self._build_reality_block(world_dict, context),
+            epistemic_status="certain",
+            epistemic_meaning="Ontological world state",
         )
 
         # Add member objects summary
@@ -249,6 +394,23 @@ class LLMViewBuilder:
             actor_dict,
             context,
         )
+        perception_view = (
+            self.perception_view(include_perception, context)
+            if include_perception is not None
+            else None
+        )
+        self._attach_standard_blocks(
+            view,
+            reality=self._build_reality_block(actor_dict, context),
+            epistemic_status="mixed" if include_perception is not None else "certain",
+            epistemic_meaning=(
+                "Actor reality plus an attached perception view"
+                if include_perception is not None
+                else "Ontological actor state"
+            ),
+            has_perception=include_perception is not None,
+            perception=perception_view,
+        )
 
         # Expose key actor properties
         kind = actor.attributes.get("kind", "generic")
@@ -266,10 +428,6 @@ class LLMViewBuilder:
                 "values": relations.get("value", []),
             }
             view["constraints"] = relations.get("constraint", [])
-
-        # If perception is provided, include the actor's view of the world
-        if include_perception is not None:
-            view["perception"] = self.perception_view(include_perception, context)
 
         return view
 
@@ -304,6 +462,12 @@ class LLMViewBuilder:
             "strategy",
             strategy_dict,
             context,
+        )
+        self._attach_standard_blocks(
+            view,
+            reality=self._build_reality_block(strategy_dict, context),
+            epistemic_status="certain",
+            epistemic_meaning="Ontological strategy structure",
         )
 
         # Highlight strategy structure
@@ -348,6 +512,12 @@ class LLMViewBuilder:
             goal_dict,
             context,
         )
+        self._attach_standard_blocks(
+            view,
+            reality=self._build_reality_block(goal_dict, context),
+            epistemic_status="certain",
+            epistemic_meaning="Ontological goal structure",
+        )
 
         if context.include_relations:
             relations = goal_dict.get("relations", {})
@@ -391,19 +561,23 @@ class LLMViewBuilder:
             perception_dict,
             context,
         )
+        perception_payload = self._build_perception_payload(perception)
 
-        # Highlight epistemic structure
-        perceived_items = perception_dict.get("perceived_items", {})
-        view["epistemic_statuses"] = {}
+        self._attach_standard_blocks(
+            view,
+            reality={
+                "id": perception.id,
+                "actor_id": perception_dict.get("actor_id"),
+                "source_id": perception_dict.get("source_id"),
+                "timestamp": perception_dict.get("timestamp"),
+            },
+            epistemic_status="mixed",
+            epistemic_meaning="Perception groups reality into epistemic confidence levels",
+            has_perception=True,
+            perception=perception_payload,
+        )
 
-        # Count items by epistemic status
-        for item_id, item_data in perceived_items.items():
-            status = item_data.get("epistemic_status", "certain")
-            if status not in view["epistemic_statuses"]:
-                view["epistemic_statuses"][status] = []
-            view["epistemic_statuses"][status].append(item_id)
-
-        # Add interpretation guide
+        view["epistemic_statuses"] = self._build_epistemic_status_groups(perception)
         view["epistemic_meanings"] = {
             "certain": "Directly observed, no uncertainty",
             "believed": "Inferred or remembered, probably true",
@@ -411,7 +585,6 @@ class LLMViewBuilder:
             "projected": "Anticipated based on a model but not observed",
             "error": "Identified as incorrect (diagnosed hallucination)",
         }
-
         return view
 
     def space_view(
@@ -445,6 +618,12 @@ class LLMViewBuilder:
             "space",
             space_dict,
             context,
+        )
+        self._attach_standard_blocks(
+            view,
+            reality=self._build_reality_block(space_dict, context),
+            epistemic_status="certain",
+            epistemic_meaning="Ontological space state",
         )
 
         # Highlight space properties

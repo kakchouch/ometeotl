@@ -574,6 +574,24 @@ class ModelObject:
                 key: sorted(str(value) for value in values)
                 for key, values in sorted(self.relations.items())
             }
+        view["reality"] = {
+            "attributes": view.get("attributes", {}),
+            "state": view.get("state", {}),
+            "relations": view.get("relations", {}),
+        }
+        view["perception"] = None
+        view["epistemic"] = {
+            "status": "certain",
+            "meaning": "Ontological model object",
+            "distinctions": [
+                "reality",
+                "perception",
+                "belief",
+                "hypothesis",
+                "projection",
+            ],
+            "has_perception": False,
+        }
         return view
 
     def _base_kwargs(self) -> "JsonMap":
