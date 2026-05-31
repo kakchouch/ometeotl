@@ -380,7 +380,7 @@ class ContextualGenerationPipeline:
         merged_context = dict(target.context)
         has_valid_update = False
         for key, value in updates.items():
-            if key:
+            if key is not None and (not isinstance(key, str) or key.strip()):
                 merged_context[key] = value
                 has_valid_update = True
 

@@ -218,10 +218,18 @@ def build_perception(context: GenerationContext) -> Perception:
 
         payload_map = _as_mapping(payload)
         raw_membership = payload_map.get("membership")
+        if raw_membership is None:
+            raise ValueError(
+                "Perception generation requires 'membership' payload in perceived_memberships"
+            )
         if isinstance(raw_membership, SpaceObjectMembership):
             membership = raw_membership
         else:
             membership_map = _as_mapping(raw_membership)
+            if not membership_map:
+                raise ValueError(
+                    "Perception generation requires non-empty 'membership' mapping in perceived_memberships"
+                )
             membership = SpaceObjectMembership.from_dict(membership_map)
 
         perceived_memberships.append(

@@ -1,5 +1,7 @@
 """Tests for contextual generation pipeline."""
 
+from typing import Any, cast
+
 import pytest
 
 from tests.ometeotl_core._artifact_utils import write_json_artifact
@@ -510,6 +512,41 @@ def test_pipeline_corrective_update_replaces_specified_relations():
     assert actor.relations["resource"] == ["resource-c"]
 
 
+def test_pipeline_partial_update_preserves_falsy_non_string_context_keys():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-falsy-keys")
+    actor_zero = Actor(id="actor-update-falsy-key-zero")
+    actor_false = Actor(id="actor-update-falsy-key-false")
+    world.register_object(actor_zero)
+    world.register_object(actor_false)
+
+    zero_result = pipeline.generate(
+        GenerationContext(
+            kind="actor",
+            id="actor-update-falsy-key-zero",
+            operation="partial_update",
+            context=cast(dict[str, Any], {0: "zero-key", "": "ignored-empty"}),
+        ),
+        world=world,
+    )
+
+    false_result = pipeline.generate(
+        GenerationContext(
+            kind="actor",
+            id="actor-update-falsy-key-false",
+            operation="partial_update",
+            context=cast(dict[str, Any], {False: "false-key"}),
+        ),
+        world=world,
+    )
+
+    assert zero_result.generated is actor_zero
+    assert false_result.generated is actor_false
+    assert cast(dict[Any, Any], actor_zero.context)[0] == "zero-key"
+    assert "" not in actor_zero.context
+    assert cast(dict[Any, Any], actor_false.context)[False] == "false-key"
+
+
 def test_pipeline_partial_update_context_is_blocked_by_authority_mode():
     pipeline = ContextualGenerationPipeline()
     world = World(id="world-update-authority-1")
@@ -603,6 +640,49 @@ def test_pipeline_perception_generation_rejects_component_link_missing_component
                             "link_id": "link-1",
                             "composite_id": "actor-1",
                             "epistemic_status": "projected",
+                        }
+                    ],
+                },
+            )
+        )
+
+
+def test_pipeline_perception_generation_rejects_membership_missing_payload():
+    pipeline = ContextualGenerationPipeline()
+
+    with pytest.raises(ValueError, match="requires 'membership' payload"):
+        pipeline.generate(
+            GenerationContext(
+                kind="perception",
+                id="perception-invalid-membership-missing",
+                metadata={
+                    "actor_id": "actor-1",
+                    "source_id": "world-1",
+                    "perceived_memberships": [
+                        {
+                            "epistemic_status": "certain",
+                        }
+                    ],
+                },
+            )
+        )
+
+
+def test_pipeline_perception_generation_rejects_membership_empty_mapping():
+    pipeline = ContextualGenerationPipeline()
+
+    with pytest.raises(ValueError, match="requires non-empty 'membership' mapping"):
+        pipeline.generate(
+            GenerationContext(
+                kind="perception",
+                id="perception-invalid-membership-empty",
+                metadata={
+                    "actor_id": "actor-1",
+                    "source_id": "world-1",
+                    "perceived_memberships": [
+                        {
+                            "membership": {},
+                            "epistemic_status": "certain",
                         }
                     ],
                 },

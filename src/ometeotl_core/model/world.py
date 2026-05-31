@@ -296,10 +296,16 @@ class World(Space):
             if not isinstance(entry, Mapping):
                 raise TypeError("World.from_context expected mapping for 'placements'")
             placement_payload = dict(entry)
+            object_id = str(placement_payload.get("object_id") or "").strip()
+            space_id = str(placement_payload.get("space_id") or "").strip()
+            if not object_id or not space_id:
+                raise ValueError(
+                    "World.from_context placements require non-empty 'object_id' and 'space_id'"
+                )
             placements.append(
                 GenerationPlacement(
-                    object_id=str(placement_payload.get("object_id") or ""),
-                    space_id=str(placement_payload.get("space_id") or ""),
+                    object_id=object_id,
+                    space_id=space_id,
                     role=str(placement_payload.get("role") or "occupies"),
                     metadata=dict(placement_payload.get("metadata") or {}),
                 )

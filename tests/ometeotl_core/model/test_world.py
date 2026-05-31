@@ -285,6 +285,34 @@ def test_world_from_context_requires_non_empty_id():
         World.from_context({"spaces": [{"id": "s1", "kind": "space"}]})
 
 
+def test_world_from_context_rejects_empty_placement_object_id():
+    with pytest.raises(
+        ValueError,
+        match="placements require non-empty 'object_id' and 'space_id'",
+    ):
+        World.from_context(
+            {
+                "id": "world-invalid-placement-1",
+                "placements": [{"object_id": "", "space_id": "space-1"}],
+                "validate": False,
+            }
+        )
+
+
+def test_world_from_context_rejects_empty_placement_space_id():
+    with pytest.raises(
+        ValueError,
+        match="placements require non-empty 'object_id' and 'space_id'",
+    ):
+        World.from_context(
+            {
+                "id": "world-invalid-placement-2",
+                "placements": [{"object_id": "actor-1", "space_id": ""}],
+                "validate": False,
+            }
+        )
+
+
 def test_world_from_context_forwards_validate_flag(monkeypatch):
     import ometeotl_core.generation as generation_module
 

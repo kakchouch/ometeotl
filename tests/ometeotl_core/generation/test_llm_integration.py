@@ -70,6 +70,26 @@ def test_llm_adapter_falls_back_on_invalid_json_response():
     assert any("falling back" in msg.lower() for msg in refinement.diagnostics)
 
 
+def test_llm_adapter_parses_markdown_wrapped_json_response():
+        def fake_generator(prompt: str) -> str:
+                del prompt
+                return """```json
+{
+    \"label\": \"Wrapped\",
+    \"attributes\": {\"kind\": \"custom\"}
+}
+```"""
+
+        adapter = LLMGenerationAdapter(text_generator=fake_generator)
+        base_context = GenerationContext(kind="actor", id="actor-hybrid-2c", label="Base")
+
+        refinement = adapter.refine_context(base_context)
+
+        assert refinement.used_fallback is False
+        assert refinement.refined_context.label == "Wrapped"
+        assert refinement.refined_context.attributes["kind"] == "custom"
+
+
 def test_llm_adapter_falls_back_when_text_generator_raises():
     def failing_generator(prompt: str) -> str:
         del prompt

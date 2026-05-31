@@ -180,7 +180,17 @@ class LLMGenerationAdapter:
         return overrides
 
     def _parse_json_mapping(self, raw_response: str) -> Mapping[str, Any]:
-        parsed = json.loads(raw_response)
+        cleaned = raw_response.strip()
+        ticks = "`" * 3
+        if cleaned.startswith(ticks):
+            lines = cleaned.splitlines()
+            if lines and lines[0].startswith(ticks):
+                lines = lines[1:]
+            if lines and lines[-1].startswith(ticks):
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
+
+        parsed = json.loads(cleaned)
         if not isinstance(parsed, Mapping):
             raise ValueError("LLM response must decode to a JSON object")
         return parsed
