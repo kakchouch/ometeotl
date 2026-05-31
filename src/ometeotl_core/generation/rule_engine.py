@@ -127,9 +127,14 @@ def _propagate_spatial_constraints(context: GenerationContext) -> GenerationCont
 
     allowed_spaces = spatial.get("allowed_spaces")
     if allowed_spaces:
-        normalized_spaces = [
-            str(space_id) for space_id in allowed_spaces if str(space_id).strip()
-        ]
+        if isinstance(allowed_spaces, str):
+            allowed_spaces = [allowed_spaces]
+        try:
+            normalized_spaces = [
+                str(space_id) for space_id in allowed_spaces if str(space_id).strip()
+            ]
+        except TypeError:
+            normalized_spaces = []
         if normalized_spaces:
             metadata.setdefault("allowed_spaces", sorted(set(normalized_spaces)))
 
