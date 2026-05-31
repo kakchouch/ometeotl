@@ -18,7 +18,7 @@ from ometeotl_core.validation.pipeline import ValidationPipeline
 from .builders import build_from_context
 from .context import GenerationContext
 from .llm_integration import LLMGenerationAdapter
-from .rules import GenerationRuleSet, default_generation_rules
+from .rule_engine import GenerationRuleSet, combined_generation_rules
 
 VALID_GENERATION_OPERATIONS: frozenset[str] = frozenset(
     {"create", "partial_update", "corrective_update"}
@@ -49,7 +49,7 @@ class ContextualGenerationPipeline:
         rules: GenerationRuleSet | None = None,
         validation_pipeline: ValidationPipeline | None = None,
     ) -> None:
-        self._rules = rules or default_generation_rules()
+        self._rules = rules or combined_generation_rules()
         self._validation_pipeline = validation_pipeline
 
     @property

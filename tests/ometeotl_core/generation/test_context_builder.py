@@ -1,4 +1,4 @@
-"""Tests for class-based contextual builders (Step 5)."""
+"""Tests for class-based contextual builders."""
 
 import pytest
 
@@ -31,7 +31,7 @@ def test_generation_context_exposes_rules_and_constraints_in_merged_context():
     assert merged["generation"]["constraints"] == {"max_links": 4}
 
 
-def test_default_contextual_builders_cover_core_step5_kinds():
+def test_default_contextual_builders_cover_core_context_kinds():
     builder_map = default_contextual_builders()
 
     assert sorted(builder_map.keys()) == [

@@ -13,7 +13,17 @@ from .context_builder import (
 )
 from .llm_integration import LLMGenerationAdapter, LLMRefinementResult
 from .pipeline import ContextualGenerationPipeline, GenerationResult
-from .rules import GenerationRule, GenerationRuleSet, default_generation_rules
+from .rule_engine import (
+    GenerationRule,
+    GenerationRuleSet,
+    RuleRegistry,
+    admissibility_constraint_rules,
+    combined_generation_rules,
+    default_generation_rules,
+    default_rule_registry,
+    spatial_constraint_rules,
+    temporal_constraint_rules,
+)
 
 __all__ = [
     "GenerationContext",
@@ -29,6 +39,12 @@ __all__ = [
     "build_with_context_builder",
     "GenerationRule",
     "GenerationRuleSet",
+    "RuleRegistry",
+    "temporal_constraint_rules",
+    "spatial_constraint_rules",
+    "admissibility_constraint_rules",
+    "combined_generation_rules",
+    "default_rule_registry",
     "ContextualGenerationPipeline",
     "LLMGenerationAdapter",
     "LLMRefinementResult",
