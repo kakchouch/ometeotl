@@ -49,6 +49,9 @@ class GenerationContext:
     actions: list["GenerationContext"] = field(default_factory=list)
     placements: list[GenerationPlacement] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    operation: str = "create"
+    target_id: str = ""
+    registration_policy: str = "none"
     validate: bool = False
     validation_mode: str = "lenient"
     stage_modes: dict[str, str] = field(default_factory=dict)
@@ -107,6 +110,9 @@ class GenerationContext:
             "actions": list(self.actions),
             "placements": list(self.placements),
             "metadata": dict(self.metadata),
+            "operation": self.operation,
+            "target_id": self.target_id,
+            "registration_policy": self.registration_policy,
             "validate": self.validate,
             "validation_mode": self.validation_mode,
             "stage_modes": dict(self.stage_modes),

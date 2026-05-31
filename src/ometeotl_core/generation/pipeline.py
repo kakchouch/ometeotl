@@ -10,12 +10,22 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from ometeotl_core.model.base import ModelObject
+from ometeotl_core.model.world import World
 from ometeotl_core.validation.base import ValidationResult
 from ometeotl_core.validation.pipeline import ValidationPipeline
 
 from .builders import build_from_context
 from .context import GenerationContext
+from .llm_integration import LLMGenerationAdapter
 from .rules import GenerationRuleSet, default_generation_rules
+
+VALID_GENERATION_OPERATIONS: frozenset[str] = frozenset(
+    {"create", "partial_update", "corrective_update"}
+)
+VALID_REGISTRATION_POLICIES: frozenset[str] = frozenset(
+    {"none", "if_available", "require"}
+)
 
 
 @dataclass
@@ -48,26 +58,63 @@ class ContextualGenerationPipeline:
     def validation_pipeline(self) -> ValidationPipeline | None:
         return self._validation_pipeline
 
-    def generate(self, context: GenerationContext) -> GenerationResult:
+    def generate(
+        self,
+        context: GenerationContext,
+        *,
+        world: World | None = None,
+    ) -> GenerationResult:
         """Generate one object from context using rules then builders."""
         refined_context = self._rules.apply(context)
-        generated = build_from_context(refined_context)
+        operation = str(refined_context.operation or "create")
+        if operation not in VALID_GENERATION_OPERATIONS:
+            raise ValueError(
+                "Unsupported generation operation: "
+                f"{operation}. Expected one of {sorted(VALID_GENERATION_OPERATIONS)}"
+            )
+
+        registration_policy = str(refined_context.registration_policy or "none")
+        if registration_policy not in VALID_REGISTRATION_POLICIES:
+            raise ValueError(
+                "Unsupported registration policy: "
+                f"{registration_policy}. Expected one of {sorted(VALID_REGISTRATION_POLICIES)}"
+            )
 
         validation_result: ValidationResult | None = None
         diagnostics: list[str] = []
 
-        should_validate = bool(refined_context.validate)
-        if should_validate and self._validation_pipeline is not None:
-            validation_result = self._validation_pipeline.validate(
-                generated,
-                mode=refined_context.validation_mode,
-                stage_modes=refined_context.stage_modes,
-                raise_on_error=False,
+        if operation == "create":
+            generated = build_from_context(refined_context)
+        else:
+            generated = self._apply_update_operation(
+                refined_context,
+                world=world,
             )
-            if not validation_result.valid:
+
+        self._apply_registration_policy(
+            refined_context,
+            generated,
+            world=world,
+            diagnostics=diagnostics,
+        )
+
+        should_validate = bool(refined_context.validate)
+        if should_validate:
+            if self._validation_pipeline is None:
                 diagnostics.append(
-                    "Generated object failed validation; inspect validation summary and issues"
+                    "Validation requested but no validation pipeline is configured"
                 )
+            else:
+                validation_result = self._validation_pipeline.validate(
+                    generated,
+                    mode=refined_context.validation_mode,
+                    stage_modes=refined_context.stage_modes,
+                    raise_on_error=False,
+                )
+                if not validation_result.valid:
+                    diagnostics.append(
+                        "Generated object failed validation; inspect validation summary and issues"
+                    )
 
         return GenerationResult(
             generated=generated,
@@ -75,3 +122,168 @@ class ContextualGenerationPipeline:
             validation=validation_result,
             diagnostics=diagnostics,
         )
+
+    def generate_hybrid(
+        self,
+        context: GenerationContext,
+        *,
+        llm_adapter: LLMGenerationAdapter,
+        prompt_template: str | None = None,
+        fallback_to_base: bool = True,
+        world: World | None = None,
+    ) -> GenerationResult:
+        """Run LLM-assisted context refinement before deterministic generation."""
+        refinement = llm_adapter.refine_context(
+            context,
+            prompt_template=prompt_template,
+            fallback_to_base=fallback_to_base,
+        )
+        result = self.generate(refinement.refined_context, world=world)
+        return GenerationResult(
+            generated=result.generated,
+            applied_rule_names=result.applied_rule_names,
+            validation=result.validation,
+            diagnostics=list(refinement.diagnostics) + list(result.diagnostics),
+        )
+
+    def _apply_registration_policy(
+        self,
+        context: GenerationContext,
+        generated: Any,
+        *,
+        world: World | None,
+        diagnostics: list[str],
+    ) -> None:
+        policy = str(context.registration_policy or "none")
+        kind = str(context.kind).lower().strip()
+
+        if kind not in {"goal", "strategy", "action"}:
+            return
+        if policy == "none":
+            return
+        if world is None:
+            if policy == "require":
+                raise ValueError(
+                    "Registration policy 'require' needs a world context for "
+                    f"generated {kind} '{context.id}'"
+                )
+            diagnostics.append(
+                f"Skipped registration for {kind} '{context.id}': no world context provided"
+            )
+            return
+        if not isinstance(generated, ModelObject):
+            diagnostics.append(
+                f"Skipping registration for non-model object generated from kind '{kind}'"
+            )
+            return
+
+        existing = world.model_registry.get(generated.id)
+        if existing is not None:
+            diagnostics.append(
+                f"Registration skipped for '{generated.id}': object already present in world registry"
+            )
+            return
+
+        world.register_object(generated)
+        diagnostics.append(
+            f"Registered generated {kind} '{generated.id}' in world '{world.id}'"
+        )
+
+    def _apply_update_operation(
+        self,
+        context: GenerationContext,
+        *,
+        world: World | None,
+    ) -> ModelObject:
+        if world is None:
+            raise ValueError(
+                f"Operation '{context.operation}' requires a world context"
+            )
+
+        target = self._resolve_update_target(context, world)
+        operation = str(context.operation)
+
+        if operation == "partial_update":
+            self._apply_partial_update(target, context)
+            return target
+        if operation == "corrective_update":
+            self._apply_corrective_update(target, context)
+            return target
+
+        raise ValueError(f"Unsupported update operation: {operation}")
+
+    def _resolve_update_target(
+        self,
+        context: GenerationContext,
+        world: World,
+    ) -> ModelObject:
+        target_id = str(context.target_id or context.id)
+        kind = str(context.kind).lower().strip()
+
+        if kind == "world" and target_id == world.id:
+            return world
+
+        if kind == "space":
+            space = world.get_space(target_id)
+            if space is not None:
+                return space
+
+        target = world.model_registry.get(target_id)
+        if target is None:
+            raise ValueError(
+                f"Unable to apply {context.operation}: target '{target_id}' does not exist"
+            )
+
+        if str(target.object_type).lower() != kind:
+            raise ValueError(
+                "Target object type mismatch for update operation: "
+                f"expected '{kind}', found '{target.object_type}'"
+            )
+
+        return target
+
+    def _apply_partial_update(
+        self,
+        target: ModelObject,
+        context: GenerationContext,
+    ) -> None:
+        for key, value in context.merged_attributes().items():
+            target.set_attribute(key, value)
+
+        for key, value in dict(context.state).items():
+            target.set_state(key, value)
+
+        for key, value in dict(context.context).items():
+            if key:
+                target.context[key] = value
+
+        for key, value in dict(context.provenance).items():
+            target.set_provenance(key, value)
+
+        for rel_name, rel_values in context.normalized_relations().items():
+            for rel_value in rel_values:
+                target.add_relation(rel_name, rel_value)
+
+    def _apply_corrective_update(
+        self,
+        target: ModelObject,
+        context: GenerationContext,
+    ) -> None:
+        for key, value in context.merged_attributes().items():
+            target.set_attribute(key, value)
+
+        for key, value in dict(context.state).items():
+            target.set_state(key, value)
+
+        for key, value in dict(context.context).items():
+            if key:
+                target.context[key] = value
+
+        for key, value in dict(context.provenance).items():
+            target.set_provenance(key, value)
+
+        for rel_name, rel_values in context.normalized_relations().items():
+            for existing_target in list(target.relations.get(rel_name, [])):
+                target.remove_relation(rel_name, existing_target)
+            for rel_value in rel_values:
+                target.add_relation(rel_name, rel_value)

@@ -154,6 +154,15 @@ def _as_mapping(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
+def _require_non_empty_string(value: Any, field_name: str) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise ValueError(
+            f"Perception generation requires non-empty '{field_name}' in perceived_component_links"
+        )
+    return normalized
+
+
 def build_perception(context: GenerationContext) -> Perception:
     actor_id = str(
         context.metadata.get("actor_id") or context.context.get("actor_id") or ""
@@ -261,9 +270,17 @@ def build_perception(context: GenerationContext) -> Perception:
         payload_map = _as_mapping(payload)
         perceived_component_links.append(
             PerceivedComponentLink(
-                link_id=str(payload_map.get("link_id") or ""),
-                composite_id=str(payload_map.get("composite_id") or ""),
-                component_id=str(payload_map.get("component_id") or ""),
+                link_id=_require_non_empty_string(
+                    payload_map.get("link_id"), "link_id"
+                ),
+                composite_id=_require_non_empty_string(
+                    payload_map.get("composite_id"),
+                    "composite_id",
+                ),
+                component_id=_require_non_empty_string(
+                    payload_map.get("component_id"),
+                    "component_id",
+                ),
                 epistemic_status=str(payload_map.get("epistemic_status") or "certain"),
                 noise_metadata=dict(payload_map.get("noise_metadata") or {}),
             )

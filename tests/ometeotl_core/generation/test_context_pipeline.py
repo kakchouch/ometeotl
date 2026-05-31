@@ -1,5 +1,7 @@
 """Tests for contextual generation pipeline."""
 
+import pytest
+
 from tests.ometeotl_core._artifact_utils import write_json_artifact
 
 from ometeotl_core.generation import (
@@ -11,8 +13,45 @@ from ometeotl_core.model.actions import Action
 from ometeotl_core.model.actors import Actor
 from ometeotl_core.model.goals import Goal
 from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.spaces import Space
 from ometeotl_core.model.strategies import Strategy
 from ometeotl_core.model.world import World
+from ometeotl_core.validation import (
+    SEVERITY_ERROR,
+    ValidationContext,
+    ValidationIssue,
+    ValidationPipeline,
+    ValidationResult,
+)
+
+
+class _AlwaysPassValidator:
+    @property
+    def name(self) -> str:
+        return "always_pass"
+
+    def validate(self, obj, context: ValidationContext) -> ValidationResult:
+        return ValidationResult(stage=context.stage, policy_mode=context.policy_mode)
+
+
+class _AlwaysFailValidator:
+    @property
+    def name(self) -> str:
+        return "always_fail"
+
+    def validate(self, obj, context: ValidationContext) -> ValidationResult:
+        return ValidationResult(
+            stage=context.stage,
+            policy_mode=context.policy_mode,
+            issues=[
+                ValidationIssue(
+                    code="GEN-FAIL",
+                    severity=SEVERITY_ERROR,
+                    message="Synthetic validation failure for pipeline testing",
+                    object_id=str(getattr(obj, "id", "")),
+                )
+            ],
+        )
 
 
 def test_pipeline_generates_world_with_registered_objects_and_placements():
@@ -229,3 +268,256 @@ def test_generation_audit_writes_local_lab_artifact():
     )
 
     assert artifact_path.name == "generation_snapshot.json"
+
+
+def test_pipeline_validation_requested_without_pipeline_records_diagnostic():
+    pipeline = ContextualGenerationPipeline()
+    actor_context = GenerationContext(
+        kind="actor",
+        id="actor-validate-missing-pipeline",
+        validate=True,
+    )
+
+    result = pipeline.generate(actor_context)
+
+    assert result.validation is None
+    assert any(
+        "Validation requested but no validation pipeline is configured" in item
+        for item in result.diagnostics
+    )
+
+
+def test_pipeline_validation_success_with_configured_pipeline():
+    pipeline = ContextualGenerationPipeline(
+        validation_pipeline=ValidationPipeline(validators=[_AlwaysPassValidator()])
+    )
+    actor_context = GenerationContext(
+        kind="actor",
+        id="actor-validate-pass",
+        validate=True,
+    )
+
+    result = pipeline.generate(actor_context)
+
+    assert result.validation is not None
+    assert result.validation.valid is True
+    assert result.validation.metadata["executed_validators"] == ["always_pass"]
+    assert not any("failed validation" in item for item in result.diagnostics)
+
+
+def test_pipeline_validation_failure_emits_diagnostic_and_result():
+    pipeline = ContextualGenerationPipeline(
+        validation_pipeline=ValidationPipeline(validators=[_AlwaysFailValidator()])
+    )
+    actor_context = GenerationContext(
+        kind="actor",
+        id="actor-validate-fail",
+        validate=True,
+    )
+
+    result = pipeline.generate(actor_context)
+
+    assert result.validation is not None
+    assert result.validation.valid is False
+    assert result.validation.summary["error"] == 1
+    assert any("failed validation" in item for item in result.diagnostics)
+
+
+def test_pipeline_registers_generated_goal_when_world_context_is_required():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-registry-1")
+    world.register_object(Actor(id="actor-1"))
+
+    goal_context = GenerationContext(
+        kind="goal",
+        id="goal-registered-1",
+        registration_policy="require",
+        metadata={
+            "actor_id": "actor-1",
+            "kind": "final",
+            "target_condition": {"state": "safe"},
+        },
+    )
+
+    result = pipeline.generate(goal_context, world=world)
+
+    assert world.model_registry.get("goal-registered-1") is result.generated
+    assert any("Registered generated goal" in item for item in result.diagnostics)
+
+
+def test_pipeline_registers_generated_strategy_and_action_when_world_available():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-registry-2")
+    world.add_space(Space(id="zone-a"))
+
+    strategy_result = pipeline.generate(
+        GenerationContext(
+            kind="strategy",
+            id="strategy-registered-1",
+            registration_policy="if_available",
+            metadata={
+                "actor_id": "actor-1",
+                "goal_id": "goal-1",
+                "action_id": "action-1",
+            },
+        ),
+        world=world,
+    )
+    action_result = pipeline.generate(
+        GenerationContext(
+            kind="action",
+            id="action-registered-1",
+            registration_policy="if_available",
+            metadata={
+                "actor_id": "actor-1",
+                "world_id": world.id,
+                "space_id": "zone-a",
+                "action_type": "move",
+            },
+        ),
+        world=world,
+    )
+
+    assert (
+        world.model_registry.get("strategy-registered-1") is strategy_result.generated
+    )
+    assert world.model_registry.get("action-registered-1") is action_result.generated
+
+
+def test_pipeline_registration_policy_require_without_world_raises():
+    pipeline = ContextualGenerationPipeline()
+
+    with pytest.raises(ValueError):
+        pipeline.generate(
+            GenerationContext(
+                kind="goal",
+                id="goal-missing-world",
+                registration_policy="require",
+                metadata={"actor_id": "actor-1", "kind": "final"},
+            )
+        )
+
+
+def test_pipeline_registration_if_available_without_world_adds_diagnostic():
+    pipeline = ContextualGenerationPipeline()
+    result = pipeline.generate(
+        GenerationContext(
+            kind="goal",
+            id="goal-skip-world",
+            registration_policy="if_available",
+            metadata={"actor_id": "actor-1", "kind": "final"},
+        )
+    )
+
+    assert any("Skipped registration" in item for item in result.diagnostics)
+
+
+def test_pipeline_partial_update_merges_attributes_state_and_relations():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-1")
+    actor = Actor(id="actor-update-1")
+    actor.set_attribute("existing", "value")
+    actor.add_relation("resource", "resource-a")
+    world.register_object(actor)
+
+    result = pipeline.generate(
+        GenerationContext(
+            kind="actor",
+            id="actor-update-1",
+            operation="partial_update",
+            attributes={"new": "value"},
+            state={"mood": "focused"},
+            relations={"resource": ["resource-b"]},
+        ),
+        world=world,
+    )
+
+    assert result.generated is actor
+    assert actor.attributes["existing"] == "value"
+    assert actor.attributes["new"] == "value"
+    assert actor.state["mood"] == "focused"
+    assert actor.relations["resource"] == ["resource-a", "resource-b"]
+
+
+def test_pipeline_corrective_update_replaces_specified_relations():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-2")
+    actor = Actor(id="actor-update-2")
+    actor.add_relation("resource", "resource-a")
+    actor.add_relation("resource", "resource-b")
+    world.register_object(actor)
+
+    result = pipeline.generate(
+        GenerationContext(
+            kind="actor",
+            id="actor-update-2",
+            operation="corrective_update",
+            relations={"resource": ["resource-c"]},
+        ),
+        world=world,
+    )
+
+    assert result.generated is actor
+    assert actor.relations["resource"] == ["resource-c"]
+
+
+def test_pipeline_update_operation_requires_existing_target():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-3")
+
+    with pytest.raises(ValueError):
+        pipeline.generate(
+            GenerationContext(
+                kind="actor",
+                id="missing-actor",
+                operation="partial_update",
+                attributes={"new": "value"},
+            ),
+            world=world,
+        )
+
+
+def test_pipeline_perception_generation_rejects_component_link_missing_link_id():
+    pipeline = ContextualGenerationPipeline()
+
+    with pytest.raises(ValueError):
+        pipeline.generate(
+            GenerationContext(
+                kind="perception",
+                id="perception-invalid-link-id",
+                metadata={
+                    "actor_id": "actor-1",
+                    "source_id": "world-1",
+                    "perceived_component_links": [
+                        {
+                            "composite_id": "actor-1",
+                            "component_id": "actor-2",
+                            "epistemic_status": "projected",
+                        }
+                    ],
+                },
+            )
+        )
+
+
+def test_pipeline_perception_generation_rejects_component_link_missing_component_id():
+    pipeline = ContextualGenerationPipeline()
+
+    with pytest.raises(ValueError):
+        pipeline.generate(
+            GenerationContext(
+                kind="perception",
+                id="perception-invalid-component-id",
+                metadata={
+                    "actor_id": "actor-1",
+                    "source_id": "world-1",
+                    "perceived_component_links": [
+                        {
+                            "link_id": "link-1",
+                            "composite_id": "actor-1",
+                            "epistemic_status": "projected",
+                        }
+                    ],
+                },
+            )
+        )
