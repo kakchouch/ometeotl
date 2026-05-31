@@ -58,10 +58,7 @@ def test_strategy_instantiation():
     assert strategy.root_node_id == "node-root"
     assert strategy.projection_policy == "perception_first"
     assert len(strategy.nodes) == 1
-    assert (
-        strategy.nodes[0].source_perception_id
-        == "perception-root"
-    )
+    assert strategy.nodes[0].source_perception_id == "perception-root"
     assert (
         strategy.nodes[0].successor_perception_id
         == "projection-perception-root-action-1"
@@ -125,19 +122,13 @@ def test_strategy_serialization_is_deterministic():
         "node-b",
     ]
     assert payload["goal_id"] is None
+    assert payload["nodes"][0]["source_perception_id"] == "perception-chain-root"
     assert (
-        payload["nodes"][0]["source_perception_id"]
-        == "perception-chain-root"
-    )
-    assert (
-        payload["nodes"][0]["projected_state"]["perception"][
-            "id"
-        ]
+        payload["nodes"][0]["projected_state"]["perception"]["id"]
         == "projection-perception-chain-root-action-1"
     )
     assert [
-        branch["branch_id"]
-        for branch in payload["nodes"][1]["outcome_branches"]
+        branch["branch_id"] for branch in payload["nodes"][1]["outcome_branches"]
     ] == ["a", "z"]
     assert restored.to_dict() == payload
 
@@ -351,10 +342,7 @@ def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
         "node-0001-action-build-1",
         "node-0002-action-build-2",
     ]
-    assert (
-        strategy.nodes[0].source_perception_id
-        == "perception-build-root"
-    )
+    assert strategy.nodes[0].source_perception_id == "perception-build-root"
     assert (
         strategy.nodes[1].source_perception_id
         == strategy.nodes[0].successor_perception_id
@@ -364,12 +352,7 @@ def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
         == "node-0002-action-build-2"
     )
     assert strategy.nodes[1].projected_state is not None
-    assert (
-        strategy.nodes[1].projected_state.perception.context[
-            "step"
-        ]
-        == 2
-    )
+    assert strategy.nodes[1].projected_state.perception.context["step"] == 2
 
 
 def test_build_linear_strategy_rejects_empty_action_sequence():
@@ -427,9 +410,7 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                 world_id="world-1",
                 space_id="space-1",
                 action_type="plan",
-                state_changes={
-                    "context_updates": {"phase": "root"}
-                },
+                state_changes={"context_updates": {"phase": "root"}},
             ),
             children=[
                 StrategyBuildStep(
@@ -439,9 +420,7 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                         world_id="world-1",
                         space_id="space-1",
                         action_type="explore",
-                        state_changes={
-                            "context_updates": {"phase": "left"}
-                        },
+                        state_changes={"context_updates": {"phase": "left"}},
                     ),
                     branch_label="left",
                     branch_probability=0.4,
@@ -454,9 +433,7 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
                         world_id="world-1",
                         space_id="space-1",
                         action_type="secure",
-                        state_changes={
-                            "context_updates": {"phase": "right"}
-                        },
+                        state_changes={"context_updates": {"phase": "right"}},
                     ),
                     branch_label="right",
                     branch_probability=0.6,
@@ -467,41 +444,23 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
     )
 
     root_node = strategy.get_node("node-0001-action-root-branch")
-    left_node = strategy.get_node(
-        "node-0001-0001-action-left-branch"
-    )
-    right_node = strategy.get_node(
-        "node-0001-0002-action-right-branch"
-    )
+    left_node = strategy.get_node("node-0001-0001-action-left-branch")
+    right_node = strategy.get_node("node-0001-0002-action-right-branch")
 
     assert root_node is not None
     assert left_node is not None
     assert right_node is not None
     assert len(root_node.outcome_branches) == 2
-    assert [
-        branch.label for branch in root_node.outcome_branches
-    ] == [
+    assert [branch.label for branch in root_node.outcome_branches] == [
         "left",
         "right",
     ]
-    assert (
-        left_node.source_perception_id
-        == root_node.successor_perception_id
-    )
-    assert (
-        right_node.source_perception_id
-        == root_node.successor_perception_id
-    )
+    assert left_node.source_perception_id == root_node.successor_perception_id
+    assert right_node.source_perception_id == root_node.successor_perception_id
     assert left_node.projected_state is not None
     assert right_node.projected_state is not None
-    assert (
-        left_node.projected_state.perception.context["phase"]
-        == "left"
-    )
-    assert (
-        right_node.projected_state.perception.context["phase"]
-        == "right"
-    )
+    assert left_node.projected_state.perception.context["phase"] == "left"
+    assert right_node.projected_state.perception.context["phase"] == "right"
 
 
 def test_build_branching_strategy_rejects_blocked_child_step():
@@ -539,3 +498,71 @@ def test_build_branching_strategy_rejects_blocked_child_step():
                 ],
             ),
         )
+
+
+def test_strategy_from_context_builds_strategy_with_structural_validation():
+    strategy = Strategy.from_context(
+        {
+            "id": "strategy-ctx-1",
+            "actor_id": "actor-ctx-1",
+            "goal_id": "goal-ctx-1",
+            "root_node_id": "node-root-ctx",
+            "action_id": "action-ctx-1",
+            "projection_policy": "perception_first",
+            "validate": False,
+        }
+    )
+
+    assert isinstance(strategy, Strategy)
+    assert strategy.id == "strategy-ctx-1"
+    assert strategy.actor_id == "actor-ctx-1"
+    assert strategy.goal_id == "goal-ctx-1"
+    assert strategy.root_node_id == "node-root-ctx"
+    assert strategy.projection_policy == "perception_first"
+    assert len(strategy.nodes) == 1
+    assert strategy.nodes[0].node_id == "node-root-ctx"
+
+
+def test_strategy_from_context_requires_non_empty_id():
+    with pytest.raises(ValueError, match="requires non-empty 'id'"):
+        Strategy.from_context({"actor_id": "actor-1"})
+
+
+def test_strategy_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = Strategy(
+                    id="strategy-ctx-forward-1",
+                    actor_id="actor-1",
+                    root_node_id="root",
+                    nodes=[StrategyNode(node_id="root", action_id="action-1")],
+                )
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    strategy = Strategy.from_context(
+        {
+            "id": "strategy-ctx-forward-1",
+            "actor_id": "actor-1",
+            "action_id": "action-1",
+            "validate": False,
+        }
+    )
+
+    assert isinstance(strategy, Strategy)
+    assert strategy.id == "strategy-ctx-forward-1"

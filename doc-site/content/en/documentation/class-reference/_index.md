@@ -119,3 +119,13 @@ Repository source:
 - [IO index](/ometeotl/documentation/class-reference/io/)
 - [World export](/ometeotl/documentation/class-reference/io/world-export/)
 - [World import / WorldImportResult](/ometeotl/documentation/class-reference/io/world-import/)
+- [LLM view export](/ometeotl/documentation/class-reference/io/llm-view-export/)
+
+### Generation
+- [Generation index](/ometeotl/documentation/class-reference/generation/)
+- [GenerationContext / GenerationPlacement](/ometeotl/documentation/class-reference/generation/generation-context/)
+- [ContextualBuilder / per-kind builders](/ometeotl/documentation/class-reference/generation/context-builder/)
+- [GenerationRule / GenerationRuleSet / RuleRegistry](/ometeotl/documentation/class-reference/generation/rule-engine/)
+- [LLMGenerationAdapter / LLMRefinementResult](/ometeotl/documentation/class-reference/generation/llm-integration/)
+- [ContextualGenerationPipeline / GenerationResult](/ometeotl/documentation/class-reference/generation/pipeline/)
+- [Generation examples](/ometeotl/documentation/class-reference/generation/examples/)

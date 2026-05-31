@@ -107,9 +107,9 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 5. Minimal game-theory interface.
 6. Two examples: a simple world and a hierarchical multi-actor case.
 
-## Current repository state (April 2026)
+## Current repository state (May 2026)
 
-The project is no longer limited to a model/perception/sensor skeleton. It now contains a broader functional V1-incremental core with tested model, projection, strategy, teleology/utility, game-layer ranking, and authority/runtime boundaries.
+The project delivers a broad functional V1 core. All layers from model through validation, IO, LLM export, and contextual generation are implemented and tested.
 
 **04/25/26 - major architectural overhaul:**
   Local tests reveal the current architecture is too abstract for any practical implementation. It has been decided to :
@@ -169,18 +169,32 @@ The project is no longer limited to a model/perception/sensor skeleton. It now c
     - Diagnostic and repair suggestions through `DiagnosticBuilder`.
 12. Minimum interfaces in `src/ometeotl_core/model/interfaces.py`:
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
-13. Quality gate:
-    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
-    - Current baseline: `317` collected tests.
+13. IO layer in `src/ometeotl_core/io/`:
+    - Canonical JSON and YAML world export (`world_to_json`, `world_to_yaml`, `write_world_json`, `write_world_yaml`).
+    - Validated world import (`world_from_json`, `world_from_yaml`, `WorldImportResult`).
+    - LLM/SLM view exporter (`llm_export.py`) implementing F-5: `world_to_llm_view`, `actor_to_llm_view`, `perception_to_llm_view`, and `ModelObject.to_llm_view()` with explicit reality/perception/belief/hypothesis/projection separation.
+14. Generation layer in `src/ometeotl_core/generation/`:
+    - `GenerationContext` declarative input dataclass with nested child contexts, placement instructions, constraint declarations, and `copy_with` for rule-safe mutation.
+    - `GenerationPlacement` for explicit object-to-space placement in world generation.
+    - Class-based `ContextualBuilder` ABC with concrete builders for all core kinds (`WorldContextualBuilder`, `ActorContextualBuilder`, `StrategyContextualBuilder`, `GoalContextualBuilder`, `PerceptionContextualBuilder`).
+    - Pluggable `GenerationRule` / `GenerationRuleSet` / `RuleRegistry` rule engine.
+    - Built-in constraint propagation rules: `temporal_constraint_rules`, `spatial_constraint_rules`, `admissibility_constraint_rules`, and `combined_generation_rules`.
+    - `default_rule_registry()` pre-populated with `"default"`, `"temporal"`, `"spatial"`, `"admissibility"`, `"combined"`.
+    - `LLMGenerationAdapter` for optional provider-agnostic LLM-assisted context refinement with fallback.
+    - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
+    - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
+    - Four runnable demo scenarios in `generation/examples.py`.
+15. Quality gate:
+    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
+    - Current baseline: `396` collected tests.
 
 ### Present but still incomplete or scaffolded
 
 The following layers remain incomplete relative to the target architecture and roadmap:
 
-- `src/ometeotl_core/io/` for dedicated import/export workflows.
-- `src/ometeotl_core/generation/` for contextual or LLM-assisted construction.
 - `src/ometeotl_core/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
 - `src/ometeotl_core/examples/` for reference worlds and end-to-end demonstrations.
+- Generation integration testing: a full roundtrip test exercising the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
 
 ### Current source layout
 
@@ -193,8 +207,19 @@ ometeotl/
 │       ├── generic/
 │       │   ├── authority.py
 │       │   └── runtime.py
-│       ├── io/                 # planned / partial scaffold
-│       ├── generation/         # planned / partial scaffold
+│       ├── io/
+│       │   ├── exporters.py
+│       │   ├── importers.py
+│       │   └── llm_export.py
+│       ├── generation/
+│       │   ├── builders.py
+│       │   ├── context.py
+│       │   ├── context_builder.py
+│       │   ├── examples.py
+│       │   ├── llm_integration.py
+│       │   ├── pipeline.py
+│       │   ├── rule_engine.py
+│       │   └── rules.py        # backward-compat re-export
 │       ├── game/
 │       │   └── utility.py
 │       ├── validation/
@@ -209,13 +234,14 @@ ometeotl/
 │       │   ├── epistemic.py
 │       │   ├── completeness.py
 │       │   └── diagnostic.py
-│       ├── examples/           # planned / partial scaffold
+│       ├── examples/           # planned
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
 │           ├── base.py
 │           ├── goals.py
 │           ├── goal_tools.py
+│           ├── interfaces.py
 │           ├── objects.py
 │           ├── perception.py
 │           ├── projection.py
@@ -230,6 +256,7 @@ ometeotl/
 └── tests/ometeotl_core/
     ├── generic/
     ├── game/
+    ├── generation/
     ├── io/
     ├── model/
     └── validation/
@@ -237,15 +264,14 @@ ometeotl/
 
 ### Practical V1 interpretation
 
-V1 is currently validated on the implemented ontology, perception, projection, strategy, teleology/utility, game ranking, authority/runtime seams, and the dedicated validation layer. Generation, IO, richer solver-facing game modules, and reference examples remain on the roadmap.
+V1 is validated on the full chain: ontology, perception, projection, strategy, teleology/utility, game ranking, authority/runtime, validation, IO (JSON/YAML + LLM export), and contextual generation with pluggable rule engine and LLM adapter. The remaining roadmap items are generation integration scenarios (a roundtrip test of the full context-to-validated-output chain, and a concrete 2-actor game world wiring goals, strategies, and utility ranking end to end) and game-layer solver extensions.
 
 ### Current TODO priorities
 
-1. Implement dedicated IO workflows on top of canonical object serialization.
-2. Implement contextual generation and repair workflows.
-3. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
-4. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
-5. Add reference examples and complete end-to-end demos.
+1. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
+2. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
+3. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
+4. Add reference examples and complete end-to-end demos.
 
 
 ## Status

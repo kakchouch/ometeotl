@@ -155,22 +155,31 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- Validator families: syntactic, structural, temporal, spatial, admissibility, epistemic, completeness.
 	- Policy profiles: `observe_only`, `enforce_structure`, `enforce_domain`.
 	- Diagnostics and repair suggestions.
-10. Quality gate:
-	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
-	- Current baseline: `317` collected tests.
+10. IO layer in `src/ometeotl_core/io/`:
+	- Canonical JSON and YAML world export (`world_to_json`, `world_to_yaml`, `write_world_json`, `write_world_yaml`).
+	- Validated world import (`world_from_json`, `world_from_yaml`, `WorldImportResult`).
+	- LLM/SLM view exporter (`llm_export.py`): `world_to_llm_view`, `actor_to_llm_view`, `perception_to_llm_view`, and `ModelObject.to_llm_view()` with explicit reality/perception/belief/hypothesis/projection separation.
+11. Generation layer in `src/ometeotl_core/generation/`:
+	- `GenerationContext` declarative input dataclass with nested child contexts, placement instructions, constraint declarations, and `copy_with` for rule-safe mutation.
+	- `ContextualBuilder` ABC with concrete builders for all core kinds (world, actor, strategy, goal, perception).
+	- Pluggable `GenerationRule` / `GenerationRuleSet` / `RuleRegistry` rule engine with built-in constraint propagation (temporal, spatial, admissibility).
+	- `LLMGenerationAdapter` for optional provider-agnostic LLM-assisted context refinement with fallback.
+	- `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
+	- `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
+	- Four runnable demo scenarios in `generation/examples.py`.
+12. Quality gate:
+	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
+	- Current baseline: `396` collected tests.
 
 ### Still incomplete or planned
 
-- `src/ometeotl_core/io/` for dedicated import/export workflows.
-- `src/ometeotl_core/generation/` for contextual construction and repair.
 - `src/ometeotl_core/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
 - `src/ometeotl_core/examples/` for reference worlds and end-to-end demos.
+- Generation integration testing: a full roundtrip test of the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
 
 ### Current TODO priorities
 
-1. Implement dedicated IO workflows.
-2. Implement contextual generation and repair.
-3. Implement the game layer.
-4. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
-5. Add examples and end-to-end demonstrations.
-- `src/ometeotl_core/examples/`
+1. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
+2. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
+3. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
+4. Add examples and end-to-end demonstrations.

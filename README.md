@@ -24,7 +24,7 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**. The current codebase already implements a functional core centered on modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, server-authoritative runtime boundaries, and a dedicated validation layer. Generation, IO packaging, and higher-level examples remain incomplete.
+This project is **actively under development**. The current codebase implements a functional core covering modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, server-authoritative runtime boundaries, a dedicated validation layer, canonical IO (JSON/YAML), LLM-oriented export, and a complete contextual generation pipeline with pluggable rule engine and optional LLM-assisted refinement.
 
 ## Current Implementation Status
 
@@ -37,7 +37,7 @@ This project is **actively under development**. The current codebase already imp
     - ...
   - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
 
-As of April 2026, the repository includes:
+As of May 2026, the repository includes:
 
 - A full model core in `src/ometeotl_core/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
 - Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
@@ -50,7 +50,16 @@ As of April 2026, the repository includes:
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
 - A dedicated validation layer with syntactic, structural, temporal, spatial, admissibility, epistemic, and completeness validators, plus policy-based hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`) and diagnostics.
-- A test suite currently collecting `317` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, and `tests/ometeotl_core/validation/`.
+- A canonical IO layer in `src/ometeotl_core/io/` with JSON/YAML world export and import, and a dedicated LLM/SLM view exporter (`to_llm_view()`) that explicitly separates reality, perception, belief, hypothesis, and projection.
+- A contextual generation pipeline in `src/ometeotl_core/generation/` with:
+  - `GenerationContext` declarative input dataclass with nested child contexts, placement instructions, and constraint declarations.
+  - Class-based `ContextualBuilder` abstraction for all core kinds (world, actor, strategy, goal, perception).
+  - Pluggable `GenerationRule` / `GenerationRuleSet` / `RuleRegistry` rule engine with built-in constraint propagation (temporal, spatial, admissibility).
+  - `LLMGenerationAdapter` for optional provider-agnostic LLM-assisted context refinement.
+  - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
+  - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
+  - Four runnable demo scenarios in `generation/examples.py`.
+- A test suite currently collecting `396` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
 
 ## Current Architecture
 
@@ -67,12 +76,10 @@ The implemented architecture follows the separation defined in `specs_EN.md`:
 
 ## Near-Term TODOs
 
-- Implement the `io/` layer for explicit import/export workflows beyond object-local serialization helpers.
-- Implement the `generation/` layer and `from_context`-style construction pipeline.
+- Add a full generation roundtrip integration test covering the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate) and a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
 - Extend the `game/` layer beyond current utility/ranking primitives with richer solver-facing abstractions.
 - Extend the strategy layer to support one action producing several alternative projected outcomes, with branch-specific successor perceived states carried by `StrategyOutcomeBranch` rather than duplicated on `StrategyNode`.
 - Add reference examples and end-to-end demo worlds in `examples/`.
-- Continue aligning public docs with the now-implemented projection, strategy, teleology, utility, authority, and composite-actor capabilities.
 
 ## Join the Journey
 
