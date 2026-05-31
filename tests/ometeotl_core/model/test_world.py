@@ -48,9 +48,7 @@ def test_world_place_object_in_subspace():
     world.add_space(sub)
     world.place_object("actor-1", "zone-b", role="occupies")
 
-    members = world.space_object_graph.list_objects_in_space(
-        "zone-b"
-    )
+    members = world.space_object_graph.list_objects_in_space("zone-b")
     assert "actor-1" in members
 
 
@@ -104,16 +102,12 @@ def test_object_register_and_place():
     world.add_space(space)
     actor = Actor(id="test-actor")
 
-    world.add_object_to_space(
-        actor, "test-space", role="occupies"
-    )
+    world.add_object_to_space(actor, "test-space", role="occupies")
 
     # Check registration
     assert world.model_registry.exists("test-actor")
     # Check placement
-    members = world.space_object_graph.list_objects_in_space(
-        "test-space"
-    )
+    members = world.space_object_graph.list_objects_in_space("test-space")
     assert "test-actor" in members
 
 
@@ -164,15 +158,8 @@ def test_world_to_dict_roundtrip():
     assert restored.label == "Test World"
     assert restored.get_space("s1") is not None
     assert restored.get_space("s2") is not None
-    assert (
-        "actor-x"
-        in restored.space_object_graph.list_objects_in_space(
-            "s1"
-        )
-    )
-    assert "s2" in restored.space_relation_graph.neighbors_of(
-        "s1"
-    )
+    assert "actor-x" in restored.space_object_graph.list_objects_in_space("s1")
+    assert "s2" in restored.space_relation_graph.neighbors_of("s1")
 
 
 def test_world_spaces_where_object_exists():
@@ -183,9 +170,7 @@ def test_world_spaces_where_object_exists():
     world.place_object("actor-multi", "phys")
     world.place_object("actor-multi", "info")
 
-    spaces = world.space_object_graph.spaces_where_object_exists(
-        "actor-multi"
-    )
+    spaces = world.space_object_graph.spaces_where_object_exists("actor-multi")
     space_ids = [space.id for space in spaces]
     assert "phys" in space_ids
     assert "info" in space_ids
@@ -205,9 +190,7 @@ def test_world_to_dict_roundtrip_preserves_registered_objects():
     restored = World.from_dict(world.to_dict())
 
     restored_actor = restored.model_registry.get("actor-rt-1")
-    restored_resource = restored.model_registry.get(
-        "resource-rt-1"
-    )
+    restored_resource = restored.model_registry.get("resource-rt-1")
 
     assert isinstance(restored_actor, Actor)
     assert isinstance(restored_resource, Resource)
@@ -246,3 +229,113 @@ def test_world_from_dict_null_optional_maps_defaults_empty():
     assert world.provenance == {}
     assert world.space_object_graph.spaces == {}
     assert world.space_relation_graph.relations == []
+
+
+def test_world_from_context_builds_nested_world_with_structural_validation():
+    world = World.from_context(
+        {
+            "id": "world-ctx-1",
+            "label": "World from context",
+            "spaces": [
+                {
+                    "id": "space-ctx-1",
+                    "kind": "space",
+                    "label": "Zone 1",
+                    "attributes": {"is_abstract": False},
+                }
+            ],
+            "actors": [
+                {
+                    "id": "actor-ctx-10",
+                    "kind": "actor",
+                    "attributes": {"composition_mode": "standalone"},
+                }
+            ],
+            "resources": [
+                {
+                    "id": "resource-ctx-10",
+                    "kind": "resource",
+                    "attributes": {"kind": "material"},
+                }
+            ],
+            "placements": [
+                {
+                    "object_id": "actor-ctx-10",
+                    "space_id": "space-ctx-1",
+                    "role": "occupies",
+                }
+            ],
+            "validate": False,
+        }
+    )
+
+    assert isinstance(world, World)
+    assert world.id == "world-ctx-1"
+    assert world.label == "World from context"
+    assert world.get_space("space-ctx-1") is not None
+    assert world.model_registry.exists("actor-ctx-10")
+    assert world.model_registry.exists("resource-ctx-10")
+    assert "actor-ctx-10" in world.space_object_graph.list_objects_in_space(
+        "space-ctx-1"
+    )
+
+
+def test_world_from_context_requires_non_empty_id():
+    with pytest.raises(ValueError, match="requires non-empty 'id'"):
+        World.from_context({"spaces": [{"id": "s1", "kind": "space"}]})
+
+
+def test_world_from_context_rejects_empty_placement_object_id():
+    with pytest.raises(
+        ValueError,
+        match="placements require non-empty 'object_id' and 'space_id'",
+    ):
+        World.from_context(
+            {
+                "id": "world-invalid-placement-1",
+                "placements": [{"object_id": "", "space_id": "space-1"}],
+                "validate": False,
+            }
+        )
+
+
+def test_world_from_context_rejects_empty_placement_space_id():
+    with pytest.raises(
+        ValueError,
+        match="placements require non-empty 'object_id' and 'space_id'",
+    ):
+        World.from_context(
+            {
+                "id": "world-invalid-placement-2",
+                "placements": [{"object_id": "actor-1", "space_id": ""}],
+                "validate": False,
+            }
+        )
+
+
+def test_world_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = World(id="world-ctx-forward-1")
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    world = World.from_context({"id": "world-ctx-forward-1", "validate": False})
+
+    assert isinstance(world, World)
+    assert world.id == "world-ctx-forward-1"

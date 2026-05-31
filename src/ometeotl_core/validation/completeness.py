@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from ometeotl_core.model.base import ModelObject
+from ometeotl_core.model.base import ModelObject, _str_from_data
 
 from .base import (
     SEVERITY_ERROR,
@@ -83,9 +83,7 @@ class CompletenessValidator:
     def name(self) -> str:
         return "completeness"
 
-    def validate(
-        self, obj: Any, context: ValidationContext
-    ) -> ValidationResult:
+    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
         payload = self._to_mapping(obj)
         if payload is None:
             return ValidationResult(
@@ -97,25 +95,18 @@ class CompletenessValidator:
                             "Completeness validation expects mapping-like payload "
                             "or ModelObject"
                         ),
-                        context={
-                            "input_type": type(obj).__name__
-                        },
+                        context={"input_type": type(obj).__name__},
                     )
                 ],
                 stage=context.stage or self.name,
                 policy_mode=context.policy_mode,
             )
 
-        level = str(
-            context.metadata.get("completeness_level")
-            or LEVEL_MINIMAL
-        )
+        level = str(context.metadata.get("completeness_level") or LEVEL_MINIMAL)
         if level not in VALID_COMPLETENESS_LEVELS:
             level = LEVEL_MINIMAL
 
-        object_type = str(
-            payload.get("object_type") or "default"
-        ).lower()
+        object_type = str(payload.get("object_type") or "default").lower()
         required_fields = REQUIRED_FIELDS_BY_TYPE.get(
             object_type,
             REQUIRED_FIELDS_BY_TYPE["default"],
@@ -126,7 +117,7 @@ class CompletenessValidator:
         )
 
         issues: list[ValidationIssue] = []
-        object_id = str(payload.get("id") or "")
+        object_id = _str_from_data(payload, "id", "")
 
         for field_name in required_fields:
             if self._is_missing(payload.get(field_name)):

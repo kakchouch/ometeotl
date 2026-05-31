@@ -33,9 +33,7 @@ def test_actor_add_role_and_tag():
 
 def test_actor_from_dict_null_optional_maps_defaults_empty():
     """Actor should accept null optional maps in from_dict."""
-    actor = Actor.from_dict(
-        {"id": "a-null", "attributes": None, "relations": None}
-    )
+    actor = Actor.from_dict({"id": "a-null", "attributes": None, "relations": None})
 
     assert isinstance(actor.attributes, dict)
     assert actor.relations == {}
@@ -271,3 +269,57 @@ def test_actor_serialization_round_trip_with_components():
     restored = Actor.from_dict(actor.to_dict())
     assert restored.composition_mode == "composite"
     assert sorted(restored.get_components()) == ["a-2", "a-3"]
+
+
+def test_actor_from_context_builds_actor_with_structural_validation():
+    actor = Actor.from_context(
+        {
+            "id": "actor-ctx-1",
+            "label": "Actor from context",
+            "attributes": {
+                "energy": 10,
+                "composition_mode": "composite",
+            },
+            "relations": {"component": ["actor-ctx-2"]},
+            "validate": False,
+        }
+    )
+
+    assert isinstance(actor, Actor)
+    assert actor.id == "actor-ctx-1"
+    assert actor.label == "Actor from context"
+    assert actor.composition_mode == "composite"
+    assert actor.get_components() == ["actor-ctx-2"]
+
+
+def test_actor_from_context_requires_non_empty_id():
+    with pytest.raises(ValueError, match="requires non-empty 'id'"):
+        Actor.from_context({"attributes": {"energy": 2}})
+
+
+def test_actor_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = Actor(id="actor-ctx-forward-1")
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    actor = Actor.from_context({"id": "actor-ctx-forward-1", "validate": False})
+
+    assert isinstance(actor, Actor)
+    assert actor.id == "actor-ctx-forward-1"

@@ -1,5 +1,7 @@
 """Tests for ometeotl_core.model.actions."""
 
+from typing import Any
+
 import pytest
 
 from ometeotl_core.model.actions import (
@@ -125,15 +127,9 @@ def test_action_to_dict_contains_required_fields():
     assert action_dict["world_id"] == "world-1"
     assert action_dict["space_id"] == "space-1"
     assert action_dict["action_type"] == "interact"
-    assert (
-        action_dict["outcome_description"]
-        == "Actor interacts with space"
-    )
+    assert action_dict["outcome_description"] == "Actor interacts with space"
     assert len(action_dict["resource_effects"]) == 1
-    assert (
-        action_dict["resource_effects"][0]["resource_id"]
-        == "res-1"
-    )
+    assert action_dict["resource_effects"][0]["resource_id"] == "res-1"
 
 
 def test_action_to_dict_roundtrip():
@@ -175,24 +171,14 @@ def test_action_to_dict_roundtrip():
     assert restored.world_id == original.world_id
     assert restored.space_id == original.space_id
     assert restored.action_type == original.action_type
-    assert (
-        restored.outcome_description
-        == original.outcome_description
-    )
-    assert len(restored.resource_effects) == len(
-        original.resource_effects
-    )
+    assert restored.outcome_description == original.outcome_description
+    assert len(restored.resource_effects) == len(original.resource_effects)
     assert (
         restored.resource_effects[0].resource_id
         == original.resource_effects[0].resource_id
     )
-    assert len(restored.prerequisites) == len(
-        original.prerequisites
-    )
-    assert (
-        restored.prerequisites[0].field_name
-        == original.prerequisites[0].field_name
-    )
+    assert len(restored.prerequisites) == len(original.prerequisites)
+    assert restored.prerequisites[0].field_name == original.prerequisites[0].field_name
     assert restored.attributes == original.attributes
     assert restored.relations == original.relations
     assert restored.state == original.state
@@ -202,7 +188,7 @@ def test_action_to_dict_roundtrip():
 
 def test_action_required_fields_cannot_be_empty():
     """Verify that all required fields in Action are validated (F-10)."""
-    base_args = {
+    base_args: dict[str, Any] = {
         "id": "act-1",
         "actor_id": "a1",
         "world_id": "w1",
@@ -216,7 +202,7 @@ def test_action_required_fields_cannot_be_empty():
         "space_id",
         "action_type",
     ]:
-        args = base_args.copy()
+        args: dict[str, Any] = base_args.copy()
         args[field_name] = ""
         with pytest.raises(ValueError):
             Action(**args)
@@ -383,9 +369,7 @@ def test_action_prerequisite_to_dict_roundtrip():
 
     restored = ActionPrerequisite.from_dict(original.to_dict())
 
-    assert (
-        restored.prerequisite_type == original.prerequisite_type
-    )
+    assert restored.prerequisite_type == original.prerequisite_type
     assert restored.field_name == original.field_name
     assert restored.required_value == original.required_value
     assert restored.metadata == original.metadata

@@ -135,3 +135,22 @@ When analyzing or modifying code, proactively scan for the following classes of 
 ## Project-specific rules 
 - Domain behavior lives in the `model` module
 - `Core` is only for generic infrastructure and computation, type-handling etc.
+
+## Audit artifacts
+
+When a test exercises serialization, export, export/import roundtrip, LLM view generation, or generation output intended for inspection, it must produce auditable artifacts under `local_lab/artifacts/`.
+
+Rules:
+- Never write audit artifacts inside tracked source folders such as `src/`, `tests/`, or `doc-site/`.
+- Use `local_lab/artifacts/` as the only default root for test-generated audit files.
+- Organize artifacts in relevant thematic subfolders that reflect the layer or export surface, for example:
+  - `local_lab/artifacts/exports/model/to_dict/`
+  - `local_lab/artifacts/exports/model/to_llm_view/`
+  - `local_lab/artifacts/exports/io/world_to_json/`
+  - `local_lab/artifacts/exports/io/world_to_yaml/`
+  - `local_lab/artifacts/generation/`
+- Artifact filenames must be deterministic, stable, and overwritten on each run. Do not create timestamped, random, or accumulating filenames by default.
+- Audit artifact generation must remain observational only: it must never modify domain behavior, move business logic out of the intended layer, or become a prerequisite for production code execution.
+- Prefer the shared test helpers and centralized pytest audit capture already present in the repository. Extend the shared mechanism rather than duplicating ad hoc file-writing logic in individual tests.
+- When a new export surface is introduced, update the shared audit capture so that the new surface is recorded consistently across the repository.
+- Any new behavior that changes exported structures should include or update tests that prove both correctness and the corresponding audit artifact output.

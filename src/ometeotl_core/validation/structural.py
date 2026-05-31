@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Mapping
 
-from ometeotl_core.model.base import ModelObject, SUPPORTED_SCHEMA_VERSION
+from ometeotl_core.model.base import (
+    ModelObject,
+    SUPPORTED_SCHEMA_VERSION,
+    _str_from_data,
+)
 from ometeotl_core.model.goals import GoalDecompositionTree
 from ometeotl_core.model.strategies import Strategy
 
@@ -24,9 +28,7 @@ class StructuralValidator:
     def name(self) -> str:
         return "structural"
 
-    def validate(
-        self, obj: Any, context: ValidationContext
-    ) -> ValidationResult:
+    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
         issues: list[ValidationIssue] = []
 
         if isinstance(obj, GoalDecompositionTree):
@@ -111,12 +113,8 @@ class StructuralValidator:
             str(obj.id or ""),
             issues,
         )
-        self._validate_map_field(
-            obj.state, "state", str(obj.id or ""), issues
-        )
-        self._validate_map_field(
-            obj.context, "context", str(obj.id or ""), issues
-        )
+        self._validate_map_field(obj.state, "state", str(obj.id or ""), issues)
+        self._validate_map_field(obj.context, "context", str(obj.id or ""), issues)
         self._validate_map_field(
             obj.provenance,
             "provenance",
@@ -150,9 +148,7 @@ class StructuralValidator:
             self._validate_goal_tree_payload(payload, issues)
             return
 
-        inferred_type = str(
-            payload.get("object_type") or ""
-        ).lower()
+        inferred_type = _str_from_data(payload, "object_type", "").lower()
         if inferred_type == "strategy":
             self._validate_strategy_payload(payload, issues)
             return
@@ -164,7 +160,7 @@ class StructuralValidator:
         payload: Mapping[str, Any],
         issues: list[ValidationIssue],
     ) -> None:
-        object_id = str(payload.get("id") or "")
+        object_id = _str_from_data(payload, "id", "")
 
         if not object_id:
             issues.append(
@@ -188,9 +184,7 @@ class StructuralValidator:
                 )
             )
 
-        schema_version = payload.get(
-            "schema_version", SUPPORTED_SCHEMA_VERSION
-        )
+        schema_version = payload.get("schema_version", SUPPORTED_SCHEMA_VERSION)
         if str(schema_version) != SUPPORTED_SCHEMA_VERSION:
             issues.append(
                 ValidationIssue(
@@ -232,9 +226,7 @@ class StructuralValidator:
                     )
                 )
             else:
-                self._validate_relations_mapping(
-                    relations_value, object_id, issues
-                )
+                self._validate_relations_mapping(relations_value, object_id, issues)
 
     def _validate_goal_tree_instance(
         self,
@@ -266,9 +258,7 @@ class StructuralValidator:
                     code="STR-GOAL-TREE",
                     severity=SEVERITY_ERROR,
                     message=str(exc),
-                    object_id=str(
-                        payload.get("root_goal_id") or ""
-                    ),
+                    object_id=str(payload.get("root_goal_id") or ""),
                 )
             )
 
@@ -334,9 +324,7 @@ class StructuralValidator:
         issues: list[ValidationIssue],
     ) -> None:
         for relation_name, targets in relations.items():
-            if not isinstance(targets, Sequence) or isinstance(
-                targets, (str, bytes)
-            ):
+            if not isinstance(targets, Sequence) or isinstance(targets, (str, bytes)):
                 issues.append(
                     ValidationIssue(
                         code="STR-RELATION-TARGETS-TYPE",

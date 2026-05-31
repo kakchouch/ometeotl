@@ -5,17 +5,34 @@ import json
 import pytest
 import yaml
 
+from tests.ometeotl_core._artifact_utils import (
+    write_json_artifact,
+    write_text_artifact,
+)
+
 from ometeotl_core.io import (
+    world_to_llm_view,
     world_from_json,
     world_from_mapping,
     world_from_yaml,
     world_to_json,
     world_to_yaml,
 )
+from ometeotl_core.model.actions import Action
 from ometeotl_core.model.actors import Actor
+from ometeotl_core.model.base import ModelObject
+from ometeotl_core.model.goals import Goal
+from ometeotl_core.model.perception import (
+    Perception,
+    PerceivedComponentLink,
+    PerceivedMembership,
+    PerceivedRelation,
+    PerceivedSpace,
+)
 from ometeotl_core.model.resources import Resource
 from ometeotl_core.model.space_relations import SpaceRelation
-from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.spaces import Space, SpaceObjectMembership
+from ometeotl_core.model.strategies import Strategy, StrategyNode
 from ometeotl_core.model.world import World
 from ometeotl_core.validation import (
     StructuralValidator,
@@ -48,6 +65,78 @@ def _build_world() -> World:
     return world
 
 
+def _build_strategy() -> Strategy:
+    strategy = Strategy(
+        id="strategy-io-1",
+        actor_id="actor-1",
+        goal_id="goal-1",
+        root_node_id="node-1",
+        nodes=[
+            StrategyNode(
+                node_id="node-1",
+                action_id="action-1",
+            )
+        ],
+    )
+    strategy.add_relation("action", "action-1")
+    return strategy
+
+
+def _build_goal() -> Goal:
+    goal = Goal(
+        id="goal-io-1",
+        actor_id="actor-1",
+        kind="final",
+        priority=0.5,
+        status="active",
+        target_condition={"kind": "sample"},
+    )
+    goal.add_relation("actor", "actor-1")
+    goal.add_relation("target_space", "zone-a")
+    return goal
+
+
+def _build_perception() -> Perception:
+    return Perception(
+        id="perception-io-1",
+        actor_id="actor-1",
+        source_id="world-io-1",
+        perceived_spaces={
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"),
+                epistemic_status="certain",
+            )
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                ),
+                epistemic_status="believed",
+            )
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            )
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-1",
+                composite_id="actor-1",
+                component_id="actor-2",
+                epistemic_status="projected",
+            )
+        ],
+    )
+
+
 def test_world_to_json_is_deterministic():
     """Repeated JSON exports of the same world should match exactly."""
     world = _build_world()
@@ -58,27 +147,28 @@ def test_world_to_json_is_deterministic():
     assert first == second
     assert json.loads(first)["id"] == "world-io-1"
 
+    artifact_path = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_to_json_deterministic",
+        content=first,
+        extension="json",
+    )
+    assert artifact_path.name == "world_to_json_deterministic.json"
+
 
 def test_world_json_roundtrip_preserves_graph_and_registry():
     """JSON import/export should preserve world structure and registered types."""
     world = _build_world()
+    json_text = world_to_json(world)
 
-    result = world_from_json(world_to_json(world))
+    result = world_from_json(json_text)
 
     assert result.parsed_format == "json"
     assert result.validation.valid is True
     assert result.world.id == world.id
     assert result.world.get_space("zone-a") is not None
-    assert (
-        "actor-1"
-        in result.world.space_object_graph.list_objects_in_space(
-            "zone-a"
-        )
-    )
-    assert (
-        result.world.model_registry.get("actor-registered")
-        is not None
-    )
+    assert "actor-1" in result.world.space_object_graph.list_objects_in_space("zone-a")
+    assert result.world.model_registry.get("actor-registered") is not None
     assert isinstance(
         result.world.model_registry.get("actor-registered"),
         Actor,
@@ -87,6 +177,14 @@ def test_world_json_roundtrip_preserves_graph_and_registry():
         result.world.model_registry.get("resource-registered"),
         Resource,
     )
+
+    artifact_path = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_json_roundtrip",
+        content=json_text,
+        extension="json",
+    )
+    assert artifact_path.name == "world_json_roundtrip.json"
 
 
 def test_world_yaml_roundtrip_preserves_canonical_payload():
@@ -100,6 +198,14 @@ def test_world_yaml_roundtrip_preserves_canonical_payload():
     assert yaml.safe_load(yaml_text) == world.to_dict()
     assert result.world.to_dict() == world.to_dict()
 
+    artifact_path = write_text_artifact(
+        layer="io/world_export/yaml",
+        name="world_yaml_roundtrip",
+        content=yaml_text,
+        extension="yaml",
+    )
+    assert artifact_path.name == "world_yaml_roundtrip.yaml"
+
 
 def test_world_from_json_rejects_invalid_payload():
     """Invalid JSON should fail before reconstruction."""
@@ -110,9 +216,7 @@ def test_world_from_json_rejects_invalid_payload():
 def test_world_from_mapping_raises_validation_exception_for_structural_errors():
     """Structurally invalid mappings should be rejected explicitly."""
     with pytest.raises(ValidationException) as exc_info:
-        world_from_mapping(
-            {"id": "broken-world", "relations": []}
-        )
+        world_from_mapping({"id": "broken-world", "relations": []})
 
     assert exc_info.value.result.valid is False
     assert exc_info.value.result.summary["error"] >= 1
@@ -126,34 +230,22 @@ def test_world_from_json_aggregates_all_stage_issues_before_raising():
     stages. Before the fix, the first failing stage raised early and the aggregated
     result was never returned to the caller.
     """
-    structurally_invalid_json = (
-        '{"id": "broken-world", "relations": []}'
-    )
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
     with pytest.raises(ValidationException) as exc_info:
-        world_from_json(
-            structurally_invalid_json, raise_on_error=True
-        )
+        world_from_json(structurally_invalid_json, raise_on_error=True)
 
     result = exc_info.value.result
     assert result.valid is False
     executed = result.metadata["executed_validators"]
-    assert (
-        "syntactic" in executed
-    ), "Syntactic stage must have run"
-    assert (
-        "structural" in executed
-    ), "Structural stage must have run"
+    assert "syntactic" in executed, "Syntactic stage must have run"
+    assert "structural" in executed, "Structural stage must have run"
     assert result.summary["error"] >= 1
 
 
 def test_world_from_json_returns_result_without_raising_when_raise_on_error_false():
     """raise_on_error=False must suppress ValidationException and return the result."""
-    structurally_invalid_json = (
-        '{"id": "broken-world", "relations": []}'
-    )
-    result = world_from_json(
-        structurally_invalid_json, raise_on_error=False
-    )
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
+    result = world_from_json(structurally_invalid_json, raise_on_error=False)
     assert result.validation.valid is False
     assert result.validation.summary["error"] >= 1
 
@@ -180,9 +272,7 @@ def test_world_from_mapping_skips_syntactic_subclass_validator():
             raise_on_error=True,
         )
 
-    executed = exc_info.value.result.metadata[
-        "executed_validators"
-    ]
+    executed = exc_info.value.result.metadata["executed_validators"]
     assert "syntactic_custom" not in executed
     assert "structural" in executed
 
@@ -191,7 +281,338 @@ def test_world_json_and_yaml_exports_describe_same_payload():
     """JSON and YAML exports should encode the same canonical mapping."""
     world = _build_world()
 
-    json_payload = json.loads(world_to_json(world))
-    yaml_payload = yaml.safe_load(world_to_yaml(world))
+    json_text = world_to_json(world)
+    yaml_text = world_to_yaml(world)
+    json_payload = json.loads(json_text)
+    yaml_payload = yaml.safe_load(yaml_text)
 
     assert json_payload == yaml_payload == world.to_dict()
+
+    json_artifact = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_export_payload_equivalence",
+        content=json_text,
+        extension="json",
+    )
+    yaml_artifact = write_text_artifact(
+        layer="io/world_export/yaml",
+        name="world_export_payload_equivalence",
+        content=yaml_text,
+        extension="yaml",
+    )
+    assert json_artifact.name == "world_export_payload_equivalence.json"
+    assert yaml_artifact.name == "world_export_payload_equivalence.yaml"
+
+
+def test_world_to_llm_view_summarizes_registry_members_without_error():
+    """LLM export should summarize registered objects using the real registry API."""
+    world = _build_world()
+
+    view = world_to_llm_view(world)
+
+    assert view["id"] == "world-io-1"
+    assert view["type"] == "world"
+    assert view["members_summary"] == {
+        "total_actors": 1,
+        "total_spaces": 0,
+        "total_resources": 1,
+    }
+    assert view["members"] == {
+        "actors": ["actor-registered"],
+        "spaces": [],
+        "resources": ["resource-registered"],
+    }
+
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="world_llm_view_members_summary",
+        payload=view,
+    )
+    assert artifact_path.name == "world_llm_view_members_summary.json"
+
+
+def test_world_to_llm_view_sorts_member_ids_deterministically():
+    """LLM export must sort registry member IDs regardless of registration order."""
+    world = World(id="world-io-sorted-members")
+    world.register_object(Actor(id="actor-z"))
+    world.register_object(Actor(id="actor-a"))
+    world.register_object(Resource(id="resource-z"))
+    world.register_object(Resource(id="resource-a"))
+    world.register_object(Space(id="space-z"))
+    world.register_object(Space(id="space-a"))
+
+    view = world_to_llm_view(world)
+
+    assert view["members"]["actors"] == ["actor-a", "actor-z"]
+    assert view["members"]["resources"] == ["resource-a", "resource-z"]
+    assert view["members"]["spaces"] == ["space-a", "space-z"]
+
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="world_llm_view_sorted_members",
+        payload=view,
+    )
+    assert artifact_path.name == "world_llm_view_sorted_members.json"
+
+
+def test_model_objects_expose_to_llm_view_directly():
+    """Model objects should expose the LLM view through the shared base API."""
+    world = _build_world()
+    actor = world.model_registry.get("actor-registered")
+
+    assert actor is not None
+
+    world_view = world.to_llm_view()
+    actor_view = actor.to_llm_view()
+
+    assert world_view["type"] == "world"
+    assert world_view["members_summary"]["total_actors"] == 1
+    assert actor_view["type"] == "actor"
+    assert actor_view["kind"] == "generic"
+
+
+def test_strategy_goal_and_perception_expose_direct_llm_views():
+    """Strategy, goal, and perception objects should expose direct LLM views."""
+    strategy = _build_strategy()
+    goal = _build_goal()
+    perception = _build_perception()
+
+    strategy_view = strategy.to_llm_view()
+    goal_view = goal.to_llm_view()
+    perception_view = perception.to_llm_view()
+
+    assert strategy_view["type"] == "strategy"
+    assert strategy_view["structure"]["action"] == ["action-1"]
+    assert strategy_view["reality"]["relations"]["action"] == ["action-1"]
+    assert strategy_view["perception"] is None
+    assert strategy_view["epistemic"]["has_perception"] is False
+
+    assert goal_view["type"] == "goal"
+    assert goal_view["structure"]["actor"] == ["actor-1"]
+    assert goal_view["structure"]["target_space"] == ["zone-a"]
+    assert goal_view["reality"]["relations"]["actor"] == ["actor-1"]
+    assert goal_view["perception"] is None
+    assert goal_view["epistemic"]["status"] == "certain"
+
+    assert perception_view["type"] == "perception"
+    assert perception_view["reality"]["actor_id"] == "actor-1"
+    assert (
+        perception_view["perception"]["perceived_spaces"]["zone-a"]["epistemic_status"]
+        == "certain"
+    )
+    assert perception_view["epistemic_statuses"]["certain"][0]["kind"] == "space"
+    assert perception_view["epistemic_statuses"]["believed"][0]["kind"] == "membership"
+    assert perception_view["epistemic_statuses"]["hypothesis"][0]["kind"] == "relation"
+    assert (
+        perception_view["epistemic_statuses"]["projected"][0]["kind"]
+        == "component_link"
+    )
+    assert perception_view["epistemic"]["has_perception"] is True
+
+
+def test_perception_llm_view_is_stable_across_insertion_order():
+    """Perception LLM export must be deterministic across insertion orders."""
+    perception_a = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-b": PerceivedSpace(
+                space=Space(id="zone-b"), epistemic_status="certain"
+            ),
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"), epistemic_status="certain"
+            ),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    perception_b = Perception(
+        id="perception-order-a",
+        actor_id="actor-1",
+        source_id="world-1",
+        perceived_spaces={
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"), epistemic_status="certain"
+            ),
+            "zone-b": PerceivedSpace(
+                space=Space(id="zone-b"), epistemic_status="certain"
+            ),
+        },
+        perceived_memberships=[
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-1",
+                    space_id="zone-a",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+            PerceivedMembership(
+                membership=SpaceObjectMembership(
+                    object_id="actor-2",
+                    space_id="zone-b",
+                    role="occupies",
+                ),
+                epistemic_status="believed",
+            ),
+        ],
+        perceived_relations=[
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-a",
+                    target_space_id="zone-b",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+            PerceivedRelation(
+                relation=SpaceRelation(
+                    source_space_id="zone-b",
+                    target_space_id="zone-c",
+                    relation_type="adjacent_to",
+                ),
+                epistemic_status="hypothesis",
+            ),
+        ],
+        perceived_component_links=[
+            PerceivedComponentLink(
+                link_id="link-a",
+                composite_id="actor-a",
+                component_id="actor-1",
+                epistemic_status="projected",
+            ),
+            PerceivedComponentLink(
+                link_id="link-z",
+                composite_id="actor-z",
+                component_id="actor-2",
+                epistemic_status="projected",
+            ),
+        ],
+    )
+
+    view_a = perception_a.to_llm_view()
+    view_b = perception_b.to_llm_view()
+
+    assert view_a["perception"] == view_b["perception"]
+    assert view_a["epistemic_statuses"] == view_b["epistemic_statuses"]
+
+
+def test_space_and_resource_expose_direct_llm_views():
+    """Space and resource objects should also use the shared direct LLM view API."""
+    space = Space(id="space-llm-1")
+    resource = Resource(id="resource-llm-1")
+    resource.kind = "material"
+
+    space_view = space.to_llm_view()
+    resource_view = resource.to_llm_view()
+
+    assert space_view["type"] == "space"
+    assert space_view["reality"]["attributes"]["kind"] == "abstract"
+    assert space_view["perception"] is None
+    assert space_view["epistemic"]["status"] == "certain"
+
+    assert resource_view["type"] == "resource"
+    assert resource_view["reality"]["attributes"]["kind"] == "material"
+    assert resource_view["perception"] is None
+    assert resource_view["epistemic"]["has_perception"] is False
+
+
+def test_action_and_generic_model_object_expose_direct_llm_views():
+    """Action and plain model objects should use the generic LLM fallback."""
+    action = Action(
+        id="action-llm-1",
+        actor_id="actor-1",
+        world_id="world-1",
+        space_id="space-1",
+    )
+    generic = ModelObject(
+        id="generic-llm-1",
+        object_type="custom-object",
+    )
+    generic.set_attribute("label", "Generic Object")
+
+    action_view = action.to_llm_view()
+    generic_view = generic.to_llm_view()
+
+    assert action_view["type"] == "action"
+    assert action_view["reality"]["attributes"] == {}
+    assert action_view["reality"]["relations"] == {}
+    assert action_view["perception"] is None
+    assert action_view["epistemic"]["has_perception"] is False
+
+    assert generic_view["type"] == "custom-object"
+    assert generic_view["reality"]["attributes"]["label"] == "Generic Object"
+    assert generic_view["perception"] is None
+    assert generic_view["epistemic"]["status"] == "certain"
+
+
+def test_llm_export_audit_writes_local_lab_artifact():
+    """Write a stable LLM export snapshot under local_lab for audit review."""
+    world = _build_world()
+    strategy = _build_strategy()
+    goal = _build_goal()
+    perception = _build_perception()
+
+    payload = {
+        "world": world.to_llm_view(),
+        "strategy": strategy.to_llm_view(),
+        "goal": goal.to_llm_view(),
+        "perception": perception.to_llm_view(),
+    }
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="llm_export_snapshot",
+        payload=payload,
+    )
+
+    assert artifact_path.name == "llm_export_snapshot.json"

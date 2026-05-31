@@ -67,9 +67,7 @@ def test_goal_priority_validation():
 
 def test_goal_status_validation():
     """Goal status must be one of the defined values."""
-    with pytest.raises(
-        ValueError, match="status must be one of"
-    ):
+    with pytest.raises(ValueError, match="status must be one of"):
         Goal(
             id="goal-bad-status",
             actor_id="actor-1",
@@ -151,16 +149,27 @@ def test_goal_serialization_round_trip():
     assert recovered_goal.priority == goal.priority
     assert recovered_goal.status == goal.status
     assert recovered_goal.horizon == goal.horizon
-    assert (
-        recovered_goal.target_condition == goal.target_condition
-    )
-    assert (
-        recovered_goal.target_perception_id
-        == goal.target_perception_id
-    )
+    assert recovered_goal.target_condition == goal.target_condition
+    assert recovered_goal.target_perception_id == goal.target_perception_id
     assert recovered_goal.parent_goal_id == goal.parent_goal_id
     assert recovered_goal.child_goal_ids == goal.child_goal_ids
     assert recovered_goal.strategy_ids == goal.strategy_ids
+
+
+def test_goal_from_dict_preserves_zero_priority() -> None:
+    """Goal.from_dict should preserve explicit zero priority and not default to 1.0."""
+    payload = {
+        "id": "goal-zero-priority",
+        "object_type": "goal",
+        "schema_version": "1.0",
+        "actor_id": "actor-1",
+        "kind": "final",
+        "priority": 0,
+        "status": "active",
+        "target_condition": {},
+    }
+    goal = Goal.from_dict(payload)
+    assert goal.priority == 0.0
 
 
 def test_goal_decomposition_tree_instantiation():
@@ -182,9 +191,7 @@ def test_goal_decomposition_tree_instantiation():
 
 def test_goal_decomposition_tree_rejects_unknown_root():
     """GoalDecompositionTree rejects if root_goal_id is not registered."""
-    with pytest.raises(
-        ValueError, match="must reference a registered goal"
-    ):
+    with pytest.raises(ValueError, match="must reference a registered goal"):
         GoalDecompositionTree(
             root_goal_id="nonexistent",
             goals={},
@@ -200,9 +207,7 @@ def test_goal_decomposition_tree_rejects_root_with_parent():
         target_condition={},
         parent_goal_id="some-parent",
     )
-    with pytest.raises(
-        ValueError, match="must not have a parent_goal_id"
-    ):
+    with pytest.raises(ValueError, match="must not have a parent_goal_id"):
         GoalDecompositionTree(
             root_goal_id="root-with-parent",
             goals={"root-with-parent": root_goal},
@@ -479,9 +484,7 @@ def test_build_goal_hierarchy_branching():
 
     children = tree.children_of(root_goal.id)
     assert len(children) == 2
-    assert all(
-        c.parent_goal_id == root_goal.id for c in children
-    )
+    assert all(c.parent_goal_id == root_goal.id for c in children)
 
 
 def test_build_goal_hierarchy_deep_nesting():
@@ -560,3 +563,72 @@ def test_goal_build_step_validation():
             target_condition={},
             priority=1.5,
         )
+
+
+def test_goal_from_context_builds_goal_with_structural_validation():
+    goal = Goal.from_context(
+        {
+            "id": "goal-ctx-1",
+            "actor_id": "actor-ctx-1",
+            "kind": "intermediate",
+            "priority": 0.5,
+            "status": "active",
+            "target_condition": {"wealth": 100},
+            "horizon": {"max_steps": 8},
+            "validate": False,
+        }
+    )
+
+    assert isinstance(goal, Goal)
+    assert goal.id == "goal-ctx-1"
+    assert goal.actor_id == "actor-ctx-1"
+    assert goal.kind == "intermediate"
+    assert goal.priority == 0.5
+    assert goal.target_condition == {"wealth": 100}
+    assert goal.horizon == {"max_steps": 8}
+
+
+def test_goal_from_context_requires_non_empty_id():
+    with pytest.raises(ValueError, match="requires non-empty 'id'"):
+        Goal.from_context({"actor_id": "actor-1"})
+
+
+def test_goal_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = Goal(
+                    id="goal-ctx-forward-1",
+                    actor_id="actor-1",
+                    kind="final",
+                    target_condition={},
+                )
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    goal = Goal.from_context(
+        {
+            "id": "goal-ctx-forward-1",
+            "actor_id": "actor-1",
+            "kind": "final",
+            "target_condition": {},
+            "validate": False,
+        }
+    )
+
+    assert isinstance(goal, Goal)
+    assert goal.id == "goal-ctx-forward-1"
