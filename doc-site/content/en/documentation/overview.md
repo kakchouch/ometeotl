@@ -58,6 +58,14 @@ Teleology and utility/ranking are now implemented as model and game extensions:
 - [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) defines the abstract utility contract.
 - [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/), [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/), and [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) provide game-layer utility derivation and strategy ranking over projected terminal states.
 
+Model objects can also be generated programmatically from declarative inputs:
+
+- [GenerationContext](/ometeotl/documentation/class-reference/generation/generation-context/) is the declarative input carrying identity, attributes, nested child contexts, placements, and constraints.
+- [ContextualGenerationPipeline](/ometeotl/documentation/class-reference/generation/pipeline/) orchestrates rule application, builder dispatch, optional registration, and optional validation.
+- [GenerationRule / GenerationRuleSet / RuleRegistry](/ometeotl/documentation/class-reference/generation/rule-engine/) provide pluggable constraint propagation (temporal, spatial, admissibility).
+- [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/) enables optional LLM-assisted context refinement before building.
+- `to_llm_view()` on any model object exports a language-model-oriented payload with explicit reality/perception separation ([LLM view export](/ometeotl/documentation/class-reference/io/llm-view-export/)).
+
 For server-authoritative setups, mutations can be routed through:
 
 - [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/)
@@ -81,10 +89,12 @@ The implemented pipeline follows this flow:
 10. Validate payloads/objects with the staged validation pipeline in `ometeotl_core.validation` (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), using policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`) when needed.
 11. Export a world to canonical JSON or YAML via `ometeotl_core.io` ([world_to_json](/ometeotl/documentation/class-reference/io/world-export/), [world_to_yaml](/ometeotl/documentation/class-reference/io/world-export/), [write_world_json](/ometeotl/documentation/class-reference/io/world-export/), [write_world_yaml](/ometeotl/documentation/class-reference/io/world-export/)).
 12. Re-import a world from JSON or YAML with validated reconstruction via [world_from_json / world_from_yaml](/ometeotl/documentation/class-reference/io/world-import/), which runs syntactic then structural validation before calling `World.from_dict`.
-13. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
-14. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
-15. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
-16. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
+13. Export any entity as a language-model-oriented payload via `to_llm_view()` ([LLM view export](/ometeotl/documentation/class-reference/io/llm-view-export/)), which separates ontological reality from epistemic/perception-aware views.
+14. Optionally enforce command gating with [AuthorityCommandHandler](/ometeotl/documentation/class-reference/core/authority-command-handler/).
+15. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
+16. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
+17. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
+18. Generate model objects programmatically from declarative [GenerationContext](/ometeotl/documentation/class-reference/generation/generation-context/) inputs using [ContextualGenerationPipeline](/ometeotl/documentation/class-reference/generation/pipeline/), with optional constraint propagation via the [rule engine](/ometeotl/documentation/class-reference/generation/rule-engine/) and optional LLM-assisted context refinement via [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -103,6 +113,7 @@ The test suite follows the same layer separation as the source tree:
 - `tests/ometeotl_core/validation/`: tests for `ometeotl_core.validation.*`
 - `tests/ometeotl_core/game/`: tests for `ometeotl_core.game.*`
 - `tests/ometeotl_core/io/`: tests for `ometeotl_core.io.*`
+- `tests/ometeotl_core/generation/`: tests for `ometeotl_core.generation.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 
@@ -147,6 +158,34 @@ When authority mode is enabled in [World](/ometeotl/documentation/class-referenc
 - immutable audit traces with [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/)
 - staged validation with configurable hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`)
 - structured validation summaries attached to command results and audit entries
+
+### 4. LLM export boundary
+
+`to_llm_view()` is defined on [ModelObject](/ometeotl/documentation/class-reference/model/base/model-object/) and dispatches to [LLMViewBuilder](/ometeotl/documentation/class-reference/io/llm-view-export/) by object type.
+
+The export path (F-5) keeps ownership clean:
+- `model` owns canonical state (`to_dict` and domain classes)
+- `io` owns formatting and projection for external consumers
+
+Output always exposes explicit epistemic distinctions: `reality`, `perception`, `belief`, `hypothesis`, `projection`. Collections and epistemic groups are produced deterministically (sorted keys).
+
+### 5. Generation boundary
+
+The generation layer (F-16 to F-22) converts declarative [GenerationContext](/ometeotl/documentation/class-reference/generation/generation-context/) inputs into model objects through a deterministic pipeline:
+
+```
+GenerationContext
+    → GenerationRuleSet.apply()   # constraint propagation, normalization
+    → build_from_context()        # kind dispatch to builder functions
+    → registration / validation   # optional; driven by context flags
+    → GenerationResult
+```
+
+Key design properties:
+- Rule application is purely functional: each rule receives a context and returns a new one via `copy_with`.
+- [RuleRegistry](/ometeotl/documentation/class-reference/generation/rule-engine/) enables pluggable policy selection at call-site without modifying the pipeline.
+- [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/) is explicitly chained by callers — the pipeline never calls it automatically.
+- Constraint propagation rules use `setdefault` semantics, making the pipeline non-destructive: existing metadata survives rule application.
 
 ### 4. Extensibility seam
 

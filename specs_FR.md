@@ -108,19 +108,19 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 6. - **Deux exemples** : un monde simple et un cas multi-acteurs hiérarchique.
 
 
-## État actuel du dépôt (avril 2026)
+## État actuel du dépôt (mai 2026)
 
-Le projet n'est plus limité à un cœur model/perception/sensor minimal. Il dispose désormais d'un noyau V1 incrémental plus large, testé, couvrant le modèle, la projection, les stratégies, la téléologie/utilité, le ranking game, ainsi que la frontière d'autorité/runtime.
+Le projet dispose d'un large cœur fonctionnel V1. Toutes les couches, du modèle à la validation, de l'IO à l'export LLM et au pipeline de génération contextuelle, sont implémentées et testées.
 
 **25/04/26 - refonte architecturale majeure :**
-Les tests locaux révèlent que l’architecture actuelle est trop abstraite pour toute implémentation pratique. Il a été décidé de :
+Les tests locaux révèlent que l'architecture actuelle est trop abstraite pour toute implémentation pratique. Il a été décidé de :
 
 - conserver le code actuel dans un module central `ometeotl_core`, qui doit rester abstrait ;
 - ajouter une couche principale de spécialisation `ometeotl_foundations`, incluant :
-    - spatial : première couche d’implémentation spatiale de `ometeotl_core` ;
-    - networks : première couche d’implémentation en théorie des graphes de `ometeotl_core` ;
+    - spatial : première couche d'implémentation spatiale de `ometeotl_core` ;
+    - networks : première couche d'implémentation en théorie des graphes de `ometeotl_core` ;
     - ...
-- ajouter enfin une couche d’adaptateurs `ometeotl_adapters`, qui implémente chaque couche de spécialisation avec une bibliothèque reconnue.
+- ajouter enfin une couche d'adaptateurs `ometeotl_adapters`, qui implémente chaque couche de spécialisation avec une bibliothèque reconnue.
 
 ### Implémenté et testé aujourd'hui
 
@@ -171,18 +171,32 @@ Les tests locaux révèlent que l’architecture actuelle est trop abstraite pou
     - Diagnostics et suggestions de réparation via `DiagnosticBuilder`.
 12. Interfaces minimales dans `src/ometeotl_core/model/interfaces.py` :
     - `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
-13. Contrôle qualité :
-    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/` et `tests/ometeotl_core/validation/`.
-    - Base actuelle : `317` tests collectés.
+13. Couche IO dans `src/ometeotl_core/io/` :
+    - Export mondial JSON et YAML canonique (`world_to_json`, `world_to_yaml`, `write_world_json`, `write_world_yaml`).
+    - Import mondial validé (`world_from_json`, `world_from_yaml`, `WorldImportResult`).
+    - Exporteur de vue LLM/SLM (`llm_export.py`) implémentant F-5 : `world_to_llm_view`, `actor_to_llm_view`, `perception_to_llm_view`, et `ModelObject.to_llm_view()` avec séparation explicite réalité/perception/croyance/hypothèse/projection.
+14. Couche de génération dans `src/ometeotl_core/generation/` :
+    - `GenerationContext` dataclass d'entrée déclarative avec contextes enfants imbriqués, instructions de placement, déclarations de contraintes, et `copy_with` pour mutation sûre dans les règles.
+    - `GenerationPlacement` pour le placement explicite d'objets dans des espaces lors de la génération de mondes.
+    - ABC `ContextualBuilder` orientée classe avec builders concrets pour tous les types de base (`WorldContextualBuilder`, `ActorContextualBuilder`, `StrategyContextualBuilder`, `GoalContextualBuilder`, `PerceptionContextualBuilder`).
+    - Moteur de règles `GenerationRule` / `GenerationRuleSet` / `RuleRegistry` enfichable.
+    - Règles de propagation de contraintes intégrées : `temporal_constraint_rules`, `spatial_constraint_rules`, `admissibility_constraint_rules`, et `combined_generation_rules`.
+    - `default_rule_registry()` pré-rempli avec `"default"`, `"temporal"`, `"spatial"`, `"admissibility"`, `"combined"`.
+    - `LLMGenerationAdapter` pour le raffinement de contexte assisté par LLM optionnel, agnostique vis-à-vis du fournisseur, avec fallback.
+    - `ContextualGenerationPipeline` orchestrant règles → construction → enregistrement optionnel → validation optionnelle → `GenerationResult`.
+    - Méthodes de classe `from_context()` sur `World`, `Actor`, `Strategy`, et `Goal`.
+    - Quatre scénarios de démonstration exécutables dans `generation/examples.py`.
+15. Contrôle qualité :
+    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, et `tests/ometeotl_core/generation/`.
+    - Base actuelle : `396` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/ometeotl_core/io/` pour les workflows dédiés d'import/export.
-- `src/ometeotl_core/generation/` pour la construction contextuelle ou assistée par LLM.
 - `src/ometeotl_core/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
 - `src/ometeotl_core/examples/` pour les mondes de référence et démonstrations de bout en bout.
+- Tests d'intégration de la génération : un test de bout en bout couvrant la chaîne complète (contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate), et un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
 
 ### Arborescence source actuelle
 
@@ -193,8 +207,19 @@ ometeotl/
 │       ├── generic/
 │       │   ├── authority.py
 │       │   └── runtime.py
-│       ├── io/                 # prévu / scaffold partiel
-│       ├── generation/         # prévu / scaffold partiel
+│       ├── io/
+│       │   ├── exporters.py
+│       │   ├── importers.py
+│       │   └── llm_export.py
+│       ├── generation/
+│       │   ├── builders.py
+│       │   ├── context.py
+│       │   ├── context_builder.py
+│       │   ├── examples.py
+│       │   ├── llm_integration.py
+│       │   ├── pipeline.py
+│       │   ├── rule_engine.py
+│       │   └── rules.py        # ré-export compat ascendante
 │       ├── game/
 │       │   └── utility.py
 │       ├── validation/
@@ -209,13 +234,14 @@ ometeotl/
 │       │   ├── epistemic.py
 │       │   ├── completeness.py
 │       │   └── diagnostic.py
-│       ├── examples/           # prévu / scaffold partiel
+│       ├── examples/           # prévu
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
 │           ├── base.py
 │           ├── goals.py
 │           ├── goal_tools.py
+│           ├── interfaces.py
 │           ├── objects.py
 │           ├── perception.py
 │           ├── projection.py
@@ -230,6 +256,7 @@ ometeotl/
 └── tests/ometeotl_core/
     ├── generic/
     ├── game/
+    ├── generation/
     ├── io/
     ├── model/
     └── validation/
@@ -237,16 +264,14 @@ ometeotl/
 
 ### Lecture pratique de la V1
 
-La V1 est actuellement validée sur les coutures ontologiques, perceptives, projectives, stratégiques, téléologie/utilité, ranking game, runtime/autorité, et la couche validation dédiée. Les couches génération, IO dédiées, les modules game orientés solveurs plus riches, et les exemples de référence restent au roadmap.
+La V1 est validée sur la chaîne complète : ontologie, perception, projection, stratégie, téléologie/utilité, ranking game, autorité/runtime, validation, IO (JSON/YAML + export LLM), et génération contextuelle avec moteur de règles enfichable et adaptateur LLM. Les éléments restants de la roadmap sont les tests d'intégration de la génération (test de la chaîne complète contexte-vers-sortie-validée, et un monde de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité) et les extensions de solveur pour la couche game.
 
 ### Priorités TODO actuelles
 
-1. Implémenter des workflows IO dédiés au-dessus de la sérialisation canonique des objets.
-2. Implémenter la génération contextuelle et les workflows de réparation.
-3. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
-4. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
-5. Ajouter des exemples de référence et des démos complètes de bout en bout.
-
+1. Ajouter un test d'intégration de bout en bout couvrant la chaîne complète : contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate. Ajouter un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
+2. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
+3. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
+4. Ajouter des exemples de référence et des démos complètes de bout en bout.
 
 ## Status
 Le document `specs_EN.md` est la source de vérité pour l'architecture et le comportement du module.
