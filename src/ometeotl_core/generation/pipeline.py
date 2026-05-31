@@ -242,7 +242,7 @@ class ContextualGenerationPipeline:
         policy = str(context.registration_policy or "none")
         kind = str(context.kind).lower().strip()
 
-        if kind not in {"goal", "strategy", "action"}:
+        if kind not in {"goal", "strategy", "action", "actor", "resource"}:
             return
         if policy == "none":
             return
@@ -338,9 +338,7 @@ class ContextualGenerationPipeline:
         for key, value in dict(context.state).items():
             target.set_state(key, value)
 
-        for key, value in dict(context.context).items():
-            if key:
-                target.context[key] = value
+        self._merge_target_context(target, dict(context.context))
 
         for key, value in dict(context.provenance).items():
             target.set_provenance(key, value)
@@ -360,9 +358,7 @@ class ContextualGenerationPipeline:
         for key, value in dict(context.state).items():
             target.set_state(key, value)
 
-        for key, value in dict(context.context).items():
-            if key:
-                target.context[key] = value
+        self._merge_target_context(target, dict(context.context))
 
         for key, value in dict(context.provenance).items():
             target.set_provenance(key, value)
@@ -372,3 +368,24 @@ class ContextualGenerationPipeline:
                 target.remove_relation(rel_name, existing_target)
             for rel_value in rel_values:
                 target.add_relation(rel_name, rel_value)
+
+    def _merge_target_context(
+        self,
+        target: ModelObject,
+        updates: dict[str, Any],
+    ) -> None:
+        if not updates:
+            return
+
+        merged_context = dict(target.context)
+        has_valid_update = False
+        for key, value in updates.items():
+            if key:
+                merged_context[key] = value
+                has_valid_update = True
+
+        if not has_valid_update:
+            return
+
+        target.context.clear()
+        target.context.update(merged_context)

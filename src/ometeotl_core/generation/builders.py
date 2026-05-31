@@ -51,9 +51,12 @@ def build_goal(context: GenerationContext) -> Goal:
         context.metadata.get("actor_id") or context.context.get("actor_id") or ""
     )
     kind = str(context.metadata.get("kind") or context.context.get("kind") or "final")
-    priority = float(
-        context.metadata.get("priority") or context.context.get("priority") or 1.0
-    )
+    priority_val = context.metadata.get("priority")
+    if priority_val is None:
+        priority_val = context.context.get("priority")
+    if priority_val is None:
+        priority_val = 1.0
+    priority = float(priority_val)
     status = str(
         context.metadata.get("status") or context.context.get("status") or "active"
     )

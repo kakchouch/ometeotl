@@ -13,6 +13,7 @@ from ometeotl_core.model.actions import Action
 from ometeotl_core.model.actors import Actor
 from ometeotl_core.model.goals import Goal
 from ometeotl_core.model.perception import Perception
+from ometeotl_core.model.resources import Resource
 from ometeotl_core.model.spaces import Space
 from ometeotl_core.model.strategies import Strategy
 from ometeotl_core.model.world import World
@@ -109,6 +110,24 @@ def test_pipeline_generates_goal_from_metadata():
     assert result.generated.actor_id == "actor-1"
     assert result.generated.priority == 0.7
     assert result.generated.target_condition == {"state": "safe"}
+
+
+def test_pipeline_generates_goal_preserving_zero_priority():
+    pipeline = ContextualGenerationPipeline()
+    goal_context = GenerationContext(
+        kind="goal",
+        id="goal-gen-priority-zero",
+        metadata={
+            "actor_id": "actor-1",
+            "kind": "intermediate",
+            "priority": 0.0,
+        },
+    )
+
+    result = pipeline.generate(goal_context)
+
+    assert isinstance(result.generated, Goal)
+    assert result.generated.priority == 0.0
 
 
 def test_pipeline_generates_strategy_with_default_single_node():
@@ -384,6 +403,36 @@ def test_pipeline_registers_generated_strategy_and_action_when_world_available()
     assert world.model_registry.get("action-registered-1") is action_result.generated
 
 
+def test_pipeline_registers_generated_actor_and_resource_when_world_available():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-registry-actor-resource")
+
+    actor_result = pipeline.generate(
+        GenerationContext(
+            kind="actor",
+            id="actor-registered-policy",
+            registration_policy="if_available",
+        ),
+        world=world,
+    )
+    resource_result = pipeline.generate(
+        GenerationContext(
+            kind="resource",
+            id="resource-registered-policy",
+            registration_policy="if_available",
+        ),
+        world=world,
+    )
+
+    assert isinstance(actor_result.generated, Actor)
+    assert isinstance(resource_result.generated, Resource)
+    assert world.model_registry.get("actor-registered-policy") is actor_result.generated
+    assert (
+        world.model_registry.get("resource-registered-policy")
+        is resource_result.generated
+    )
+
+
 def test_pipeline_registration_policy_require_without_world_raises():
     pipeline = ContextualGenerationPipeline()
 
@@ -459,6 +508,44 @@ def test_pipeline_corrective_update_replaces_specified_relations():
 
     assert result.generated is actor
     assert actor.relations["resource"] == ["resource-c"]
+
+
+def test_pipeline_partial_update_context_is_blocked_by_authority_mode():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-authority-1")
+    actor = Actor(id="actor-update-authority-1")
+    world.register_object(actor)
+    world.enable_authority_mode("secret")
+
+    with pytest.raises(PermissionError):
+        pipeline.generate(
+            GenerationContext(
+                kind="actor",
+                id="actor-update-authority-1",
+                operation="partial_update",
+                context={"risk": "high"},
+            ),
+            world=world,
+        )
+
+
+def test_pipeline_corrective_update_context_is_blocked_by_authority_mode():
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-update-authority-2")
+    actor = Actor(id="actor-update-authority-2")
+    world.register_object(actor)
+    world.enable_authority_mode("secret")
+
+    with pytest.raises(PermissionError):
+        pipeline.generate(
+            GenerationContext(
+                kind="actor",
+                id="actor-update-authority-2",
+                operation="corrective_update",
+                context={"risk": "high"},
+            ),
+            world=world,
+        )
 
 
 def test_pipeline_update_operation_requires_existing_target():
