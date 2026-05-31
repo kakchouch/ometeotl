@@ -5,6 +5,11 @@ import json
 import pytest
 import yaml
 
+from tests.ometeotl_core._artifact_utils import (
+    write_json_artifact,
+    write_text_artifact,
+)
+
 from ometeotl_core.io import (
     world_to_llm_view,
     world_from_json,
@@ -142,27 +147,28 @@ def test_world_to_json_is_deterministic():
     assert first == second
     assert json.loads(first)["id"] == "world-io-1"
 
+    artifact_path = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_to_json_deterministic",
+        content=first,
+        extension="json",
+    )
+    assert artifact_path.name == "world_to_json_deterministic.json"
+
 
 def test_world_json_roundtrip_preserves_graph_and_registry():
     """JSON import/export should preserve world structure and registered types."""
     world = _build_world()
+    json_text = world_to_json(world)
 
-    result = world_from_json(world_to_json(world))
+    result = world_from_json(json_text)
 
     assert result.parsed_format == "json"
     assert result.validation.valid is True
     assert result.world.id == world.id
     assert result.world.get_space("zone-a") is not None
-    assert (
-        "actor-1"
-        in result.world.space_object_graph.list_objects_in_space(
-            "zone-a"
-        )
-    )
-    assert (
-        result.world.model_registry.get("actor-registered")
-        is not None
-    )
+    assert "actor-1" in result.world.space_object_graph.list_objects_in_space("zone-a")
+    assert result.world.model_registry.get("actor-registered") is not None
     assert isinstance(
         result.world.model_registry.get("actor-registered"),
         Actor,
@@ -171,6 +177,14 @@ def test_world_json_roundtrip_preserves_graph_and_registry():
         result.world.model_registry.get("resource-registered"),
         Resource,
     )
+
+    artifact_path = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_json_roundtrip",
+        content=json_text,
+        extension="json",
+    )
+    assert artifact_path.name == "world_json_roundtrip.json"
 
 
 def test_world_yaml_roundtrip_preserves_canonical_payload():
@@ -184,6 +198,14 @@ def test_world_yaml_roundtrip_preserves_canonical_payload():
     assert yaml.safe_load(yaml_text) == world.to_dict()
     assert result.world.to_dict() == world.to_dict()
 
+    artifact_path = write_text_artifact(
+        layer="io/world_export/yaml",
+        name="world_yaml_roundtrip",
+        content=yaml_text,
+        extension="yaml",
+    )
+    assert artifact_path.name == "world_yaml_roundtrip.yaml"
+
 
 def test_world_from_json_rejects_invalid_payload():
     """Invalid JSON should fail before reconstruction."""
@@ -194,9 +216,7 @@ def test_world_from_json_rejects_invalid_payload():
 def test_world_from_mapping_raises_validation_exception_for_structural_errors():
     """Structurally invalid mappings should be rejected explicitly."""
     with pytest.raises(ValidationException) as exc_info:
-        world_from_mapping(
-            {"id": "broken-world", "relations": []}
-        )
+        world_from_mapping({"id": "broken-world", "relations": []})
 
     assert exc_info.value.result.valid is False
     assert exc_info.value.result.summary["error"] >= 1
@@ -210,34 +230,22 @@ def test_world_from_json_aggregates_all_stage_issues_before_raising():
     stages. Before the fix, the first failing stage raised early and the aggregated
     result was never returned to the caller.
     """
-    structurally_invalid_json = (
-        '{"id": "broken-world", "relations": []}'
-    )
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
     with pytest.raises(ValidationException) as exc_info:
-        world_from_json(
-            structurally_invalid_json, raise_on_error=True
-        )
+        world_from_json(structurally_invalid_json, raise_on_error=True)
 
     result = exc_info.value.result
     assert result.valid is False
     executed = result.metadata["executed_validators"]
-    assert (
-        "syntactic" in executed
-    ), "Syntactic stage must have run"
-    assert (
-        "structural" in executed
-    ), "Structural stage must have run"
+    assert "syntactic" in executed, "Syntactic stage must have run"
+    assert "structural" in executed, "Structural stage must have run"
     assert result.summary["error"] >= 1
 
 
 def test_world_from_json_returns_result_without_raising_when_raise_on_error_false():
     """raise_on_error=False must suppress ValidationException and return the result."""
-    structurally_invalid_json = (
-        '{"id": "broken-world", "relations": []}'
-    )
-    result = world_from_json(
-        structurally_invalid_json, raise_on_error=False
-    )
+    structurally_invalid_json = '{"id": "broken-world", "relations": []}'
+    result = world_from_json(structurally_invalid_json, raise_on_error=False)
     assert result.validation.valid is False
     assert result.validation.summary["error"] >= 1
 
@@ -264,9 +272,7 @@ def test_world_from_mapping_skips_syntactic_subclass_validator():
             raise_on_error=True,
         )
 
-    executed = exc_info.value.result.metadata[
-        "executed_validators"
-    ]
+    executed = exc_info.value.result.metadata["executed_validators"]
     assert "syntactic_custom" not in executed
     assert "structural" in executed
 
@@ -275,10 +281,27 @@ def test_world_json_and_yaml_exports_describe_same_payload():
     """JSON and YAML exports should encode the same canonical mapping."""
     world = _build_world()
 
-    json_payload = json.loads(world_to_json(world))
-    yaml_payload = yaml.safe_load(world_to_yaml(world))
+    json_text = world_to_json(world)
+    yaml_text = world_to_yaml(world)
+    json_payload = json.loads(json_text)
+    yaml_payload = yaml.safe_load(yaml_text)
 
     assert json_payload == yaml_payload == world.to_dict()
+
+    json_artifact = write_text_artifact(
+        layer="io/world_export/json",
+        name="world_export_payload_equivalence",
+        content=json_text,
+        extension="json",
+    )
+    yaml_artifact = write_text_artifact(
+        layer="io/world_export/yaml",
+        name="world_export_payload_equivalence",
+        content=yaml_text,
+        extension="yaml",
+    )
+    assert json_artifact.name == "world_export_payload_equivalence.json"
+    assert yaml_artifact.name == "world_export_payload_equivalence.yaml"
 
 
 def test_world_to_llm_view_summarizes_registry_members_without_error():
@@ -300,6 +323,13 @@ def test_world_to_llm_view_summarizes_registry_members_without_error():
         "resources": ["resource-registered"],
     }
 
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="world_llm_view_members_summary",
+        payload=view,
+    )
+    assert artifact_path.name == "world_llm_view_members_summary.json"
+
 
 def test_world_to_llm_view_sorts_member_ids_deterministically():
     """LLM export must sort registry member IDs regardless of registration order."""
@@ -316,6 +346,13 @@ def test_world_to_llm_view_sorts_member_ids_deterministically():
     assert view["members"]["actors"] == ["actor-a", "actor-z"]
     assert view["members"]["resources"] == ["resource-a", "resource-z"]
     assert view["members"]["spaces"] == ["space-a", "space-z"]
+
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="world_llm_view_sorted_members",
+        payload=view,
+    )
+    assert artifact_path.name == "world_llm_view_sorted_members.json"
 
 
 def test_model_objects_expose_to_llm_view_directly():
@@ -359,11 +396,17 @@ def test_strategy_goal_and_perception_expose_direct_llm_views():
 
     assert perception_view["type"] == "perception"
     assert perception_view["reality"]["actor_id"] == "actor-1"
-    assert perception_view["perception"]["perceived_spaces"]["zone-a"]["epistemic_status"] == "certain"
+    assert (
+        perception_view["perception"]["perceived_spaces"]["zone-a"]["epistemic_status"]
+        == "certain"
+    )
     assert perception_view["epistemic_statuses"]["certain"][0]["kind"] == "space"
     assert perception_view["epistemic_statuses"]["believed"][0]["kind"] == "membership"
     assert perception_view["epistemic_statuses"]["hypothesis"][0]["kind"] == "relation"
-    assert perception_view["epistemic_statuses"]["projected"][0]["kind"] == "component_link"
+    assert (
+        perception_view["epistemic_statuses"]["projected"][0]["kind"]
+        == "component_link"
+    )
     assert perception_view["epistemic"]["has_perception"] is True
 
 
@@ -374,8 +417,12 @@ def test_perception_llm_view_is_stable_across_insertion_order():
         actor_id="actor-1",
         source_id="world-1",
         perceived_spaces={
-            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
-            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
+            "zone-b": PerceivedSpace(
+                space=Space(id="zone-b"), epistemic_status="certain"
+            ),
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"), epistemic_status="certain"
+            ),
         },
         perceived_memberships=[
             PerceivedMembership(
@@ -434,8 +481,12 @@ def test_perception_llm_view_is_stable_across_insertion_order():
         actor_id="actor-1",
         source_id="world-1",
         perceived_spaces={
-            "zone-a": PerceivedSpace(space=Space(id="zone-a"), epistemic_status="certain"),
-            "zone-b": PerceivedSpace(space=Space(id="zone-b"), epistemic_status="certain"),
+            "zone-a": PerceivedSpace(
+                space=Space(id="zone-a"), epistemic_status="certain"
+            ),
+            "zone-b": PerceivedSpace(
+                space=Space(id="zone-b"), epistemic_status="certain"
+            ),
         },
         perceived_memberships=[
             PerceivedMembership(
@@ -543,3 +594,25 @@ def test_action_and_generic_model_object_expose_direct_llm_views():
     assert generic_view["reality"]["attributes"]["label"] == "Generic Object"
     assert generic_view["perception"] is None
     assert generic_view["epistemic"]["status"] == "certain"
+
+
+def test_llm_export_audit_writes_local_lab_artifact():
+    """Write a stable LLM export snapshot under local_lab for audit review."""
+    world = _build_world()
+    strategy = _build_strategy()
+    goal = _build_goal()
+    perception = _build_perception()
+
+    payload = {
+        "world": world.to_llm_view(),
+        "strategy": strategy.to_llm_view(),
+        "goal": goal.to_llm_view(),
+        "perception": perception.to_llm_view(),
+    }
+    artifact_path = write_json_artifact(
+        layer="io/llm_export",
+        name="llm_export_snapshot",
+        payload=payload,
+    )
+
+    assert artifact_path.name == "llm_export_snapshot.json"
