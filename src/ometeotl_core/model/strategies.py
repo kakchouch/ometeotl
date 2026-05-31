@@ -331,6 +331,66 @@ class Strategy(ModelObject):
             ),
         )
 
+    @classmethod
+    def from_context(cls, context: Mapping[str, Any]) -> "Strategy":
+        """Build a strategy from contextual payload via generation pipeline."""
+        from ometeotl_core.generation import (
+            ContextualGenerationPipeline,
+            GenerationContext,
+        )
+        from ometeotl_core.validation import (
+            StructuralValidator,
+            ValidationException,
+            ValidationPipeline,
+        )
+
+        payload = dict(context)
+        strategy_id = str(payload.get("id") or "")
+        if not strategy_id:
+            raise ValueError("Strategy.from_context requires non-empty 'id'")
+
+        metadata = dict(payload.get("metadata") or {})
+        for key in (
+            "actor_id",
+            "goal_id",
+            "root_node_id",
+            "action_id",
+            "projection_policy",
+        ):
+            if key in payload and key not in metadata:
+                metadata[key] = payload[key]
+
+        generation_context = GenerationContext(
+            kind="strategy",
+            id=strategy_id,
+            label=str(payload.get("label") or ""),
+            attributes=dict(payload.get("attributes") or {}),
+            relations={
+                str(name): [str(item) for item in values or []]
+                for name, values in dict(payload.get("relations") or {}).items()
+            },
+            state=dict(payload.get("state") or {}),
+            context=dict(payload.get("context") or {}),
+            provenance=dict(payload.get("provenance") or {}),
+            metadata=metadata,
+            validate=True,
+            validation_mode=str(payload.get("validation_mode") or "strict"),
+            stage_modes=dict(payload.get("stage_modes") or {}),
+        )
+
+        pipeline = ContextualGenerationPipeline(
+            validation_pipeline=ValidationPipeline(validators=[StructuralValidator()])
+        )
+        result = pipeline.generate(generation_context)
+        if result.validation is not None and not result.validation.valid:
+            raise ValidationException(result.validation)
+        if not isinstance(result.generated, cls):
+            raise TypeError(
+                "Strategy.from_context expected generated Strategy, got "
+                f"{type(result.generated).__name__}"
+            )
+        return result.generated
+
 
 def _default_strategy_node_id(index: int, action: Action) -> ObjectId:
     return f"node-{index:04d}-{action.id}"

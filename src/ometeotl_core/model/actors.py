@@ -81,9 +81,7 @@ class Actor(GenericObject):
         self.attributes.setdefault("roles", [])
         self.attributes.setdefault("profile", {})
         self.attributes.setdefault("emergent", False)
-        self.attributes.setdefault(
-            "composition_mode", "standalone"
-        )
+        self.attributes.setdefault("composition_mode", "standalone")
 
     @property
     def kind(self) -> str:
@@ -153,17 +151,13 @@ class Actor(GenericObject):
           clear existence but is treated as an actor for modeling purposes or
           through other actors interactions.
         """
-        value = self.attributes.get(
-            "composition_mode", "standalone"
-        )
+        value = self.attributes.get("composition_mode", "standalone")
         return str(value) if value is not None else "standalone"
 
     @composition_mode.setter
     def composition_mode(self, value: str) -> None:
         """Sets the actor's composition mode."""
-        _require_non_empty(
-            value, "Composition mode cannot be empty"
-        )
+        _require_non_empty(value, "Composition mode cannot be empty")
         self.attributes["composition_mode"] = value
 
     @property
@@ -229,9 +223,55 @@ class Actor(GenericObject):
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "Actor":
         """Create an Actor instance from a dictionary representation."""
-        return cls(
-            **_base_kwargs_from_typed_payload(data, "actor")
+        return cls(**_base_kwargs_from_typed_payload(data, "actor"))
+
+    @classmethod
+    def from_context(cls, context: Mapping[str, Any]) -> "Actor":
+        """Build an actor from contextual payload via generation pipeline."""
+        from ometeotl_core.generation import (
+            ContextualGenerationPipeline,
+            GenerationContext,
         )
+        from ometeotl_core.validation import (
+            StructuralValidator,
+            ValidationException,
+            ValidationPipeline,
+        )
+
+        payload = dict(context)
+        actor_id = str(payload.get("id") or "")
+        if not actor_id:
+            raise ValueError("Actor.from_context requires non-empty 'id'")
+
+        generation_context = GenerationContext(
+            kind="actor",
+            id=actor_id,
+            label=str(payload.get("label") or ""),
+            attributes=dict(payload.get("attributes") or {}),
+            relations={
+                str(name): [str(item) for item in values or []]
+                for name, values in dict(payload.get("relations") or {}).items()
+            },
+            state=dict(payload.get("state") or {}),
+            context=dict(payload.get("context") or {}),
+            provenance=dict(payload.get("provenance") or {}),
+            metadata=dict(payload.get("metadata") or {}),
+            validate=True,
+            validation_mode=str(payload.get("validation_mode") or "strict"),
+            stage_modes=dict(payload.get("stage_modes") or {}),
+        )
+
+        pipeline = ContextualGenerationPipeline(
+            validation_pipeline=ValidationPipeline(validators=[StructuralValidator()])
+        )
+        result = pipeline.generate(generation_context)
+        if result.validation is not None and not result.validation.valid:
+            raise ValidationException(result.validation)
+        if not isinstance(result.generated, cls):
+            raise TypeError(
+                f"Actor.from_context expected generated Actor, got {type(result.generated).__name__}"
+            )
+        return result.generated
 
 
 # ---------------------------------------------------------------------------
@@ -363,9 +403,7 @@ def is_abstract_composite(
     if not actor.is_composite:
         return False
 
-    spaces = world.space_object_graph.spaces_where_object_exists(
-        actor.id
-    )
+    spaces = world.space_object_graph.spaces_where_object_exists(actor.id)
     if not spaces:
         return False
     return all(space.is_abstract for space in spaces)

@@ -173,6 +173,66 @@ class Goal(ModelObject):
             strategy_ids=[str(sid) for sid in (data.get("strategy_ids") or [])],
         )
 
+    @classmethod
+    def from_context(cls, context: Mapping[str, Any]) -> "Goal":
+        """Build a goal from contextual payload via generation pipeline."""
+        from ometeotl_core.generation import (
+            ContextualGenerationPipeline,
+            GenerationContext,
+        )
+        from ometeotl_core.validation import (
+            StructuralValidator,
+            ValidationException,
+            ValidationPipeline,
+        )
+
+        payload = dict(context)
+        goal_id = str(payload.get("id") or "")
+        if not goal_id:
+            raise ValueError("Goal.from_context requires non-empty 'id'")
+
+        metadata = dict(payload.get("metadata") or {})
+        for key in (
+            "actor_id",
+            "kind",
+            "priority",
+            "status",
+            "horizon",
+            "target_condition",
+        ):
+            if key in payload and key not in metadata:
+                metadata[key] = payload[key]
+
+        generation_context = GenerationContext(
+            kind="goal",
+            id=goal_id,
+            label=str(payload.get("label") or ""),
+            attributes=dict(payload.get("attributes") or {}),
+            relations={
+                str(name): [str(item) for item in values or []]
+                for name, values in dict(payload.get("relations") or {}).items()
+            },
+            state=dict(payload.get("state") or {}),
+            context=dict(payload.get("context") or {}),
+            provenance=dict(payload.get("provenance") or {}),
+            metadata=metadata,
+            validate=True,
+            validation_mode=str(payload.get("validation_mode") or "strict"),
+            stage_modes=dict(payload.get("stage_modes") or {}),
+        )
+
+        pipeline = ContextualGenerationPipeline(
+            validation_pipeline=ValidationPipeline(validators=[StructuralValidator()])
+        )
+        result = pipeline.generate(generation_context)
+        if result.validation is not None and not result.validation.valid:
+            raise ValidationException(result.validation)
+        if not isinstance(result.generated, cls):
+            raise TypeError(
+                f"Goal.from_context expected generated Goal, got {type(result.generated).__name__}"
+            )
+        return result.generated
+
 
 @dataclass
 class GoalDecompositionTree:

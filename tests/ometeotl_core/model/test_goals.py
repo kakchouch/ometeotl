@@ -563,3 +563,31 @@ def test_goal_build_step_validation():
             target_condition={},
             priority=1.5,
         )
+
+
+def test_goal_from_context_builds_goal_with_structural_validation():
+    goal = Goal.from_context(
+        {
+            "id": "goal-ctx-1",
+            "actor_id": "actor-ctx-1",
+            "kind": "intermediate",
+            "priority": 0.5,
+            "status": "active",
+            "target_condition": {"wealth": 100},
+            "horizon": {"max_steps": 8},
+            "validate": False,
+        }
+    )
+
+    assert isinstance(goal, Goal)
+    assert goal.id == "goal-ctx-1"
+    assert goal.actor_id == "actor-ctx-1"
+    assert goal.kind == "intermediate"
+    assert goal.priority == 0.5
+    assert goal.target_condition == {"wealth": 100}
+    assert goal.horizon == {"max_steps": 8}
+
+
+def test_goal_from_context_requires_non_empty_id():
+    with pytest.raises(ValueError, match="requires non-empty 'id'"):
+        Goal.from_context({"actor_id": "actor-1"})

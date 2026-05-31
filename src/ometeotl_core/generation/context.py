@@ -49,6 +49,8 @@ class GenerationContext:
     actions: list["GenerationContext"] = field(default_factory=list)
     placements: list[GenerationPlacement] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    rules: dict[str, Any] = field(default_factory=dict)
+    constraints: dict[str, Any] = field(default_factory=dict)
     operation: str = "create"
     target_id: str = ""
     registration_policy: str = "none"
@@ -77,10 +79,14 @@ class GenerationContext:
     def merged_context(self) -> dict[str, Any]:
         """Return context metadata enriched with the generation payload."""
         merged = dict(self.context)
-        if self.metadata:
+        if self.metadata or self.rules or self.constraints:
             merged.setdefault("generation", {})
             generation_metadata = dict(merged["generation"])
             generation_metadata.update(self.metadata)
+            if self.rules:
+                generation_metadata.setdefault("rules", dict(self.rules))
+            if self.constraints:
+                generation_metadata.setdefault("constraints", dict(self.constraints))
             merged["generation"] = generation_metadata
         return merged
 
@@ -110,6 +116,8 @@ class GenerationContext:
             "actions": list(self.actions),
             "placements": list(self.placements),
             "metadata": dict(self.metadata),
+            "rules": dict(self.rules),
+            "constraints": dict(self.constraints),
             "operation": self.operation,
             "target_id": self.target_id,
             "registration_policy": self.registration_policy,

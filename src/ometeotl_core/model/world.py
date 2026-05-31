@@ -227,3 +227,114 @@ class World(Space):
                 data.get("model_registry") or {}
             ),
         )
+
+    @classmethod
+    def from_context(cls, context: Mapping[str, Any]) -> "World":
+        """Build a world from contextual payload via generation pipeline."""
+        from ometeotl_core.generation import (
+            ContextualGenerationPipeline,
+            GenerationContext,
+            GenerationPlacement,
+        )
+        from ometeotl_core.validation import (
+            StructuralValidator,
+            ValidationException,
+            ValidationPipeline,
+        )
+
+        payload = dict(context)
+        world_id = str(payload.get("id") or "")
+        if not world_id:
+            raise ValueError("World.from_context requires non-empty 'id'")
+
+        def _parse_contexts(raw_contexts: Any, kind: str) -> list[GenerationContext]:
+            parsed: list[GenerationContext] = []
+            for entry in raw_contexts or []:
+                if isinstance(entry, GenerationContext):
+                    parsed.append(entry)
+                    continue
+                if not isinstance(entry, Mapping):
+                    raise TypeError(
+                        f"World.from_context expected mapping for nested '{kind}' context"
+                    )
+                nested_payload = dict(entry)
+                nested_id = str(nested_payload.get("id") or "")
+                if not nested_id:
+                    raise ValueError(
+                        f"World.from_context requires non-empty nested '{kind}' id"
+                    )
+                parsed.append(
+                    GenerationContext(
+                        kind=str(nested_payload.get("kind") or kind),
+                        id=nested_id,
+                        label=str(nested_payload.get("label") or ""),
+                        attributes=dict(nested_payload.get("attributes") or {}),
+                        relations={
+                            str(name): [str(item) for item in values or []]
+                            for name, values in dict(
+                                nested_payload.get("relations") or {}
+                            ).items()
+                        },
+                        state=dict(nested_payload.get("state") or {}),
+                        context=dict(nested_payload.get("context") or {}),
+                        provenance=dict(nested_payload.get("provenance") or {}),
+                        metadata=dict(nested_payload.get("metadata") or {}),
+                        validate=bool(nested_payload.get("validate", True)),
+                        validation_mode=str(
+                            nested_payload.get("validation_mode") or "strict"
+                        ),
+                        stage_modes=dict(nested_payload.get("stage_modes") or {}),
+                    )
+                )
+            return parsed
+
+        placements: list[GenerationPlacement] = []
+        for entry in payload.get("placements") or []:
+            if isinstance(entry, GenerationPlacement):
+                placements.append(entry)
+                continue
+            if not isinstance(entry, Mapping):
+                raise TypeError("World.from_context expected mapping for 'placements'")
+            placement_payload = dict(entry)
+            placements.append(
+                GenerationPlacement(
+                    object_id=str(placement_payload.get("object_id") or ""),
+                    space_id=str(placement_payload.get("space_id") or ""),
+                    role=str(placement_payload.get("role") or "occupies"),
+                    metadata=dict(placement_payload.get("metadata") or {}),
+                )
+            )
+
+        generation_context = GenerationContext(
+            kind="world",
+            id=world_id,
+            label=str(payload.get("label") or ""),
+            attributes=dict(payload.get("attributes") or {}),
+            relations={
+                str(name): [str(item) for item in values or []]
+                for name, values in dict(payload.get("relations") or {}).items()
+            },
+            state=dict(payload.get("state") or {}),
+            context=dict(payload.get("context") or {}),
+            provenance=dict(payload.get("provenance") or {}),
+            metadata=dict(payload.get("metadata") or {}),
+            spaces=_parse_contexts(payload.get("spaces"), "space"),
+            actors=_parse_contexts(payload.get("actors"), "actor"),
+            resources=_parse_contexts(payload.get("resources"), "resource"),
+            placements=placements,
+            validate=True,
+            validation_mode=str(payload.get("validation_mode") or "strict"),
+            stage_modes=dict(payload.get("stage_modes") or {}),
+        )
+
+        pipeline = ContextualGenerationPipeline(
+            validation_pipeline=ValidationPipeline(validators=[StructuralValidator()])
+        )
+        result = pipeline.generate(generation_context)
+        if result.validation is not None and not result.validation.valid:
+            raise ValidationException(result.validation)
+        if not isinstance(result.generated, cls):
+            raise TypeError(
+                f"World.from_context expected generated World, got {type(result.generated).__name__}"
+            )
+        return result.generated
