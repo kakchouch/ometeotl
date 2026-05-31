@@ -591,3 +591,44 @@ def test_goal_from_context_builds_goal_with_structural_validation():
 def test_goal_from_context_requires_non_empty_id():
     with pytest.raises(ValueError, match="requires non-empty 'id'"):
         Goal.from_context({"actor_id": "actor-1"})
+
+
+def test_goal_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = Goal(
+                    id="goal-ctx-forward-1",
+                    actor_id="actor-1",
+                    kind="final",
+                    target_condition={},
+                )
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    goal = Goal.from_context(
+        {
+            "id": "goal-ctx-forward-1",
+            "actor_id": "actor-1",
+            "kind": "final",
+            "target_condition": {},
+            "validate": False,
+        }
+    )
+
+    assert isinstance(goal, Goal)
+    assert goal.id == "goal-ctx-forward-1"

@@ -70,6 +70,22 @@ def test_llm_adapter_falls_back_on_invalid_json_response():
     assert any("falling back" in msg.lower() for msg in refinement.diagnostics)
 
 
+def test_llm_adapter_falls_back_when_text_generator_raises():
+    def failing_generator(prompt: str) -> str:
+        del prompt
+        raise RuntimeError("provider timeout")
+
+    adapter = LLMGenerationAdapter(text_generator=failing_generator)
+    base_context = GenerationContext(kind="actor", id="actor-hybrid-2b", label="Base")
+
+    refinement = adapter.refine_context(base_context, fallback_to_base=True)
+
+    assert refinement.used_fallback is True
+    assert refinement.refined_context.id == "actor-hybrid-2b"
+    assert refinement.raw_response == ""
+    assert any("generation failed" in msg.lower() for msg in refinement.diagnostics)
+
+
 def test_pipeline_generate_hybrid_uses_llm_refined_context():
     def fake_generator(prompt: str) -> str:
         del prompt

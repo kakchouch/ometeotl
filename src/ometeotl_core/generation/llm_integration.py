@@ -79,7 +79,19 @@ class LLMGenerationAdapter:
         returned with diagnostics and used_fallback=True.
         """
         prompt = self.render_prompt(context, prompt_template=prompt_template)
-        raw_response = self._text_generator(prompt)
+        try:
+            raw_response = self._text_generator(prompt)
+        except Exception as exc:  # noqa: BLE001 - provider/runtime exceptions
+            if not fallback_to_base:
+                raise
+            return LLMRefinementResult(
+                refined_context=context,
+                raw_response="",
+                used_fallback=True,
+                diagnostics=[
+                    "LLM generation failed; falling back to base " f"context: {exc}"
+                ],
+            )
 
         return self.refine_context_from_response(
             context,

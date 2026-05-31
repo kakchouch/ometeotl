@@ -526,3 +526,43 @@ def test_strategy_from_context_builds_strategy_with_structural_validation():
 def test_strategy_from_context_requires_non_empty_id():
     with pytest.raises(ValueError, match="requires non-empty 'id'"):
         Strategy.from_context({"actor_id": "actor-1"})
+
+
+def test_strategy_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = Strategy(
+                    id="strategy-ctx-forward-1",
+                    actor_id="actor-1",
+                    root_node_id="root",
+                    nodes=[StrategyNode(node_id="root", action_id="action-1")],
+                )
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    strategy = Strategy.from_context(
+        {
+            "id": "strategy-ctx-forward-1",
+            "actor_id": "actor-1",
+            "action_id": "action-1",
+            "validate": False,
+        }
+    )
+
+    assert isinstance(strategy, Strategy)
+    assert strategy.id == "strategy-ctx-forward-1"

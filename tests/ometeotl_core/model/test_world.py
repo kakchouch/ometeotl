@@ -283,3 +283,31 @@ def test_world_from_context_builds_nested_world_with_structural_validation():
 def test_world_from_context_requires_non_empty_id():
     with pytest.raises(ValueError, match="requires non-empty 'id'"):
         World.from_context({"spaces": [{"id": "s1", "kind": "space"}]})
+
+
+def test_world_from_context_forwards_validate_flag(monkeypatch):
+    import ometeotl_core.generation as generation_module
+
+    class _DummyPipeline:
+        def __init__(self, *, validation_pipeline):
+            del validation_pipeline
+
+        def generate(self, generation_context):
+            assert generation_context.validate is False
+
+            class _Result:
+                generated = World(id="world-ctx-forward-1")
+                validation = None
+
+            return _Result()
+
+    monkeypatch.setattr(
+        generation_module,
+        "ContextualGenerationPipeline",
+        _DummyPipeline,
+    )
+
+    world = World.from_context({"id": "world-ctx-forward-1", "validate": False})
+
+    assert isinstance(world, World)
+    assert world.id == "world-ctx-forward-1"

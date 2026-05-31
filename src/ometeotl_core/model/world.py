@@ -322,7 +322,7 @@ class World(Space):
             actors=_parse_contexts(payload.get("actors"), "actor"),
             resources=_parse_contexts(payload.get("resources"), "resource"),
             placements=placements,
-            validate=True,
+            validate=bool(payload.get("validate", True)),
             validation_mode=str(payload.get("validation_mode") or "strict"),
             stage_modes=dict(payload.get("stage_modes") or {}),
         )

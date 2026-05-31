@@ -256,7 +256,7 @@ class Actor(GenericObject):
             context=dict(payload.get("context") or {}),
             provenance=dict(payload.get("provenance") or {}),
             metadata=dict(payload.get("metadata") or {}),
-            validate=True,
+            validate=bool(payload.get("validate", True)),
             validation_mode=str(payload.get("validation_mode") or "strict"),
             stage_modes=dict(payload.get("stage_modes") or {}),
         )
