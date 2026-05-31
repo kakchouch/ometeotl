@@ -81,6 +81,21 @@ class LLMGenerationAdapter:
         prompt = self.render_prompt(context, prompt_template=prompt_template)
         raw_response = self._text_generator(prompt)
 
+        return self.refine_context_from_response(
+            context,
+            raw_response,
+            fallback_to_base=fallback_to_base,
+        )
+
+    def refine_context_from_response(
+        self,
+        context: GenerationContext,
+        raw_response: str,
+        *,
+        fallback_to_base: bool = True,
+    ) -> LLMRefinementResult:
+        """Refine a context from an already-produced LLM text response."""
+
         try:
             parsed = self._response_parser(raw_response)
             overrides = self._extract_overrides(parsed)

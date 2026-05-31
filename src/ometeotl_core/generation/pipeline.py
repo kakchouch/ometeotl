@@ -36,6 +36,8 @@ class GenerationResult:
     applied_rule_names: list[str] = field(default_factory=list)
     validation: Optional[ValidationResult] = None
     diagnostics: list[str] = field(default_factory=list)
+    uncertainty_zones: list[str] = field(default_factory=list)
+    repair_suggestions: list[str] = field(default_factory=list)
 
 
 class ContextualGenerationPipeline:
@@ -82,13 +84,22 @@ class ContextualGenerationPipeline:
 
         validation_result: ValidationResult | None = None
         diagnostics: list[str] = []
+        repair_suggestions: list[str] = []
 
         if operation == "create":
+            diagnostics.append("stage: instantiation (create)")
             generated = build_from_context(refined_context)
         else:
+            diagnostics.append(f"stage: instantiation ({operation})")
             generated = self._apply_update_operation(
                 refined_context,
                 world=world,
+            )
+
+        uncertainty_zones = self._extract_uncertainty_zones(refined_context)
+        if uncertainty_zones:
+            diagnostics.append(
+                "Explicit uncertainty zones declared: " + ", ".join(uncertainty_zones)
             )
 
         self._apply_registration_policy(
@@ -100,6 +111,7 @@ class ContextualGenerationPipeline:
 
         should_validate = bool(refined_context.validate)
         if should_validate:
+            diagnostics.append("stage: validation")
             if self._validation_pipeline is None:
                 diagnostics.append(
                     "Validation requested but no validation pipeline is configured"
@@ -115,12 +127,48 @@ class ContextualGenerationPipeline:
                     diagnostics.append(
                         "Generated object failed validation; inspect validation summary and issues"
                     )
+                    repair_suggestions = self._build_repair_suggestions(
+                        validation_result
+                    )
+                    diagnostics.extend(
+                        [f"Suggested repair: {item}" for item in repair_suggestions]
+                    )
 
         return GenerationResult(
             generated=generated,
             applied_rule_names=[rule.name for rule in self._rules.rules],
             validation=validation_result,
             diagnostics=diagnostics,
+            uncertainty_zones=uncertainty_zones,
+            repair_suggestions=repair_suggestions,
+        )
+
+    def generate_from_text_response(
+        self,
+        context: GenerationContext,
+        *,
+        raw_response: str,
+        llm_adapter: LLMGenerationAdapter,
+        fallback_to_base: bool = True,
+        world: World | None = None,
+    ) -> GenerationResult:
+        """Run parsing + deterministic generation from an LLM text response."""
+        diagnostics: list[str] = ["stage: parsing"]
+        refinement = llm_adapter.refine_context_from_response(
+            context,
+            raw_response,
+            fallback_to_base=fallback_to_base,
+        )
+        diagnostics.extend(refinement.diagnostics)
+
+        result = self.generate(refinement.refined_context, world=world)
+        return GenerationResult(
+            generated=result.generated,
+            applied_rule_names=result.applied_rule_names,
+            validation=result.validation,
+            diagnostics=diagnostics + list(result.diagnostics),
+            uncertainty_zones=list(result.uncertainty_zones),
+            repair_suggestions=list(result.repair_suggestions),
         )
 
     def generate_hybrid(
@@ -133,18 +181,55 @@ class ContextualGenerationPipeline:
         world: World | None = None,
     ) -> GenerationResult:
         """Run LLM-assisted context refinement before deterministic generation."""
+        diagnostics: list[str] = ["stage: text_generation"]
         refinement = llm_adapter.refine_context(
             context,
             prompt_template=prompt_template,
             fallback_to_base=fallback_to_base,
         )
+        diagnostics.append("stage: parsing")
+        diagnostics.extend(refinement.diagnostics)
+
         result = self.generate(refinement.refined_context, world=world)
         return GenerationResult(
             generated=result.generated,
             applied_rule_names=result.applied_rule_names,
             validation=result.validation,
-            diagnostics=list(refinement.diagnostics) + list(result.diagnostics),
+            diagnostics=diagnostics + list(result.diagnostics),
+            uncertainty_zones=list(result.uncertainty_zones),
+            repair_suggestions=list(result.repair_suggestions),
         )
+
+    def _extract_uncertainty_zones(
+        self,
+        context: GenerationContext,
+    ) -> list[str]:
+        """Extract explicit uncertainty zones from generation context metadata."""
+        raw_zones = context.metadata.get("uncertainty_zones") or context.context.get(
+            "uncertainty_zones"
+        )
+        if not raw_zones:
+            return []
+        if isinstance(raw_zones, str):
+            return [raw_zones]
+        if isinstance(raw_zones, (list, tuple, set)):
+            return [str(item) for item in raw_zones if str(item).strip()]
+        return [str(raw_zones)]
+
+    def _build_repair_suggestions(
+        self,
+        validation_result: ValidationResult,
+    ) -> list[str]:
+        suggestions: list[str] = []
+        for issue in validation_result.errors:
+            candidate = issue.suggestion.strip() if issue.suggestion else ""
+            if candidate:
+                suggestions.append(candidate)
+                continue
+
+            location = issue.path or issue.object_id or "target"
+            suggestions.append(f"Resolve {issue.code} on {location}: {issue.message}")
+        return suggestions
 
     def _apply_registration_policy(
         self,

@@ -7,6 +7,34 @@ from ometeotl_core.generation import (
     GenerationContext,
     LLMGenerationAdapter,
 )
+from ometeotl_core.validation import (
+    SEVERITY_ERROR,
+    ValidationContext,
+    ValidationIssue,
+    ValidationPipeline,
+    ValidationResult,
+)
+
+
+class _FailWithSuggestionValidator:
+    @property
+    def name(self) -> str:
+        return "fail_with_suggestion"
+
+    def validate(self, obj, context: ValidationContext) -> ValidationResult:
+        return ValidationResult(
+            stage=context.stage,
+            policy_mode=context.policy_mode,
+            issues=[
+                ValidationIssue(
+                    code="GEN-SUGGEST",
+                    severity=SEVERITY_ERROR,
+                    message="Synthetic failure with fix guidance",
+                    object_id=str(getattr(obj, "id", "")),
+                    suggestion="Set required actor_id in metadata",
+                )
+            ],
+        )
 
 
 def test_llm_adapter_refines_context_from_json_overrides():
@@ -58,6 +86,9 @@ def test_pipeline_generate_hybrid_uses_llm_refined_context():
     assert result.generated.id == "actor-hybrid-3"
     assert result.generated.label == "Hybrid Actor"
     assert result.generated.attributes["kind"] == "custom"
+    assert "stage: text_generation" in result.diagnostics
+    assert "stage: parsing" in result.diagnostics
+    assert "stage: instantiation (create)" in result.diagnostics
 
 
 def test_pipeline_generate_hybrid_preserves_generation_when_fallback_needed():
@@ -77,3 +108,59 @@ def test_pipeline_generate_hybrid_preserves_generation_when_fallback_needed():
     assert result.generated.id == "actor-hybrid-4"
     assert result.generated.label == "Base"
     assert any("falling back" in msg.lower() for msg in result.diagnostics)
+
+
+def test_pipeline_generate_from_text_response_parses_and_instantiates():
+    adapter = LLMGenerationAdapter(text_generator=lambda prompt: "{}")
+    pipeline = ContextualGenerationPipeline()
+
+    result = pipeline.generate_from_text_response(
+        GenerationContext(kind="actor", id="actor-hybrid-5", label="Base"),
+        raw_response='{"label": "FromText", "attributes": {"kind": "custom"}}',
+        llm_adapter=adapter,
+    )
+
+    assert result.generated.id == "actor-hybrid-5"
+    assert result.generated.label == "FromText"
+    assert "stage: parsing" in result.diagnostics
+    assert "stage: instantiation (create)" in result.diagnostics
+
+
+def test_pipeline_reports_uncertainty_zones_from_context_metadata():
+    adapter = LLMGenerationAdapter(text_generator=lambda prompt: "{}")
+    pipeline = ContextualGenerationPipeline()
+
+    result = pipeline.generate_hybrid(
+        GenerationContext(
+            kind="actor",
+            id="actor-hybrid-6",
+            metadata={"uncertainty_zones": ["zone-a", "zone-b"]},
+        ),
+        llm_adapter=adapter,
+    )
+
+    assert result.uncertainty_zones == ["zone-a", "zone-b"]
+    assert any("uncertainty zones" in msg.lower() for msg in result.diagnostics)
+
+
+def test_pipeline_builds_repair_suggestions_on_validation_failure():
+    adapter = LLMGenerationAdapter(text_generator=lambda prompt: "{}")
+    pipeline = ContextualGenerationPipeline(
+        validation_pipeline=ValidationPipeline(
+            validators=[_FailWithSuggestionValidator()]
+        )
+    )
+
+    result = pipeline.generate_hybrid(
+        GenerationContext(
+            kind="actor",
+            id="actor-hybrid-7",
+            validate=True,
+        ),
+        llm_adapter=adapter,
+    )
+
+    assert result.validation is not None
+    assert result.validation.valid is False
+    assert result.repair_suggestions == ["Set required actor_id in metadata"]
+    assert any("Suggested repair" in msg for msg in result.diagnostics)
