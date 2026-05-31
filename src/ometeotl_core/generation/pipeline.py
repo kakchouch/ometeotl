@@ -257,6 +257,12 @@ class ContextualGenerationPipeline:
             )
             return
         if not isinstance(generated, ModelObject):
+            if policy == "require":
+                raise TypeError(
+                    "Registration policy 'require' failed: generated object "
+                    f"for kind '{kind}' is not a ModelObject "
+                    f"(got {type(generated).__name__})"
+                )
             diagnostics.append(
                 f"Skipping registration for non-model object generated from kind '{kind}'"
             )

@@ -449,6 +449,30 @@ def test_pipeline_registration_policy_require_without_world_raises():
         )
 
 
+def test_pipeline_registration_policy_require_rejects_non_model_generated(monkeypatch):
+    import ometeotl_core.generation.pipeline as pipeline_module
+
+    pipeline = ContextualGenerationPipeline()
+    world = World(id="world-registry-non-model-require")
+    world.register_object(Actor(id="actor-1"))
+
+    def _fake_build(_context: GenerationContext):
+        return {"id": "not-a-model-object"}
+
+    monkeypatch.setattr(pipeline_module, "build_from_context", _fake_build)
+
+    with pytest.raises(TypeError, match="Registration policy 'require' failed"):
+        pipeline.generate(
+            GenerationContext(
+                kind="goal",
+                id="goal-non-model-require",
+                registration_policy="require",
+                metadata={"actor_id": "actor-1", "kind": "final"},
+            ),
+            world=world,
+        )
+
+
 def test_pipeline_registration_if_available_without_world_adds_diagnostic():
     pipeline = ContextualGenerationPipeline()
     result = pipeline.generate(
