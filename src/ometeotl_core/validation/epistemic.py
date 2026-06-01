@@ -24,9 +24,7 @@ class EpistemicValidator:
     def name(self) -> str:
         return "epistemic"
 
-    def validate(
-        self, obj: Any, context: ValidationContext
-    ) -> ValidationResult:
+    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
         issues: list[ValidationIssue] = []
 
         if isinstance(obj, Perception):
@@ -95,26 +93,18 @@ class EpistemicValidator:
             self._validate_status(
                 value.get("epistemic_status"),
                 issues,
-                path=(
-                    f"{path}.epistemic_status"
-                    if path
-                    else "epistemic_status"
-                ),
+                path=(f"{path}.epistemic_status" if path else "epistemic_status"),
             )
 
         for key, nested in value.items():
             child_path = f"{path}.{key}" if path else str(key)
             if isinstance(nested, Mapping):
                 self._scan_mapping(nested, issues, child_path)
-            elif isinstance(nested, Sequence) and not isinstance(
-                nested, (str, bytes)
-            ):
+            elif isinstance(nested, Sequence) and not isinstance(nested, (str, bytes)):
                 for index, item in enumerate(nested):
                     list_path = f"{child_path}[{index}]"
                     if isinstance(item, Mapping):
-                        self._scan_mapping(
-                            item, issues, list_path
-                        )
+                        self._scan_mapping(item, issues, list_path)
 
     def _validate_status(
         self,

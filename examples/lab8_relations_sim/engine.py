@@ -28,7 +28,6 @@ from .config import SimConfig
 from .graph_gen import RawGraph, build_graph, bfs_distances
 from .perception import get_faction_perception, visible_border_targets
 
-
 # --------------------------------------------------------------------------- #
 # Genome utilities                                                              #
 # --------------------------------------------------------------------------- #
@@ -67,18 +66,12 @@ def _drift_behavior(
         engagement_threshold=_clamp01(
             behavior.engagement_threshold + rng.uniform(-mag, mag)
         ),
-        concentration=_clamp01(
-            behavior.concentration + rng.uniform(-mag, mag)
-        ),
+        concentration=_clamp01(behavior.concentration + rng.uniform(-mag, mag)),
         liquidity_preference=_clamp01(
             behavior.liquidity_preference + rng.uniform(-mag, mag)
         ),
-        objective_bias=_clamp01(
-            behavior.objective_bias + rng.uniform(-mag, mag)
-        ),
-        centralization=_clamp01(
-            behavior.centralization + rng.uniform(-mag, mag)
-        ),
+        objective_bias=_clamp01(behavior.objective_bias + rng.uniform(-mag, mag)),
+        centralization=_clamp01(behavior.centralization + rng.uniform(-mag, mag)),
     )
 
 
@@ -103,7 +96,9 @@ def _apply_centralization(state: SimState, faction: Faction, node: Node) -> int:
     target_corrections = max(1, round(z * len(drift_indices)))
     admin_cost = state.config.centralization_admin_cost
     spendable_spice = min(node.spice_stock, available_budget)
-    affordable = len(drift_indices) if admin_cost <= 0 else int(spendable_spice // admin_cost)
+    affordable = (
+        len(drift_indices) if admin_cost <= 0 else int(spendable_spice // admin_cost)
+    )
     corrections = min(len(drift_indices), target_corrections, affordable)
     if corrections <= 0:
         return 0
@@ -153,7 +148,7 @@ class Link:
 
     source_id: str
     target_id: str
-    max_flow: float   # maximum spice that can transit per tick
+    max_flow: float  # maximum spice that can transit per tick
     used_flow: float = 0.0  # committed this tick (reset each tick)
 
 
@@ -202,8 +197,8 @@ class SimState:
     config: SimConfig
     world: World
     relation_graph: SpaceRelationGraph
-    nodes: dict[str, Node]          # node_id → Node
-    factions: dict[str, Faction]    # faction_id → Faction
+    nodes: dict[str, Node]  # node_id → Node
+    factions: dict[str, Faction]  # faction_id → Faction
     links: dict[tuple[str, str], Link]  # (min_id, max_id) → Link
     tick: int = 0
     game_over: bool = False
@@ -234,11 +229,15 @@ class SimState:
         return sorted(targets)
 
     def spice_income_for(self, faction_id: str) -> int:
-        return sum(self.nodes[nid].spice_flow for nid in self.nodes_owned_by(faction_id))
+        return sum(
+            self.nodes[nid].spice_flow for nid in self.nodes_owned_by(faction_id)
+        )
 
     def total_spice_for(self, faction_id: str) -> float:
         """Total spice physically held in nodes owned by this faction."""
-        return sum(self.nodes[nid].spice_stock for nid in self.nodes_owned_by(faction_id))
+        return sum(
+            self.nodes[nid].spice_stock for nid in self.nodes_owned_by(faction_id)
+        )
 
     def link_remaining(self, a: str, b: str) -> float:
         """Remaining transport capacity on the link between a and b this tick."""
@@ -357,7 +356,9 @@ def _random_behavior(config: SimConfig, rng: random.Random) -> BehaviorProfile:
     )
 
 
-def _relation_pressure_factor(state: SimState, attacker_id: str, defender_id: str) -> float:
+def _relation_pressure_factor(
+    state: SimState, attacker_id: str, defender_id: str
+) -> float:
     """Return offense multiplier from relation level.
 
     High relation -> lower aggression. Low relation -> higher aggression.
@@ -465,7 +466,8 @@ def _plan_moves(
         return
 
     ranked_targets = [
-        nid for nid, score in sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+        nid
+        for nid, score in sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
         if score > 0
     ]
     if not ranked_targets:
@@ -476,7 +478,9 @@ def _plan_moves(
     selected_targets = ranked_targets[:target_count]
 
     # Liquidity axis: high => conserve reserves, low => spend aggressively.
-    spend_fraction = state.config.max_spice_move_fraction * (1.0 - behavior.liquidity_preference)
+    spend_fraction = state.config.max_spice_move_fraction * (
+        1.0 - behavior.liquidity_preference
+    )
     spend_fraction = max(0.05, min(1.0, spend_fraction))
 
     base_cost = state.config.transport_base_cost
@@ -731,7 +735,6 @@ def _execute_transport(state: SimState) -> None:
             )
 
 
-
 def _apply_conquest(state: SimState) -> list[str]:
     """Check nodes for ownership flips; handle spice seizure on conquest.
 
@@ -826,7 +829,9 @@ def _mutate_and_check_secession(state: SimState) -> list[str]:
                 node.genome = _mutate_genome(node.genome, state._rng)
                 # Genetic drift also nudges strategy/teleology parameters.
                 drift_mag = min(0.2, 0.02 + 0.03 * min(depth, 5))
-                faction.behavior = _drift_behavior(faction.behavior, state._rng, drift_mag)
+                faction.behavior = _drift_behavior(
+                    faction.behavior, state._rng, drift_mag
+                )
 
             _apply_centralization(state, faction, node)
 
@@ -906,7 +911,10 @@ def _check_victory(state: SimState) -> None:
 
     if state.config.max_ticks > 0 and state.tick >= state.config.max_ticks:
         # Winner by most nodes
-        best = max(state.active_factions(), key=lambda f: len(state.nodes_owned_by(f.faction_id)))
+        best = max(
+            state.active_factions(),
+            key=lambda f: len(state.nodes_owned_by(f.faction_id)),
+        )
         state.game_over = True
         state.winner_id = best.faction_id
         state.event_log.append(
@@ -988,7 +996,9 @@ def create_sim(config: SimConfig) -> SimState:
 
     links: dict[tuple[str, str], Link] = {}
     for a, b in raw.edges:
-        rel = SpaceRelation(source_space_id=a, target_space_id=b, relation_type="adjacent_to")
+        rel = SpaceRelation(
+            source_space_id=a, target_space_id=b, relation_type="adjacent_to"
+        )
         relation_graph.add_relation(rel)
         world.space_relation_graph.add_relation(rel)
         cap = rng.uniform(config.min_link_flow, config.max_link_flow)
@@ -1021,7 +1031,9 @@ def create_sim(config: SimConfig) -> SimState:
         world.register_object(actor)
 
     # ---- Build nodes ----
-    capital_to_faction: dict[str, str] = {f.capital_id: fid for fid, f in factions.items()}
+    capital_to_faction: dict[str, str] = {
+        f.capital_id: fid for fid, f in factions.items()
+    }
     nodes: dict[str, Node] = {}
     for raw_node in raw.nodes:
         nid = raw_node.node_id
@@ -1104,34 +1116,40 @@ def serialize_state(state: SimState) -> dict:
 
     nodes_out = []
     for nid, node in state.nodes.items():
-        nodes_out.append({
-            "node_id": nid,
-            "spice_flow": node.spice_flow,
-            "spice_stock": round(node.spice_stock, 2),
-            "x": node.x,
-            "y": node.y,
-            "owner_id": node.owner_id,
-            "color": (
-                state.factions[node.owner_id].color
-                if node.owner_id and node.owner_id in state.factions
-                else "#cccccc"
-            ),
-            "genome_str": "".join(str(b) for b in node.genome),
-            "pressure_accumulated": round(node.pressure_accumulated, 2),
-        })
+        nodes_out.append(
+            {
+                "node_id": nid,
+                "spice_flow": node.spice_flow,
+                "spice_stock": round(node.spice_stock, 2),
+                "x": node.x,
+                "y": node.y,
+                "owner_id": node.owner_id,
+                "color": (
+                    state.factions[node.owner_id].color
+                    if node.owner_id and node.owner_id in state.factions
+                    else "#cccccc"
+                ),
+                "genome_str": "".join(str(b) for b in node.genome),
+                "pressure_accumulated": round(node.pressure_accumulated, 2),
+            }
+        )
 
     edges_out = []
     for r in state.relation_graph.relations:
         if r.relation_type == "adjacent_to":
-            key = (min(r.source_space_id, r.target_space_id),
-                   max(r.source_space_id, r.target_space_id))
+            key = (
+                min(r.source_space_id, r.target_space_id),
+                max(r.source_space_id, r.target_space_id),
+            )
             lnk = state.links.get(key)
-            edges_out.append({
-                "a": r.source_space_id,
-                "b": r.target_space_id,
-                "max_flow": round(lnk.max_flow, 1) if lnk else None,
-                "used_flow": round(lnk.used_flow, 1) if lnk else None,
-            })
+            edges_out.append(
+                {
+                    "a": r.source_space_id,
+                    "b": r.target_space_id,
+                    "max_flow": round(lnk.max_flow, 1) if lnk else None,
+                    "used_flow": round(lnk.used_flow, 1) if lnk else None,
+                }
+            )
 
     relations_out = [
         {

@@ -260,7 +260,9 @@ class LLMViewBuilder:
             ],
         }
 
-    def _build_epistemic_status_groups(self, perception: Any) -> dict[str, list[dict[str, Any]]]:
+    def _build_epistemic_status_groups(
+        self, perception: Any
+    ) -> dict[str, list[dict[str, Any]]]:
         """Group perceived items by epistemic status for stable LLM output."""
         grouped: dict[str, list[dict[str, Any]]] = {}
 
@@ -319,10 +321,7 @@ class LLMViewBuilder:
                 }
             )
 
-        return {
-            status: grouped[status]
-            for status in sorted(grouped)
-        }
+        return {status: grouped[status] for status in sorted(grouped)}
 
     def world_view(
         self,
@@ -372,13 +371,8 @@ class LLMViewBuilder:
 
         if hasattr(world, "model_registry") and world.model_registry:
             registry = world.model_registry
-            registered_objects = [
-                registry.get(obj_id)
-                for obj_id in registry.all_ids()
-            ]
-            registered_objects = [
-                obj for obj in registered_objects if obj is not None
-            ]
+            registered_objects = [registry.get(obj_id) for obj_id in registry.all_ids()]
+            registered_objects = [obj for obj in registered_objects if obj is not None]
 
             members_summary["total_actors"] = sum(
                 1 for obj in registered_objects if obj.object_type == "actor"
@@ -695,6 +689,7 @@ class LLMViewBuilder:
 
 
 # Convenience functions for common use cases
+
 
 def actor_to_llm_view(
     actor: Any,

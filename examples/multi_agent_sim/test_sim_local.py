@@ -23,7 +23,6 @@ from examples.multi_agent_sim.engine import (
 
 import random
 
-
 # --------------------------------------------------------------------------- #
 # Config validation                                                            #
 # --------------------------------------------------------------------------- #
@@ -187,7 +186,11 @@ def test_node_flips_after_threshold_pressure():
     state = create_sim(cfg)
 
     # Find a border target for faction-0
-    from examples.multi_agent_sim.engine import _assign_priorities, _apply_conquest, _collect_income
+    from examples.multi_agent_sim.engine import (
+        _assign_priorities,
+        _apply_conquest,
+        _collect_income,
+    )
 
     # Give faction-0 lots of spice
     state.factions["faction-0"].spice_stock = 1000.0
@@ -234,8 +237,7 @@ def test_hamming_check_triggers_secession_on_step():
     # Find a non-capital node owned by faction-0
     faction_0 = state.factions["faction-0"]
     owned = [
-        nid for nid in state.nodes_owned_by("faction-0")
-        if nid != faction_0.capital_id
+        nid for nid in state.nodes_owned_by("faction-0") if nid != faction_0.capital_id
     ]
     if not owned:
         pytest.skip("faction-0 only has capital node — give it more territory")
@@ -265,8 +267,7 @@ def test_secession_new_faction_owns_node():
 
     faction_0 = state.factions["faction-0"]
     owned = [
-        nid for nid in state.nodes_owned_by("faction-0")
-        if nid != faction_0.capital_id
+        nid for nid in state.nodes_owned_by("faction-0") if nid != faction_0.capital_id
     ]
     if not owned:
         pytest.skip("faction-0 only has capital node")
@@ -293,7 +294,16 @@ def test_serialize_state_has_expected_keys():
     state = create_sim(cfg)
     step(state)
     d = serialize_state(state)
-    for key in ("tick", "game_over", "winner_id", "factions", "nodes", "edges", "event_log", "config"):
+    for key in (
+        "tick",
+        "game_over",
+        "winner_id",
+        "factions",
+        "nodes",
+        "edges",
+        "event_log",
+        "config",
+    ):
         assert key in d, f"Missing key: {key}"
 
 

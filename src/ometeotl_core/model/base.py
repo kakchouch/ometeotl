@@ -309,15 +309,11 @@ def _validated_model_object_kwargs(
     return {
         "id": _require_non_null_string(data, "id"),
         "object_type": _require_non_null_string(data, "object_type"),
-        "schema_version": _validate_schema_version(
-            data.get("schema_version")
-        ),
+        "schema_version": _validate_schema_version(data.get("schema_version")),
         "attributes": _dict_from_data(data, "attributes"),
         "relations": {
             str(key): [str(item) for item in value]
-            for key, value in _dict_from_data(
-                data, "relations"
-            ).items()
+            for key, value in _dict_from_data(data, "relations").items()
         },
         "state": _dict_from_data(data, "state"),
         "context": _dict_from_data(data, "context"),
@@ -345,9 +341,7 @@ def _base_kwargs_from_typed_payload(
     }
 
 
-def _dict_from_data(
-    data: Mapping[str, Any], key: str, default: Any = None
-) -> JsonMap:
+def _dict_from_data(data: Mapping[str, Any], key: str, default: Any = None) -> JsonMap:
     """Extract a dict field from deserialized data, with null-safe defaults.
 
     This helper consolidates the common pattern of safely extracting dictionary
@@ -375,9 +369,7 @@ def _dict_from_data(
     return dict(value)
 
 
-def _str_from_data(
-    data: Mapping[str, Any], key: str, default: str = ""
-) -> str:
+def _str_from_data(data: Mapping[str, Any], key: str, default: str = "") -> str:
     """Extract a string field from deserialized data, with null-safe defaults.
 
     This helper consolidates the common pattern of safely extracting string fields

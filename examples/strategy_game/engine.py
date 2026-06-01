@@ -146,7 +146,9 @@ def check_victory(state: GameState) -> str:
     return ""
 
 
-def _apply_action(state: GameState, player_id: str, action_type: str, target: str) -> None:
+def _apply_action(
+    state: GameState, player_id: str, action_type: str, target: str
+) -> None:
     if action_type == "claim":
         current = state.player_positions[player_id]
         if target != current:
@@ -160,7 +162,9 @@ def _apply_action(state: GameState, player_id: str, action_type: str, target: st
         if target not in state.adjacency[current]:
             raise ValueError("Move target is not adjacent")
         state.player_positions[player_id] = target
-        _record_and_finalize_turn(state, f"{player_id} moved from {current} to {target}.")
+        _record_and_finalize_turn(
+            state, f"{player_id} moved from {current} to {target}."
+        )
         return
 
     if action_type == "pass":
@@ -179,7 +183,8 @@ def apply_player_action(state: GameState, action_type: str, target: str = "") ->
         raise ValueError("It is not the human player's turn")
 
     legal = {
-        (item["action_type"], item["target"]) for item in legal_actions_for_player(state, PLAYER_RED)
+        (item["action_type"], item["target"])
+        for item in legal_actions_for_player(state, PLAYER_RED)
     }
     key = (action_type, target)
     if key not in legal:
@@ -223,7 +228,9 @@ def step_ai_turn(state: GameState) -> GameAction:
         raise ValueError("It is not the AI player's turn")
 
     actions = legal_actions_for_player(state, PLAYER_BLUE)
-    chosen = sorted(actions, key=lambda item: _ai_action_score(state, item), reverse=True)[0]
+    chosen = sorted(
+        actions, key=lambda item: _ai_action_score(state, item), reverse=True
+    )[0]
     _apply_action(state, PLAYER_BLUE, chosen["action_type"], chosen["target"])
 
     winner = check_victory(state)
@@ -246,8 +253,12 @@ def serialize_state_for_ui(state: GameState) -> dict[str, object]:
             {
                 "id": territory,
                 "owner": state.territory_owner.get(territory, ""),
-                "red_here": "1" if state.player_positions[PLAYER_RED] == territory else "0",
-                "blue_here": "1" if state.player_positions[PLAYER_BLUE] == territory else "0",
+                "red_here": (
+                    "1" if state.player_positions[PLAYER_RED] == territory else "0"
+                ),
+                "blue_here": (
+                    "1" if state.player_positions[PLAYER_BLUE] == territory else "0"
+                ),
             }
         )
 

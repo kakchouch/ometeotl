@@ -32,7 +32,6 @@ from examples.lab4_logistics_sim.perception import (
     visible_border_targets,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Config validation                                                            #
 # --------------------------------------------------------------------------- #
@@ -91,12 +90,15 @@ def test_create_sim_nodes_have_spice_stock():
 
 def test_create_sim_links_built():
     """Each edge in the graph has a Link with capacity in [min_link_flow, max_link_flow]."""
-    cfg = SimConfig(seed=3, num_nodes=8, num_factions=2,
-                    min_link_flow=2.0, max_link_flow=10.0)
+    cfg = SimConfig(
+        seed=3, num_nodes=8, num_factions=2, min_link_flow=2.0, max_link_flow=10.0
+    )
     state = create_sim(cfg)
     assert len(state.links) > 0
     for key, lnk in state.links.items():
-        assert 2.0 <= lnk.max_flow <= 10.0, f"Link {key} capacity {lnk.max_flow} out of range"
+        assert (
+            2.0 <= lnk.max_flow <= 10.0
+        ), f"Link {key} capacity {lnk.max_flow} out of range"
         assert lnk.used_flow == 0.0
 
 
@@ -133,9 +135,14 @@ def test_income_flows_into_nodes():
 
 def test_base_cost_burned_per_shipment():
     """Each executed move order burns exactly transport_base_cost from source."""
-    cfg = SimConfig(seed=1, num_nodes=6, num_factions=2,
-                    transport_base_cost=2.0, transport_gas_fee=0.0,
-                    initial_node_spice=20.0)
+    cfg = SimConfig(
+        seed=1,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=2.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=20.0,
+    )
     state = create_sim(cfg)
     # Pick a faction and manually inject a move order: src→dst, amount=5
     faction = list(state.factions.values())[0]
@@ -150,8 +157,9 @@ def test_base_cost_burned_per_shipment():
 
     # Manually ensure link has capacity
     key = (min(src_id, dst_id), max(src_id, dst_id))
-    state.links[key] = Link(source_id=min(src_id, dst_id),
-                             target_id=max(src_id, dst_id), max_flow=100.0)
+    state.links[key] = Link(
+        source_id=min(src_id, dst_id), target_id=max(src_id, dst_id), max_flow=100.0
+    )
 
     _execute_transport(state)
 
@@ -161,9 +169,14 @@ def test_base_cost_burned_per_shipment():
 
 def test_gas_fee_proportional_applied_after_base_cost():
     """Delivered = amount * (1 - gas_fee); base cost burned from source separately."""
-    cfg = SimConfig(seed=1, num_nodes=6, num_factions=2,
-                    transport_base_cost=1.0, transport_gas_fee=0.2,
-                    initial_node_spice=30.0)
+    cfg = SimConfig(
+        seed=1,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=1.0,
+        transport_gas_fee=0.2,
+        initial_node_spice=30.0,
+    )
     state = create_sim(cfg)
     faction = list(state.factions.values())[0]
     src_id = faction.capital_id
@@ -176,8 +189,9 @@ def test_gas_fee_proportional_applied_after_base_cost():
     faction.move_orders = [(src_id, dst_id, 10.0)]
 
     key = (min(src_id, dst_id), max(src_id, dst_id))
-    state.links[key] = Link(source_id=min(src_id, dst_id),
-                             target_id=max(src_id, dst_id), max_flow=100.0)
+    state.links[key] = Link(
+        source_id=min(src_id, dst_id), target_id=max(src_id, dst_id), max_flow=100.0
+    )
 
     _execute_transport(state)
 
@@ -189,9 +203,14 @@ def test_gas_fee_proportional_applied_after_base_cost():
 
 def test_scatter_costs_more_than_bulk():
     """Ten scattered 1-unit shipments cost 10x the base fee; one 10-unit shipment pays once."""
-    cfg = SimConfig(seed=1, num_nodes=12, num_factions=2,
-                    transport_base_cost=1.0, transport_gas_fee=0.0,
-                    initial_node_spice=50.0)
+    cfg = SimConfig(
+        seed=1,
+        num_nodes=12,
+        num_factions=2,
+        transport_base_cost=1.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=50.0,
+    )
     state = create_sim(cfg)
     faction = list(state.factions.values())[0]
     src_id = faction.capital_id
@@ -224,16 +243,21 @@ def test_scatter_costs_more_than_bulk():
     bulk_remaining = state.nodes[src_id].spice_stock
     # Spent: 1 * base_cost (1.0) + 10 (10.0) = 11.0 → remaining = 39.0
 
-    assert bulk_remaining > scatter_remaining, (
-        f"Bulk ({bulk_remaining}) should leave more spice than scatter ({scatter_remaining})"
-    )
+    assert (
+        bulk_remaining > scatter_remaining
+    ), f"Bulk ({bulk_remaining}) should leave more spice than scatter ({scatter_remaining})"
 
 
 def test_order_below_base_cost_is_cancelled():
     """A move order for 0 amount (after base cost exceeds stock) is dropped cleanly."""
-    cfg = SimConfig(seed=1, num_nodes=6, num_factions=2,
-                    transport_base_cost=5.0, transport_gas_fee=0.0,
-                    initial_node_spice=3.0)
+    cfg = SimConfig(
+        seed=1,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=5.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=3.0,
+    )
     state = create_sim(cfg)
     faction = list(state.factions.values())[0]
     src_id = faction.capital_id
@@ -246,8 +270,9 @@ def test_order_below_base_cost_is_cancelled():
     faction.move_orders = [(src_id, dst_id, 10.0)]
 
     key = (min(src_id, dst_id), max(src_id, dst_id))
-    state.links[key] = Link(source_id=min(src_id, dst_id),
-                             target_id=max(src_id, dst_id), max_flow=100.0)
+    state.links[key] = Link(
+        source_id=min(src_id, dst_id), target_id=max(src_id, dst_id), max_flow=100.0
+    )
 
     _execute_transport(state)
 
@@ -264,9 +289,14 @@ def test_order_below_base_cost_is_cancelled():
 
 def test_link_capacity_limits_flow():
     """Shipments cannot exceed the link's max_flow."""
-    cfg = SimConfig(seed=2, num_nodes=6, num_factions=2,
-                    transport_base_cost=0.0, transport_gas_fee=0.0,
-                    initial_node_spice=100.0)
+    cfg = SimConfig(
+        seed=2,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=0.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=100.0,
+    )
     state = create_sim(cfg)
     faction = list(state.factions.values())[0]
     src_id = faction.capital_id
@@ -275,8 +305,9 @@ def test_link_capacity_limits_flow():
 
     # Cap the link at 5 units
     key = (min(src_id, dst_id), max(src_id, dst_id))
-    state.links[key] = Link(source_id=min(src_id, dst_id),
-                             target_id=max(src_id, dst_id), max_flow=5.0)
+    state.links[key] = Link(
+        source_id=min(src_id, dst_id), target_id=max(src_id, dst_id), max_flow=5.0
+    )
 
     state.nodes[src_id].spice_stock = 100.0
     state.nodes[dst_id].spice_stock = 0.0
@@ -296,9 +327,15 @@ def test_link_capacity_limits_flow():
 
 def test_pressure_accumulated_from_transport():
     """Spice routed to an enemy node increases its pressure_accumulated."""
-    cfg = SimConfig(seed=3, num_nodes=6, num_factions=2,
-                    transport_base_cost=0.0, transport_gas_fee=0.0,
-                    initial_node_spice=50.0, flip_threshold=100.0)
+    cfg = SimConfig(
+        seed=3,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=0.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=50.0,
+        flip_threshold=100.0,
+    )
     state = create_sim(cfg)
     faction = list(state.factions.values())[0]
     src_id = faction.capital_id
@@ -312,8 +349,9 @@ def test_pressure_accumulated_from_transport():
         pytest.skip("No enemy neighbor available")
 
     key = (min(src_id, enemy_nb), max(src_id, enemy_nb))
-    state.links[key] = Link(source_id=min(src_id, enemy_nb),
-                             target_id=max(src_id, enemy_nb), max_flow=100.0)
+    state.links[key] = Link(
+        source_id=min(src_id, enemy_nb), target_id=max(src_id, enemy_nb), max_flow=100.0
+    )
 
     before = state.nodes[enemy_nb].pressure_accumulated
     faction.move_orders = [(src_id, enemy_nb, 10.0)]
@@ -324,12 +362,20 @@ def test_pressure_accumulated_from_transport():
 
 def test_node_flip_seizes_spice():
     """When a node flips, its spice_stock is transferred to the conqueror's capital."""
-    cfg = SimConfig(seed=5, num_nodes=6, num_factions=2,
-                    transport_base_cost=0.0, transport_gas_fee=0.0,
-                    initial_node_spice=10.0, flip_threshold=1.0)
+    cfg = SimConfig(
+        seed=5,
+        num_nodes=6,
+        num_factions=2,
+        transport_base_cost=0.0,
+        transport_gas_fee=0.0,
+        initial_node_spice=10.0,
+        flip_threshold=1.0,
+    )
     state = create_sim(cfg)
     # Manually trigger a flip: pick a neutral node, apply pressure from faction-0
-    neutral_node = next((nid for nid, n in state.nodes.items() if n.owner_id is None), None)
+    neutral_node = next(
+        (nid for nid, n in state.nodes.items() if n.owner_id is None), None
+    )
     if neutral_node is None:
         pytest.skip("No neutral node available with this seed")
 
@@ -342,6 +388,7 @@ def test_node_flip_seizes_spice():
     state.nodes[neutral_node].pressure_accumulated = 5.0
 
     from examples.lab4_logistics_sim.engine import _apply_conquest
+
     _apply_conquest(state)
 
     # Node should now belong to faction-0
@@ -449,4 +496,3 @@ def test_hamming_identical():
 
 def test_hamming_all_differ():
     assert _hamming_distance([0, 0, 0, 0], [1, 1, 1, 1]) == 4
-

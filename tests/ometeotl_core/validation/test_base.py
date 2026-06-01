@@ -16,9 +16,7 @@ from ometeotl_core.validation.base import (
 def test_validation_issue_rejects_invalid_severity():
     """ValidationIssue rejects severities outside the contract."""
     with pytest.raises(ValueError, match="severity"):
-        ValidationIssue(
-            code="X", severity="fatal", message="bad"
-        )
+        ValidationIssue(code="X", severity="fatal", message="bad")
 
 
 def test_validation_result_summary_and_valid_property():
@@ -35,9 +33,7 @@ def test_validation_result_summary_and_valid_property():
                 severity=SEVERITY_WARNING,
                 message="warn",
             ),
-            ValidationIssue(
-                code="I1", severity=SEVERITY_INFO, message="info"
-            ),
+            ValidationIssue(code="I1", severity=SEVERITY_INFO, message="info"),
         ],
         stage="structural",
     )
@@ -72,9 +68,7 @@ def test_validation_exception_carries_result():
 
 def test_issue_from_mapping_defaults_to_error():
     """Mapping conversion defaults severity to error when omitted."""
-    issue = issue_from_mapping(
-        {"code": "E2", "message": "missing field"}
-    )
+    issue = issue_from_mapping({"code": "E2", "message": "missing field"})
 
     assert issue.severity == SEVERITY_ERROR
     assert issue.code == "E2"

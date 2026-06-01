@@ -25,9 +25,7 @@ class Serializable(Protocol):
 class Validatable(Protocol):
     """Object that can expose a validation hook."""
 
-    def validate(
-        self, context: Mapping[str, Any] | None = None
-    ) -> Any:
+    def validate(self, context: Mapping[str, Any] | None = None) -> Any:
         """Validate the object using optional contextual information."""
         ...
 

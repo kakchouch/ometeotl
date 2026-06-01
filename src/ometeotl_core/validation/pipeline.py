@@ -47,16 +47,12 @@ class ValidationPipeline:
         ``raise_on_error`` is honored only in strict mode.
         """
         if mode not in VALID_PIPELINE_MODES:
-            raise ValueError(
-                f"Unsupported validation mode: {mode}"
-            )
+            raise ValueError(f"Unsupported validation mode: {mode}")
 
         base_context = context or ValidationContext()
         normalized_stage_modes = {
             str(stage_name): str(stage_mode)
-            for stage_name, stage_mode in dict(
-                stage_modes or {}
-            ).items()
+            for stage_name, stage_mode in dict(stage_modes or {}).items()
         }
         for (
             stage_name,
@@ -77,9 +73,7 @@ class ValidationPipeline:
         )
 
         for validator in self._validators:
-            effective_mode = normalized_stage_modes.get(
-                validator.name, mode
-            )
+            effective_mode = normalized_stage_modes.get(validator.name, mode)
             stage_context = ValidationContext(
                 stage=validator.name,
                 policy_mode=effective_mode,
@@ -87,28 +81,19 @@ class ValidationPipeline:
                 world_id=base_context.world_id,
                 metadata=dict(base_context.metadata),
             )
-            current_result = validator.validate(
-                obj, stage_context
-            )
+            current_result = validator.validate(obj, stage_context)
             normalized_result = self._normalize_result_for_mode(
                 current_result,
                 effective_mode,
             )
             aggregate = aggregate.merged_with(normalized_result)
-            aggregate.metadata["executed_validators"].append(
-                validator.name
-            )
-            aggregate.metadata["effective_stage_modes"][
-                validator.name
-            ] = effective_mode
+            aggregate.metadata["executed_validators"].append(validator.name)
+            aggregate.metadata["effective_stage_modes"][validator.name] = effective_mode
 
         if raise_on_error and not aggregate.valid:
             has_strict_stage = (
                 mode == MODE_STRICT
-                or MODE_STRICT
-                in aggregate.metadata[
-                    "effective_stage_modes"
-                ].values()
+                or MODE_STRICT in aggregate.metadata["effective_stage_modes"].values()
             )
             if has_strict_stage:
                 raise ValidationException(aggregate)

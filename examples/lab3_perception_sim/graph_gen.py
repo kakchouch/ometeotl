@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 
 from .config import SimConfig
 
-
 # --------------------------------------------------------------------------- #
 # Data types                                                                   #
 # --------------------------------------------------------------------------- #
@@ -101,7 +100,9 @@ def _distance(a: tuple[float, float], b: tuple[float, float]) -> float:
 # --------------------------------------------------------------------------- #
 
 
-def _random_spanning_tree(node_ids: list[str], rng: random.Random) -> list[tuple[str, str]]:
+def _random_spanning_tree(
+    node_ids: list[str], rng: random.Random
+) -> list[tuple[str, str]]:
     """Return a set of edges forming a random spanning tree (random insertion order)."""
     shuffled = node_ids[:]
     rng.shuffle(shuffled)
@@ -141,7 +142,9 @@ def _build_uniform_graph(
             added += 1
         attempts += 1
 
-    spice_flows = [rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)]
+    spice_flows = [
+        rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)
+    ]
     nodes = [
         RawNode(
             node_id=node_ids[i],
@@ -152,7 +155,9 @@ def _build_uniform_graph(
         for i in range(n)
     ]
 
-    sorted_edges = [(min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]]
+    sorted_edges = [
+        (min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]
+    ]
     unique_edges: list[tuple[str, str]] = list({(a, b) for a, b in sorted_edges})
     unique_edges.sort()
     return RawGraph(nodes=nodes, edges=unique_edges)
@@ -260,7 +265,9 @@ def _build_geographic_graph(
     for nodes in regions.values():
         if len(nodes) < 3:
             continue
-        desired_local = max(0, round((len(nodes) * (len(nodes) - 1) / 2) * config.graph_density * 0.35))
+        desired_local = max(
+            0, round((len(nodes) * (len(nodes) - 1) / 2) * config.graph_density * 0.35)
+        )
         attempts = 0
         added = 0
         while added < desired_local and attempts < len(nodes) * len(nodes) * 2:
@@ -342,7 +349,9 @@ def _build_geographic_graph(
             degree[leaf] += 1
             degree[anchor] += 1
 
-    spice_flows = [rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)]
+    spice_flows = [
+        rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)
+    ]
     nodes = [
         RawNode(
             node_id=nid,
@@ -353,7 +362,9 @@ def _build_geographic_graph(
         for i, nid in enumerate(node_ids)
     ]
 
-    sorted_edges = [(min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]]
+    sorted_edges = [
+        (min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]
+    ]
     unique_edges: list[tuple[str, str]] = list({(a, b) for a, b in sorted_edges})
     unique_edges.sort()
     return RawGraph(nodes=nodes, edges=unique_edges)

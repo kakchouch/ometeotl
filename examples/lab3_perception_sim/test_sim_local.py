@@ -27,7 +27,6 @@ from examples.lab3_perception_sim.perception import (
 
 import random
 
-
 # --------------------------------------------------------------------------- #
 # Config validation (includes perception_mode)                                #
 # --------------------------------------------------------------------------- #
@@ -94,9 +93,9 @@ def test_perception_includes_owned_and_neighbors():
     # Extract perceived space IDs (perceived_spaces is a dict with space IDs as keys)
     perceived_ids = set(perception.perceived_spaces.keys())
 
-    assert perceived_ids == expected_visible, (
-        f"Perceived spaces {perceived_ids} do not match expected {expected_visible}"
-    )
+    assert (
+        perceived_ids == expected_visible
+    ), f"Perceived spaces {perceived_ids} do not match expected {expected_visible}"
 
 
 def test_perception_excludes_distant_nodes():
@@ -127,9 +126,9 @@ def test_perception_excludes_distant_nodes():
     perceived_ids = set(perception.perceived_spaces.keys())
 
     for nid in distance_2_plus:
-        assert nid not in perceived_ids, (
-            f"Distance-2 node {nid} should not be visible; perceived={perceived_ids}"
-        )
+        assert (
+            nid not in perceived_ids
+        ), f"Distance-2 node {nid} should not be visible; perceived={perceived_ids}"
 
 
 def test_limited_ai_only_targets_visible():
@@ -163,7 +162,7 @@ def test_limited_ai_only_targets_visible():
 
 def test_full_mode_identical_to_omniscience():
     """perception_mode='full' should not use perception in AI decision-making.
-    
+
     This test verifies that in full mode, the engine does NOT compute or use
     perception for targeting decisions, matching Lab 2 omniscient behavior.
     """

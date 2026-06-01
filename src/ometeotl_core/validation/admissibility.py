@@ -25,12 +25,8 @@ class AdmissibilityValidator:
     def name(self) -> str:
         return "admissibility"
 
-    def validate(
-        self, obj: Any, context: ValidationContext
-    ) -> ValidationResult:
-        goal, actor, perception = self._resolve_inputs(
-            obj, context
-        )
+    def validate(self, obj: Any, context: ValidationContext) -> ValidationResult:
+        goal, actor, perception = self._resolve_inputs(obj, context)
         if goal is None or actor is None or perception is None:
             return ValidationResult(
                 issues=[
@@ -47,9 +43,7 @@ class AdmissibilityValidator:
                 policy_mode=context.policy_mode,
             )
 
-        result = GoalAdmissibilityChecker().check(
-            goal, actor, perception
-        )
+        result = GoalAdmissibilityChecker().check(goal, actor, perception)
         if result.admissible:
             return ValidationResult(
                 issues=[],
@@ -65,9 +59,7 @@ class AdmissibilityValidator:
                     severity=SEVERITY_ERROR,
                     message=f"Goal is not admissible: {result.reason}",
                     object_id=goal.id,
-                    context={
-                        "blocking_constraints": result.blocking_constraints
-                    },
+                    context={"blocking_constraints": result.blocking_constraints},
                 )
             ],
             stage=context.stage or self.name,
@@ -97,17 +89,11 @@ class AdmissibilityValidator:
                 perception = raw_perception
 
         metadata = context.metadata
-        if goal is None and isinstance(
-            metadata.get("goal"), Goal
-        ):
+        if goal is None and isinstance(metadata.get("goal"), Goal):
             goal = metadata.get("goal")
-        if actor is None and isinstance(
-            metadata.get("actor"), Actor
-        ):
+        if actor is None and isinstance(metadata.get("actor"), Actor):
             actor = metadata.get("actor")
-        if perception is None and isinstance(
-            metadata.get("perception"), Perception
-        ):
+        if perception is None and isinstance(metadata.get("perception"), Perception):
             perception = metadata.get("perception")
 
         return goal, actor, perception

@@ -157,7 +157,9 @@ class SimConfig:
         if self.graph_mode not in ("uniform", "geographic"):
             raise ValueError("graph_mode must be 'uniform' or 'geographic'")
         if self.geography_preset not in ("pangea", "continents", "archipelago"):
-            raise ValueError("geography_preset must be 'pangea', 'continents', or 'archipelago'")
+            raise ValueError(
+                "geography_preset must be 'pangea', 'continents', or 'archipelago'"
+            )
         if not 0.06 <= self.layout_min_node_distance <= 0.30:
             raise ValueError("layout_min_node_distance must be in [0.06, 0.30]")
         if self.perception_mode not in ("full", "limited"):
@@ -179,13 +181,17 @@ class SimConfig:
         if not 0.0 <= self.behavior_engagement_max <= 1.0:
             raise ValueError("behavior_engagement_max must be in [0, 1]")
         if self.behavior_engagement_min > self.behavior_engagement_max:
-            raise ValueError("behavior_engagement_min must be <= behavior_engagement_max")
+            raise ValueError(
+                "behavior_engagement_min must be <= behavior_engagement_max"
+            )
         if not 0.0 <= self.behavior_concentration_min <= 1.0:
             raise ValueError("behavior_concentration_min must be in [0, 1]")
         if not 0.0 <= self.behavior_concentration_max <= 1.0:
             raise ValueError("behavior_concentration_max must be in [0, 1]")
         if self.behavior_concentration_min > self.behavior_concentration_max:
-            raise ValueError("behavior_concentration_min must be <= behavior_concentration_max")
+            raise ValueError(
+                "behavior_concentration_min must be <= behavior_concentration_max"
+            )
         if not 0.0 <= self.behavior_liquidity_min <= 1.0:
             raise ValueError("behavior_liquidity_min must be in [0, 1]")
         if not 0.0 <= self.behavior_liquidity_max <= 1.0:

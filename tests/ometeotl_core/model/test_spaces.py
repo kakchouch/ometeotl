@@ -59,16 +59,12 @@ def test_space_object_graph_lists_unique_object_ids_per_space():
         )
     )
 
-    assert graph.list_objects_in_space("space-roles") == [
-        "actor-dup"
-    ]
+    assert graph.list_objects_in_space("space-roles") == ["actor-dup"]
 
 
 def test_space_from_dict_null_optional_maps_defaults_empty():
     """Space should accept null optional maps in from_dict."""
-    space = Space.from_dict(
-        {"id": "s-null", "attributes": None, "relations": None}
-    )
+    space = Space.from_dict({"id": "s-null", "attributes": None, "relations": None})
 
     assert isinstance(space.attributes, dict)
     assert space.relations == {}
@@ -76,9 +72,7 @@ def test_space_from_dict_null_optional_maps_defaults_empty():
 
 def test_space_object_graph_from_dict_null_collections_defaults_empty():
     """SpaceObjectGraph should treat null collections as empty."""
-    graph = SpaceObjectGraph.from_dict(
-        {"spaces": None, "object_memberships": None}
-    )
+    graph = SpaceObjectGraph.from_dict({"spaces": None, "object_memberships": None})
 
     assert graph.spaces == {}
     assert graph.object_memberships == []

@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 
 from .config import SimConfig
 
-
 # --------------------------------------------------------------------------- #
 # Data types                                                                   #
 # --------------------------------------------------------------------------- #
@@ -184,7 +183,9 @@ def _apply_layout_readability(
 # --------------------------------------------------------------------------- #
 
 
-def _random_spanning_tree(node_ids: list[str], rng: random.Random) -> list[tuple[str, str]]:
+def _random_spanning_tree(
+    node_ids: list[str], rng: random.Random
+) -> list[tuple[str, str]]:
     """Return a set of edges forming a random spanning tree (random insertion order)."""
     shuffled = node_ids[:]
     rng.shuffle(shuffled)
@@ -238,7 +239,9 @@ def _build_uniform_graph(
         iterations=110,
     )
 
-    spice_flows = [rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)]
+    spice_flows = [
+        rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)
+    ]
     nodes = [
         RawNode(
             node_id=node_ids[i],
@@ -485,7 +488,14 @@ def _build_geographic_graph(
             local_factor = 0.25
         else:
             local_factor = 0.32
-        desired_local = max(0, round((len(nodes) * (len(nodes) - 1) / 2) * config.graph_density * local_factor))
+        desired_local = max(
+            0,
+            round(
+                (len(nodes) * (len(nodes) - 1) / 2)
+                * config.graph_density
+                * local_factor
+            ),
+        )
         attempts = 0
         added = 0
         while added < desired_local and attempts < len(nodes) * len(nodes) * 2:
@@ -541,7 +551,9 @@ def _build_geographic_graph(
         extra_bridge_budget = 1 if region_count >= 7 else 0
     else:
         # Continents: keep few corridors.
-        extra_bridge_budget = 1 if config.graph_density > 0.58 and region_count >= 5 else 0
+        extra_bridge_budget = (
+            1 if config.graph_density > 0.58 and region_count >= 5 else 0
+        )
     for _ in range(extra_bridge_budget):
         ra, rb = rng.sample(region_ids, 2)
         a = rng.choice(regions[ra])
@@ -590,7 +602,9 @@ def _build_geographic_graph(
             degree[leaf] += 1
             degree[anchor] += 1
 
-    sorted_edges = [(min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]]
+    sorted_edges = [
+        (min(a, b), max(a, b)) for pair in edge_set for a, b in [sorted(pair)]
+    ]
     unique_edges: list[tuple[str, str]] = list({(a, b) for a, b in sorted_edges})
     unique_edges.sort()
 
@@ -604,7 +618,9 @@ def _build_geographic_graph(
         iterations=90,
     )
 
-    spice_flows = [rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)]
+    spice_flows = [
+        rng.randint(config.min_spice_flow, config.max_spice_flow) for _ in range(n)
+    ]
     nodes = [
         RawNode(
             node_id=nid,

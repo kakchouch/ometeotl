@@ -86,9 +86,7 @@ def test_lexicographic_utility_uses_raw_values_and_directional_comparison():
     )
 
     frame = utility.evaluate(
-        perception=_make_perception(
-            "p-2", safety=10.0, cost=2.0
-        ),
+        perception=_make_perception("p-2", safety=10.0, cost=2.0),
         actor=Actor(id="actor-1"),
         context={},
     )
@@ -145,9 +143,7 @@ def test_strategy_ranker_orders_strategies_by_scalar_terminal_utility():
         ],
     )
 
-    ranked = ranker.rank_strategies(
-        [strategy_a, strategy_b], actor=actor
-    )
+    ranked = ranker.rank_strategies([strategy_a, strategy_b], actor=actor)
 
     assert [item.strategy.id for item in ranked] == [
         "strategy-b",
@@ -301,9 +297,7 @@ def test_strategy_ranker_uses_lexicographic_rank_key_for_multi_criteria_frames()
         ],
     )
 
-    ranked = ranker.rank_strategies(
-        [safer_costlier, safer_cheaper], actor=actor
-    )
+    ranked = ranker.rank_strategies([safer_costlier, safer_cheaper], actor=actor)
 
     assert [item.strategy.id for item in ranked] == [
         "strategy-a",
@@ -372,9 +366,7 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(
-        strategy, actor=actor
-    )
+    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
 
     assert ranked_strategy.utility_frame.value == 1.0
     assert ranked_strategy.terminal_probabilities == {
@@ -449,9 +441,7 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(
-        strategy, actor=actor
-    )
+    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
 
     assert ranked_strategy.terminal_probabilities == {
         "left-node": 0.5,
@@ -547,12 +537,8 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
         ],
     )
 
-    ranked_strategy = ranker.evaluate_strategy(
-        strategy, actor=actor
-    )
+    ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
 
     assert ranked_strategy.terminal_node_ids == ["terminal-node"]
-    assert ranked_strategy.terminal_probabilities == {
-        "terminal-node": 1.0
-    }
+    assert ranked_strategy.terminal_probabilities == {"terminal-node": 1.0}
     assert ranked_strategy.utility_frame.value == 5.0

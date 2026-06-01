@@ -81,7 +81,9 @@ def get_faction_perception(state: SimState, faction_id: str) -> Perception:
         A Perception object containing only visible spaces and relations.
     """
     # Collect owned and neighbor space IDs
-    owned_space_ids = {nid for nid, node in state.nodes.items() if node.owner_id == faction_id}
+    owned_space_ids = {
+        nid for nid, node in state.nodes.items() if node.owner_id == faction_id
+    }
 
     # Find neighbors of owned spaces using the relation graph
     neighbor_space_ids = set()

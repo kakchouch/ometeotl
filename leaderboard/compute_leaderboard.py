@@ -60,9 +60,7 @@ def _load_founder_identity(config):
     normalized_username = _normalize_username(username)
     normalized_aliases = {
         normalized_alias
-        for normalized_alias in (
-            _normalize_username(alias) for alias in aliases
-        )
+        for normalized_alias in (_normalize_username(alias) for alias in aliases)
         if normalized_alias
     }
     normalized_aliases.add(normalized_username)
@@ -145,10 +143,7 @@ def collect_events(repo):
             return
         username = canonicalize_username(user)
         # Exclude bots
-        if (
-            username.endswith("[bot]")
-            or username == "github-actions"
-        ):
+        if username.endswith("[bot]") or username == "github-actions":
             return
         if username not in events:
             events[username] = []
@@ -156,9 +151,7 @@ def collect_events(repo):
 
     # --- Merged PRs ---
     print("Fetching merged pull requests...")
-    pulls = repo.get_pulls(
-        state="closed", sort="updated", direction="desc"
-    )
+    pulls = repo.get_pulls(state="closed", sort="updated", direction="desc")
     for pr in pulls:
         if not pr.merged:
             continue
@@ -173,9 +166,7 @@ def collect_events(repo):
 
         # Lines changed (capped)
         lines = min(pr.additions + pr.deletions, LINES_CAP)
-        add_event(
-            author, "lines_changed", merged_at, extra=lines
-        )
+        add_event(author, "lines_changed", merged_at, extra=lines)
 
         # Commits in the PR
         try:
@@ -185,9 +176,7 @@ def collect_events(repo):
                 if c_author:
                     c_date = commit.commit.author.date
                     if c_date and c_date.tzinfo is None:
-                        c_date = c_date.replace(
-                            tzinfo=timezone.utc
-                        )
+                        c_date = c_date.replace(tzinfo=timezone.utc)
                     if c_date:
                         add_event(
                             c_author.login,
@@ -202,20 +191,12 @@ def collect_events(repo):
             reviews = pr.get_reviews()
             for review in reviews:
                 reviewer = review.user
-                if (
-                    reviewer
-                    and reviewer.login.lower()
-                    != (author or "").lower()
-                ):
+                if reviewer and reviewer.login.lower() != (author or "").lower():
                     r_date = review.submitted_at
                     if r_date and r_date.tzinfo is None:
-                        r_date = r_date.replace(
-                            tzinfo=timezone.utc
-                        )
+                        r_date = r_date.replace(tzinfo=timezone.utc)
                     if r_date:
-                        add_event(
-                            reviewer.login, "pr_review", r_date
-                        )
+                        add_event(reviewer.login, "pr_review", r_date)
         except Exception:
             pass
 
@@ -227,21 +208,15 @@ def collect_events(repo):
                 if commenter:
                     c_date = comment.created_at
                     if c_date and c_date.tzinfo is None:
-                        c_date = c_date.replace(
-                            tzinfo=timezone.utc
-                        )
+                        c_date = c_date.replace(tzinfo=timezone.utc)
                     if c_date:
-                        add_event(
-                            commenter.login, "pr_comment", c_date
-                        )
+                        add_event(commenter.login, "pr_comment", c_date)
         except Exception:
             pass
 
     # --- Issues ---
     print("Fetching issues...")
-    issues = repo.get_issues(
-        state="all", sort="updated", direction="desc"
-    )
+    issues = repo.get_issues(state="all", sort="updated", direction="desc")
     for issue in issues:
         if issue.pull_request is not None:
             continue  # Skip PRs (they appear as issues too)
@@ -260,9 +235,7 @@ def collect_events(repo):
                 if commenter:
                     c_date = comment.created_at
                     if c_date and c_date.tzinfo is None:
-                        c_date = c_date.replace(
-                            tzinfo=timezone.utc
-                        )
+                        c_date = c_date.replace(tzinfo=timezone.utc)
                     if c_date:
                         add_event(
                             commenter.login,
@@ -287,13 +260,8 @@ def compute_raw_scores(events):
         total = 0.0
         for event_type, date, extra in user_events:
             r = recency_factor(date)
-            if (
-                event_type == "lines_changed"
-                and extra is not None
-            ):
-                total += (
-                    WEIGHTS["lines_changed_per_unit"] * extra * r
-                )
+            if event_type == "lines_changed" and extra is not None:
+                total += WEIGHTS["lines_changed_per_unit"] * extra * r
             elif event_type in WEIGHTS:
                 total += WEIGHTS[event_type] * r
         scores[username] = round(total, 4)
@@ -309,18 +277,13 @@ def compute_z_scores(raw_scores):
         return {u: 0.0 for u in raw_scores}
 
     mean = sum(values) / n
-    variance = sum((v - mean) ** 2 for v in values) / (
-        n - 1
-    )  # Bessel
+    variance = sum((v - mean) ** 2 for v in values) / (n - 1)  # Bessel
     std = math.sqrt(variance)
 
     if std == 0:
         return {u: 0.0 for u in raw_scores}
 
-    return {
-        u: round((s - mean) / std, 6)
-        for u, s in raw_scores.items()
-    }
+    return {u: round((s - mean) / std, 6) for u, s in raw_scores.items()}
 
 
 def compute_leaderboard(raw_scores, z_scores, n_active):
@@ -328,14 +291,10 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
     k = compute_k(n_active)
 
     # Adjusted scores for everyone
-    adjusted = {
-        u: adjusted_score(z, k) for u, z in z_scores.items()
-    }
+    adjusted = {u: adjusted_score(z, k) for u, z in z_scores.items()}
 
     # Share allocation (founder excluded)
-    contributors = {
-        u: s for u, s in adjusted.items() if not is_founder(u)
-    }
+    contributors = {u: s for u, s in adjusted.items() if not is_founder(u)}
 
     if not contributors:
         return k, adjusted, {}
@@ -351,8 +310,7 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
         )
 
     shares = {
-        u: round((s / total_adj) * TOTAL_SHARES, 1)
-        for u, s in contributors.items()
+        u: round((s / total_adj) * TOTAL_SHARES, 1) for u, s in contributors.items()
     }
 
     # Fix rounding residual
@@ -366,9 +324,7 @@ def compute_leaderboard(raw_scores, z_scores, n_active):
 
 def compute_leaderboard_fallback(raw_scores):
     """Fallback: proportional allocation when n_active < min threshold."""
-    contributors = {
-        u: s for u, s in raw_scores.items() if not is_founder(u)
-    }
+    contributors = {u: s for u, s in raw_scores.items() if not is_founder(u)}
     total = sum(contributors.values())
 
     if total == 0:
@@ -377,10 +333,7 @@ def compute_leaderboard_fallback(raw_scores):
         equal = round(TOTAL_SHARES / len(contributors), 1)
         return {u: equal for u in contributors}
 
-    shares = {
-        u: round((s / total) * TOTAL_SHARES, 1)
-        for u, s in contributors.items()
-    }
+    shares = {u: round((s / total) * TOTAL_SHARES, 1) for u, s in contributors.items()}
     residual = round(TOTAL_SHARES - sum(shares.values()), 1)
     if residual != 0 and shares:
         top_user = max(shares, key=shares.get)
@@ -420,20 +373,12 @@ def generate_markdown(data, repo_name):
     lines.append("")
 
     if data.get("fallback"):
-        lines.append(
-            "| Rank | Contributor | Raw Score | Shares |"
-        )
-        lines.append(
-            "|------|-------------|-----------|--------|"
-        )
-        ranked = sorted(
-            data["shares"].items(), key=lambda x: -x[1]
-        )
+        lines.append("| Rank | Contributor | Raw Score | Shares |")
+        lines.append("|------|-------------|-----------|--------|")
+        ranked = sorted(data["shares"].items(), key=lambda x: -x[1])
         for rank, (user, share) in enumerate(ranked, 1):
             raw = data["raw_scores"].get(user, 0)
-            lines.append(
-                f"| {rank} | @{user} | {raw:.1f} | {share:.1f} |"
-            )
+            lines.append(f"| {rank} | @{user} | {raw:.1f} | {share:.1f} |")
     else:
         lines.append(
             "| Rank | Contributor | Raw Score | z-Score | Adj. Score | Shares |"
@@ -441,9 +386,7 @@ def generate_markdown(data, repo_name):
         lines.append(
             "|------|-------------|-----------|---------|------------|--------|"
         )
-        ranked = sorted(
-            data["shares"].items(), key=lambda x: -x[1]
-        )
+        ranked = sorted(data["shares"].items(), key=lambda x: -x[1])
         for rank, (user, share) in enumerate(ranked, 1):
             raw = data["raw_scores"].get(user, 0)
             z = data["z_scores"].get(user, 0)
@@ -471,15 +414,9 @@ def generate_markdown(data, repo_name):
             lines.append("|-------------|-----------|")
             lines.append(f"| @{FOUNDER} | {raw:.1f} |")
         else:
-            lines.append(
-                "| Contributor | Raw Score | z-Score | Adj. Score |"
-            )
-            lines.append(
-                "|-------------|-----------|---------|------------|"
-            )
-            lines.append(
-                f"| @{FOUNDER} | {raw:.1f} | {z:+.2f} | {adj:.4f} |"
-            )
+            lines.append("| Contributor | Raw Score | z-Score | Adj. Score |")
+            lines.append("|-------------|-----------|---------|------------|")
+            lines.append(f"| @{FOUNDER} | {raw:.1f} | {z:+.2f} | {adj:.4f} |")
 
     # Methodology
     lines.extend(
@@ -576,9 +513,7 @@ def generate_hugo_page(data, repo_name):
                 raw = data["raw_scores"].get(user, 0)
                 pct = share / 10
                 # Visual bar
-                bar_width = max(
-                    2, int(share / 10)
-                )  # max 100px width
+                bar_width = max(2, int(share / 10))  # max 100px width
                 lines.append(
                     f"<tr>"
                     f'<td style="text-align:center; padding: 6px 8px; font-weight:bold;">{rank}</td>'
@@ -610,11 +545,7 @@ def generate_hugo_page(data, repo_name):
                 pct = share / 10
                 bar_width = max(2, int(share / 10))
                 # Color z-score
-                z_color = (
-                    "var(--base0C)"
-                    if z >= 0
-                    else "var(--base09)"
-                )
+                z_color = "var(--base0C)" if z >= 0 else "var(--base09)"
                 lines.append(
                     f"<tr>"
                     f'<td style="text-align:center; padding: 6px 8px; font-weight:bold;">{rank}</td>'
@@ -673,9 +604,7 @@ def generate_hugo_page(data, repo_name):
                 '<th style="text-align:right; padding: 8px;">Adj. Score</th>'
                 "</tr>"
             )
-            z_color = (
-                "var(--base0C)" if z >= 0 else "var(--base09)"
-            )
+            z_color = "var(--base0C)" if z >= 0 else "var(--base09)"
             lines.append(
                 f'<tr style="opacity: 0.7;">'
                 f'<td style="padding: 6px 8px;">'
@@ -728,17 +657,13 @@ def main():
     try:
         from github import Github
     except ImportError:
-        sys.exit(
-            "PyGithub is required. Install with: pip install PyGithub"
-        )
+        sys.exit("PyGithub is required. Install with: pip install PyGithub")
 
     token = os.environ.get("GITHUB_TOKEN")
     repo_name = os.environ.get("REPO_FULL_NAME")
 
     if not token or not repo_name:
-        sys.exit(
-            "GITHUB_TOKEN and REPO_FULL_NAME environment variables required."
-        )
+        sys.exit("GITHUB_TOKEN and REPO_FULL_NAME environment variables required.")
 
     g = Github(token)
     repo = g.get_repo(repo_name)
@@ -760,17 +685,13 @@ def main():
             last_events[username] = max(dates)
 
     active_users = {
-        u
-        for u, d in last_events.items()
-        if is_active(d) and not is_founder(u)
+        u for u, d in last_events.items() if is_active(d) and not is_founder(u)
     }
     n_active = len(active_users)
     k = compute_k(n_active)
 
     print(f"Active contributors (excl. founder): {n_active}")
-    print(
-        f"Computed k = max({K_FLOOR}, {K_OFFSET} - {n_active}) = {k}"
-    )
+    print(f"Computed k = max({K_FLOOR}, {K_OFFSET} - {n_active}) = {k}")
 
     # Decide: z-score path or fallback
     use_fallback = n_active < MIN_CONTRIBUTORS
@@ -826,13 +747,7 @@ def main():
 
     # Write Hugo page (doc-site)
     hugo_content = generate_hugo_page(output_data, repo_name)
-    hugo_dir = (
-        SCRIPT_DIR.parent
-        / "doc-site"
-        / "content"
-        / "en"
-        / "leaderboard"
-    )
+    hugo_dir = SCRIPT_DIR.parent / "doc-site" / "content" / "en" / "leaderboard"
     hugo_dir.mkdir(parents=True, exist_ok=True)
     hugo_path = hugo_dir / "live.md"
     with open(hugo_path, "w", encoding="utf-8") as f:
@@ -841,14 +756,8 @@ def main():
 
     # Summary
     print("\n--- Leaderboard ---")
-    for user, share in sorted(
-        shares.items(), key=lambda x: -x[1]
-    ):
-        flag = (
-            " (founder, out-of-competition)"
-            if is_founder(user)
-            else ""
-        )
+    for user, share in sorted(shares.items(), key=lambda x: -x[1]):
+        flag = " (founder, out-of-competition)" if is_founder(user) else ""
         print(f"  @{user}: {share:.1f} shares{flag}")
 
 
