@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ometeotl Local Lab - Territory Control</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel hero">
+        <p class="eyebrow">Ometeotl examples demo</p>
+        <h1>Territory Control</h1>
+        <p class="subtitle">A small strategic duel with deterministic AI, played from a simple web UI.</p>
+        <div class="scorebar">
+          <div class="score red">Red <span id="score-red">0</span></div>
+          <div class="score blue">Blue <span id="score-blue">0</span></div>
+        </div>
+        <p id="status" class="status">Loading game state...</p>
+      </section>
+
+      <section class="panel board-panel">
+        <svg id="board" viewBox="0 0 520 340" role="img" aria-label="Territory board">
+          <g class="territory" data-id="A">
+            <rect x="40" y="40" width="140" height="90" rx="18"></rect>
+            <text x="110" y="95">A</text>
+          </g>
+          <g class="territory" data-id="B">
+            <rect x="190" y="40" width="140" height="90" rx="18"></rect>
+            <text x="260" y="95">B</text>
+          </g>
+          <g class="territory" data-id="C">
+            <rect x="340" y="40" width="140" height="90" rx="18"></rect>
+            <text x="410" y="95">C</text>
+          </g>
+          <g class="territory" data-id="D">
+            <rect x="40" y="190" width="140" height="90" rx="18"></rect>
+            <text x="110" y="245">D</text>
+          </g>
+          <g class="territory" data-id="E">
+            <rect x="190" y="190" width="140" height="90" rx="18"></rect>
+            <text x="260" y="245">E</text>
+          </g>
+          <g class="territory" data-id="F">
+            <rect x="340" y="190" width="140" height="90" rx="18"></rect>
+            <text x="410" y="245">F</text>
+          </g>
+
+          <circle id="red-unit" r="11"></circle>
+          <circle id="blue-unit" r="11"></circle>
+        </svg>
+      </section>
+
+      <section class="panel controls">
+        <h2>Actions</h2>
+        <div id="actions" class="actions"></div>
+        <button id="reset" class="secondary" type="button">Reset game</button>
+      </section>
+
+      <section class="panel log">
+        <h2>Action Log</h2>
+        <ul id="log"></ul>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
