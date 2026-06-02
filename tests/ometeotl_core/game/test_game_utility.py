@@ -49,6 +49,28 @@ def _make_projected_state(
     )
 
 
+def _terminal_branch(
+    branch_id: str,
+    *,
+    source_perception_id: str,
+    generating_action_id: str,
+    perception_id: str,
+    **context,
+) -> StrategyOutcomeBranch:
+    """Convenience: a terminal branch (no child) carrying a projected state."""
+    return StrategyOutcomeBranch(
+        branch_id=branch_id,
+        label="terminal",
+        child_node_id=None,
+        projected_state=_make_projected_state(
+            source_perception_id=source_perception_id,
+            generating_action_id=generating_action_id,
+            perception_id=perception_id,
+            **context,
+        ),
+    )
+
+
 def test_weighted_sum_utility_returns_scalar_frame_with_metadata():
     utility = WeightedSumUtility(
         framework_id="material-gain",
@@ -116,12 +138,15 @@ def test_strategy_ranker_orders_strategies_by_scalar_terminal_utility():
             StrategyNode(
                 node_id="node-a",
                 action_id=action_a.id,
-                projected_state=_make_projected_state(
-                    source_perception_id="p-source",
-                    generating_action_id=action_a.id,
-                    perception_id="p-a",
-                    gain=1.0,
-                ),
+                outcome_branches=[
+                    _terminal_branch(
+                        "node-a:terminal",
+                        source_perception_id="p-source",
+                        generating_action_id=action_a.id,
+                        perception_id="p-a",
+                        gain=1.0,
+                    )
+                ],
             )
         ],
     )
@@ -133,12 +158,15 @@ def test_strategy_ranker_orders_strategies_by_scalar_terminal_utility():
             StrategyNode(
                 node_id="node-b",
                 action_id=action_b.id,
-                projected_state=_make_projected_state(
-                    source_perception_id="p-source",
-                    generating_action_id=action_b.id,
-                    perception_id="p-b",
-                    gain=3.0,
-                ),
+                outcome_branches=[
+                    _terminal_branch(
+                        "node-b:terminal",
+                        source_perception_id="p-source",
+                        generating_action_id=action_b.id,
+                        perception_id="p-b",
+                        gain=3.0,
+                    )
+                ],
             )
         ],
     )
@@ -163,11 +191,7 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
     right_action = _make_action("action-right")
     baseline_action = _make_action("action-baseline")
 
-    root_state = _make_projected_state(
-        source_perception_id="p-source",
-        generating_action_id=root_action.id,
-        perception_id="p-root-successor",
-    )
+    root_successor_perception_id = "p-root-successor"
     strategy_branching = Strategy(
         id="strategy-branching",
         actor_id=actor.id,
@@ -176,7 +200,6 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
             StrategyNode(
                 node_id="root-node",
                 action_id=root_action.id,
-                projected_state=root_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="left",
@@ -193,24 +216,30 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
             StrategyNode(
                 node_id="left-node",
                 action_id=left_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=left_action.id,
-                    perception_id="p-left",
-                    gain=4.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "left-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=left_action.id,
+                        perception_id="p-left",
+                        gain=4.0,
+                    )
+                ],
             ),
             StrategyNode(
                 node_id="right-node",
                 action_id=right_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=right_action.id,
-                    perception_id="p-right",
-                    gain=0.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "right-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=right_action.id,
+                        perception_id="p-right",
+                        gain=0.0,
+                    )
+                ],
             ),
         ],
     )
@@ -222,12 +251,15 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
             StrategyNode(
                 node_id="baseline-node",
                 action_id=baseline_action.id,
-                projected_state=_make_projected_state(
-                    source_perception_id="p-source",
-                    generating_action_id=baseline_action.id,
-                    perception_id="p-baseline",
-                    gain=0.5,
-                ),
+                outcome_branches=[
+                    _terminal_branch(
+                        "baseline-node:terminal",
+                        source_perception_id="p-source",
+                        generating_action_id=baseline_action.id,
+                        perception_id="p-baseline",
+                        gain=0.5,
+                    )
+                ],
             )
         ],
     )
@@ -268,13 +300,16 @@ def test_strategy_ranker_uses_lexicographic_rank_key_for_multi_criteria_frames()
             StrategyNode(
                 node_id="node-a",
                 action_id=action_a.id,
-                projected_state=_make_projected_state(
-                    source_perception_id="p-source",
-                    generating_action_id=action_a.id,
-                    perception_id="p-a",
-                    safety=10.0,
-                    cost=5.0,
-                ),
+                outcome_branches=[
+                    _terminal_branch(
+                        "node-a:terminal",
+                        source_perception_id="p-source",
+                        generating_action_id=action_a.id,
+                        perception_id="p-a",
+                        safety=10.0,
+                        cost=5.0,
+                    )
+                ],
             )
         ],
     )
@@ -286,13 +321,16 @@ def test_strategy_ranker_uses_lexicographic_rank_key_for_multi_criteria_frames()
             StrategyNode(
                 node_id="node-b",
                 action_id=action_b.id,
-                projected_state=_make_projected_state(
-                    source_perception_id="p-source",
-                    generating_action_id=action_b.id,
-                    perception_id="p-b",
-                    safety=10.0,
-                    cost=7.0,
-                ),
+                outcome_branches=[
+                    _terminal_branch(
+                        "node-b:terminal",
+                        source_perception_id="p-source",
+                        generating_action_id=action_b.id,
+                        perception_id="p-b",
+                        safety=10.0,
+                        cost=7.0,
+                    )
+                ],
             )
         ],
     )
@@ -316,11 +354,7 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
     left_action = _make_action("action-left")
     right_action = _make_action("action-right")
 
-    root_state = _make_projected_state(
-        source_perception_id="p-source",
-        generating_action_id=root_action.id,
-        perception_id="p-root-successor",
-    )
+    root_successor_perception_id = "p-root-successor"
     strategy = Strategy(
         id="strategy-equal",
         actor_id=actor.id,
@@ -329,7 +363,6 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
             StrategyNode(
                 node_id="root-node",
                 action_id=root_action.id,
-                projected_state=root_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="left",
@@ -344,24 +377,30 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
             StrategyNode(
                 node_id="left-node",
                 action_id=left_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=left_action.id,
-                    perception_id="p-left",
-                    gain=2.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "left-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=left_action.id,
+                        perception_id="p-left",
+                        gain=2.0,
+                    )
+                ],
             ),
             StrategyNode(
                 node_id="right-node",
                 action_id=right_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=right_action.id,
-                    perception_id="p-right",
-                    gain=0.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "right-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=right_action.id,
+                        perception_id="p-right",
+                        gain=0.0,
+                    )
+                ],
             ),
         ],
     )
@@ -384,11 +423,7 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
     left_action = _make_action("action-left")
     right_action = _make_action("action-right")
 
-    root_state = _make_projected_state(
-        source_perception_id="p-source",
-        generating_action_id=root_action.id,
-        perception_id="p-root-successor",
-    )
+    root_successor_perception_id = "p-root-successor"
     strategy = Strategy(
         id="strategy-duplicate-child",
         actor_id=actor.id,
@@ -397,7 +432,6 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
             StrategyNode(
                 node_id="root-node",
                 action_id=root_action.id,
-                projected_state=root_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="left-a",
@@ -419,24 +453,30 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
             StrategyNode(
                 node_id="left-node",
                 action_id=left_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=left_action.id,
-                    perception_id="p-left",
-                    gain=2.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "left-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=left_action.id,
+                        perception_id="p-left",
+                        gain=2.0,
+                    )
+                ],
             ),
             StrategyNode(
                 node_id="right-node",
                 action_id=right_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=right_action.id,
-                    perception_id="p-right",
-                    gain=0.0,
-                ),
+                source_perception_id=root_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "right-node:terminal",
+                        source_perception_id=root_successor_perception_id,
+                        generating_action_id=right_action.id,
+                        perception_id="p-right",
+                        gain=0.0,
+                    )
+                ],
             ),
         ],
     )
@@ -460,16 +500,8 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
     right_action = _make_action("action-right")
     terminal_action = _make_action("action-terminal")
 
-    root_state = _make_projected_state(
-        source_perception_id="p-source",
-        generating_action_id=root_action.id,
-        perception_id="p-root-successor",
-    )
-    shared_state = _make_projected_state(
-        source_perception_id=root_state.perception.id,
-        generating_action_id=left_action.id,
-        perception_id="p-shared-successor",
-    )
+    root_successor_perception_id = "p-root-successor"
+    shared_successor_perception_id = "p-shared-successor"
 
     strategy = Strategy(
         id="strategy-dag-duplicate-terminal",
@@ -479,7 +511,6 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
             StrategyNode(
                 node_id="root-node",
                 action_id=root_action.id,
-                projected_state=root_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="to-left",
@@ -496,8 +527,7 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
             StrategyNode(
                 node_id="left-node",
                 action_id=left_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=shared_state,
+                source_perception_id=root_successor_perception_id,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="left-to-terminal",
@@ -509,12 +539,7 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
             StrategyNode(
                 node_id="right-node",
                 action_id=right_action.id,
-                source_perception_id=root_state.perception.id,
-                projected_state=_make_projected_state(
-                    source_perception_id=root_state.perception.id,
-                    generating_action_id=right_action.id,
-                    perception_id="p-shared-successor",
-                ),
+                source_perception_id=root_successor_perception_id,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="right-to-terminal",
@@ -526,13 +551,16 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
             StrategyNode(
                 node_id="terminal-node",
                 action_id=terminal_action.id,
-                source_perception_id="p-shared-successor",
-                projected_state=_make_projected_state(
-                    source_perception_id="p-shared-successor",
-                    generating_action_id=terminal_action.id,
-                    perception_id="p-terminal",
-                    gain=5.0,
-                ),
+                source_perception_id=shared_successor_perception_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "terminal-node:terminal",
+                        source_perception_id=shared_successor_perception_id,
+                        generating_action_id=terminal_action.id,
+                        perception_id="p-terminal",
+                        gain=5.0,
+                    )
+                ],
             ),
         ],
     )

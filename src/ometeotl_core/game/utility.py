@@ -287,9 +287,13 @@ class StrategyRanker:
 
             child_weights = _branch_weight_map(node)
             if not child_weights:
-                if node.projected_state is None:
+                terminal_branches = [
+                    b for b in node.outcome_branches if b.child_node_id is None and b.projected_state is not None
+                ]
+                if not terminal_branches:
                     raise ValueError(
-                        "StrategyRanker requires terminal strategy nodes to carry a projected_state"
+                        "StrategyRanker requires terminal strategy nodes to carry a"
+                        " projected_state on a terminal branch (child_node_id=None)"
                     )
                 terminal_node_index[node.node_id] = node
                 terminal_probability_by_node[node.node_id] = (
@@ -332,6 +336,10 @@ class StrategyRanker:
             normalized_probabilities,
             strict=False,
         ):
+            terminal_branch = next(
+                b for b in node.outcome_branches
+                if b.child_node_id is None and b.projected_state is not None
+            )
             evaluation_context = dict(context or {})
             evaluation_context.update(
                 {
@@ -342,7 +350,7 @@ class StrategyRanker:
             )
             frames.append(
                 self.utility_function.evaluate(
-                    node.projected_state.perception,
+                    terminal_branch.projected_state.perception,
                     actor,
                     evaluation_context,
                 )
