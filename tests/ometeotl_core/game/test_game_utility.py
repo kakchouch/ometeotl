@@ -275,8 +275,8 @@ def test_strategy_ranker_aggregates_branch_probabilities_over_terminal_nodes():
     ]
     assert ranked[0].utility_frame.value == 1.0
     assert ranked[0].terminal_probabilities == {
-        "left-node": 0.25,
-        "right-node": 0.75,
+        "left-node:terminal": 0.25,
+        "right-node:terminal": 0.75,
     }
 
 
@@ -409,8 +409,8 @@ def test_strategy_ranker_defaults_to_equal_weights_when_probabilities_missing():
 
     assert ranked_strategy.utility_frame.value == 1.0
     assert ranked_strategy.terminal_probabilities == {
-        "left-node": 0.5,
-        "right-node": 0.5,
+        "left-node:terminal": 0.5,
+        "right-node:terminal": 0.5,
     }
 
 
@@ -484,8 +484,8 @@ def test_strategy_ranker_sums_duplicate_child_branch_probabilities():
     ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
 
     assert ranked_strategy.terminal_probabilities == {
-        "left-node": 0.5,
-        "right-node": 0.5,
+        "left-node:terminal": 0.5,
+        "right-node:terminal": 0.5,
     }
     assert ranked_strategy.utility_frame.value == 1.0
 
@@ -567,6 +567,133 @@ def test_strategy_ranker_aggregates_duplicate_terminal_paths_in_dag():
 
     ranked_strategy = ranker.evaluate_strategy(strategy, actor=actor)
 
-    assert ranked_strategy.terminal_node_ids == ["terminal-node"]
-    assert ranked_strategy.terminal_probabilities == {"terminal-node": 1.0}
+    assert ranked_strategy.terminal_branch_ids == ["terminal-node:terminal"]
+    assert ranked_strategy.terminal_probabilities == {"terminal-node:terminal": 1.0}
     assert ranked_strategy.utility_frame.value == 5.0
+
+
+def test_strategy_ranker_evaluates_all_terminal_branches_on_single_node():
+    """Multiple terminal branches on one node are all probability-weighted, not just the first."""
+    actor = Actor(id="actor-1")
+    utility = WeightedSumUtility("expected-gain", {"gain": 1.0})
+    ranker = StrategyRanker(utility)
+
+    action = _make_action("action-1")
+
+    strategy = Strategy(
+        id="strategy-multi-terminal",
+        actor_id=actor.id,
+        root_node_id="node-1",
+        nodes=[
+            StrategyNode(
+                node_id="node-1",
+                action_id=action.id,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="node-1:success",
+                        label="success",
+                        child_node_id=None,
+                        probability=0.6,
+                        projected_state=_make_projected_state(
+                            source_perception_id="p-source",
+                            generating_action_id=action.id,
+                            perception_id="p-success",
+                            gain=10.0,
+                        ),
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="node-1:failure",
+                        label="failure",
+                        child_node_id=None,
+                        probability=0.4,
+                        projected_state=_make_projected_state(
+                            source_perception_id="p-source",
+                            generating_action_id=action.id,
+                            perception_id="p-failure",
+                            gain=0.0,
+                        ),
+                    ),
+                ],
+            )
+        ],
+    )
+
+    result = ranker.evaluate_strategy(strategy, actor=actor)
+
+    # 0.6 * 10 + 0.4 * 0 = 6.0
+    assert result.utility_frame.value == 6.0
+    assert result.terminal_branch_ids == ["node-1:failure", "node-1:success"]
+    assert result.terminal_probabilities == {
+        "node-1:failure": 0.4,
+        "node-1:success": 0.6,
+    }
+
+
+def test_strategy_ranker_evaluates_terminal_branches_on_mixed_node():
+    """A node with both child and terminal branches correctly accounts for all terminal outcomes."""
+    actor = Actor(id="actor-1")
+    utility = WeightedSumUtility("expected-gain", {"gain": 1.0})
+    ranker = StrategyRanker(utility)
+
+    root_action = _make_action("action-root")
+    child_action = _make_action("action-child")
+
+    child_successor_id = "p-child-successor"
+
+    strategy = Strategy(
+        id="strategy-mixed",
+        actor_id=actor.id,
+        root_node_id="root-node",
+        nodes=[
+            StrategyNode(
+                node_id="root-node",
+                action_id=root_action.id,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="root:immediate-fail",
+                        label="failure",
+                        child_node_id=None,
+                        probability=0.4,
+                        projected_state=_make_projected_state(
+                            source_perception_id="p-source",
+                            generating_action_id=root_action.id,
+                            perception_id="p-fail",
+                            gain=0.0,
+                        ),
+                    ),
+                    StrategyOutcomeBranch(
+                        branch_id="root:continue",
+                        label="success",
+                        child_node_id="child-node",
+                        probability=0.6,
+                    ),
+                ],
+            ),
+            StrategyNode(
+                node_id="child-node",
+                action_id=child_action.id,
+                source_perception_id=child_successor_id,
+                outcome_branches=[
+                    _terminal_branch(
+                        "child-node:terminal",
+                        source_perception_id=child_successor_id,
+                        generating_action_id=child_action.id,
+                        perception_id="p-child-terminal",
+                        gain=10.0,
+                    )
+                ],
+            ),
+        ],
+    )
+
+    result = ranker.evaluate_strategy(strategy, actor=actor)
+
+    # root:immediate-fail accumulates 0.4 probability (gain=0)
+    # child-node:terminal accumulates 0.6 probability (gain=10)
+    # weighted utility: 0.4 * 0 + 0.6 * 10 = 6.0
+    assert result.utility_frame.value == 6.0
+    assert result.terminal_branch_ids == ["child-node:terminal", "root:immediate-fail"]
+    assert result.terminal_probabilities == {
+        "child-node:terminal": 0.6,
+        "root:immediate-fail": 0.4,
+    }
