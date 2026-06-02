@@ -1,4 +1,4 @@
-"""Perception layer for limited-visibility multi-agent simulation (Lab 3).
+"""Perception layer for limited-visibility multi-agent simulation (Lab 6).
 
 Responsibilities:
 - FactionCoverageRule: determines which spaces are visible to a faction

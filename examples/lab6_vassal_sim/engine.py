@@ -1,4 +1,4 @@
-"""Core simulation engine for Lab 5 — Behavior Logistics Simulation.
+"""Core simulation engine for Lab 6 — Vassal Simulation.
 
 Key differences from Lab 3:
 - Spice stock is stored in Node, NOT in Faction (logistics layer)
@@ -315,6 +315,28 @@ def _bfs_distances_state(state: SimState, source: str) -> dict[str, int]:
     return dist
 
 
+def _bfs_distances_visible(
+    state: SimState,
+    source: str,
+    visible_ids: set[str],
+) -> dict[str, int]:
+    """BFS from *source* restricted to *visible_ids*."""
+    dist: dict[str, int] = {source: 0}
+    queue = [source]
+    head = 0
+    while head < len(queue):
+        current = queue[head]
+        head += 1
+        for nb in state.neighbors_of(current):
+            if nb not in dist and nb in visible_ids:
+                dist[nb] = dist[current] + 1
+                queue.append(nb)
+    for nid in visible_ids:
+        if nid not in dist:
+            dist[nid] = -1
+    return dist
+
+
 def _random_behavior(config: SimConfig, rng: random.Random) -> BehaviorProfile:
     """Sample a behavior profile from configured ranges."""
     return BehaviorProfile(
@@ -383,7 +405,11 @@ def _plan_moves(
         if node.pressure_accumulated > 0:
             defense_targets[nid] = node.pressure_accumulated * (1.0 + node.spice_flow)
 
-    bfs = _bfs_distances_state(state, faction.capital_id)
+    if perception is not None:
+        _visible = set(perception.perceived_spaces.keys())
+        bfs = _bfs_distances_visible(state, faction.capital_id, _visible)
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
     offense_scores: dict[str, float] = {}
     for nid in offense_targets:
         d = max(1, bfs.get(nid, 1))

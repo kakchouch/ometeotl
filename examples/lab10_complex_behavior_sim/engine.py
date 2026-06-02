@@ -347,6 +347,28 @@ def _bfs_distances_state(state: SimState, source: str) -> dict[str, int]:
     return dist
 
 
+def _bfs_distances_visible(
+    state: SimState,
+    source: str,
+    visible_ids: set[str],
+) -> dict[str, int]:
+    """BFS from *source* restricted to *visible_ids*."""
+    dist: dict[str, int] = {source: 0}
+    queue = [source]
+    head = 0
+    while head < len(queue):
+        current = queue[head]
+        head += 1
+        for nb in state.neighbors_of(current):
+            if nb not in dist and nb in visible_ids:
+                dist[nb] = dist[current] + 1
+                queue.append(nb)
+    for nid in visible_ids:
+        if nid not in dist:
+            dist[nid] = -1
+    return dist
+
+
 def _random_behavior(config: SimConfig, rng: random.Random) -> BehaviorProfile:
     """Sample a behavior profile from configured ranges."""
     return BehaviorProfile(
@@ -403,29 +425,69 @@ def _effective_behavior(faction: Faction) -> BehaviorProfile:
     )
 
 
-def _symbolic_snapshot(state: SimState, faction: Faction) -> dict[str, float]:
+def _symbolic_snapshot(
+    state: SimState,
+    faction: Faction,
+    perception: Optional[Perception] = None,
+) -> dict[str, float]:
     """Compute high-level signals used by symbolic deliberation."""
     owned = state.nodes_owned_by(faction.faction_id)
-    total_nodes = max(1, len(state.nodes))
+
+    if perception is not None:
+        visible_ids = set(perception.perceived_spaces.keys())
+    else:
+        visible_ids = set(state.nodes.keys())
+
+    total_nodes = max(1, len(visible_ids))
     node_share = len(owned) / total_nodes
 
     total_pressure = sum(state.nodes[nid].pressure_accumulated for nid in owned)
     mean_pressure = total_pressure / max(1, len(owned))
 
     relation_values: list[float] = []
-    for other in state.factions:
-        if other == faction.faction_id:
-            continue
-        rel = state.relation_between(faction.faction_id, other)
+    if perception is not None:
+        visible_faction_ids = {
+            state.nodes[nid].owner_id
+            for nid in visible_ids
+            if state.nodes[nid].owner_id not in (None, faction.faction_id)
+        }
+    else:
+        visible_faction_ids = set(state.factions.keys()) - {faction.faction_id}
+    for other_fid in visible_faction_ids:
+        rel = state.relation_between(faction.faction_id, other_fid)
         if rel is not None:
             relation_values.append(rel)
     mean_relation = sum(relation_values) / len(relation_values) if relation_values else 0.5
 
     disconnected_owned = 0
-    bfs = _bfs_distances_state(state, faction.capital_id)
-    for nid in owned:
-        if bfs.get(nid, -1) < 0:
-            disconnected_owned += 1
+    if perception is not None:
+        perceived_adj: dict[str, list[str]] = {nid: [] for nid in visible_ids}
+        for perceived_rel in perception.perceived_relations:
+            inner = perceived_rel.relation
+            if inner.relation_type == "adjacent_to":
+                a, b = inner.source_space_id, inner.target_space_id
+                if a in perceived_adj:
+                    perceived_adj[a].append(b)
+                if b in perceived_adj:
+                    perceived_adj[b].append(a)
+        seen: set[str] = {faction.capital_id}
+        bfs_queue: list[str] = [faction.capital_id]
+        bfs_head = 0
+        while bfs_head < len(bfs_queue):
+            cur = bfs_queue[bfs_head]
+            bfs_head += 1
+            for nb in perceived_adj.get(cur, []):
+                if nb not in seen:
+                    seen.add(nb)
+                    bfs_queue.append(nb)
+        for nid in owned:
+            if nid not in seen:
+                disconnected_owned += 1
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
+        for nid in owned:
+            if bfs.get(nid, -1) < 0:
+                disconnected_owned += 1
     disconnected_ratio = disconnected_owned / max(1, len(owned))
 
     return {
@@ -631,9 +693,13 @@ def _build_goal_and_strategy(
     )
 
 
-def _run_symbolic_deliberation(state: SimState, faction: Faction) -> None:
+def _run_symbolic_deliberation(
+    state: SimState,
+    faction: Faction,
+    perception: Optional[Perception] = None,
+) -> None:
     """Compute and attach a fresh symbolic intent for the current tick."""
-    snapshot = _symbolic_snapshot(state, faction)
+    snapshot = _symbolic_snapshot(state, faction, perception)
     faction.symbolic_intent = _build_goal_and_strategy(state, faction, snapshot)
 
 
@@ -692,7 +758,11 @@ def _plan_moves(
         if node.pressure_accumulated > 0:
             defense_targets[nid] = node.pressure_accumulated * (1.0 + node.spice_flow)
 
-    bfs = _bfs_distances_state(state, faction.capital_id)
+    if perception is not None:
+        _visible = set(perception.perceived_spaces.keys())
+        bfs = _bfs_distances_visible(state, faction.capital_id, _visible)
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
     offense_scores: dict[str, float] = {}
     for nid in offense_targets:
         d = max(1, bfs.get(nid, 1))
@@ -1294,10 +1364,10 @@ def step(state: SimState) -> None:
     _apply_globalization(state)
 
     for faction in state.active_factions():
-        _run_symbolic_deliberation(state, faction)
         perception = None
         if state.config.perception_mode == "limited":
             perception = get_faction_perception(state, faction.faction_id)
+        _run_symbolic_deliberation(state, faction, perception)
         _plan_moves(state, faction, perception)
         _plan_centralization(state, faction)
 
@@ -1334,7 +1404,7 @@ def create_sim(config: SimConfig) -> SimState:
     raw = build_graph(config)
 
     # ---- Ometeotl world layer ----
-    world = World(id="lab8-relations-sim-world")
+    world = World(id="lab10-complex-behavior-sim-world")
     relation_graph = SpaceRelationGraph()
 
     for raw_node in raw.nodes:

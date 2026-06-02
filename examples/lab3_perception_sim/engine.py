@@ -188,6 +188,28 @@ def _bfs_distances_state(state: SimState, source: str) -> dict[str, int]:
     return dist
 
 
+def _bfs_distances_visible(
+    state: SimState,
+    source: str,
+    visible_ids: set[str],
+) -> dict[str, int]:
+    """BFS from *source* restricted to *visible_ids*."""
+    dist: dict[str, int] = {source: 0}
+    queue = [source]
+    head = 0
+    while head < len(queue):
+        current = queue[head]
+        head += 1
+        for nb in state.neighbors_of(current):
+            if nb not in dist and nb in visible_ids:
+                dist[nb] = dist[current] + 1
+                queue.append(nb)
+    for nid in visible_ids:
+        if nid not in dist:
+            dist[nid] = -1
+    return dist
+
+
 # --------------------------------------------------------------------------- #
 # Symbolic AI â€” priority assignment (with perception support)                 #
 # --------------------------------------------------------------------------- #
@@ -229,14 +251,18 @@ def _assign_priorities(state: SimState, faction: Faction, perception: Optional[P
             defense_targets[nid] = threat_score
 
     # Score both offensive and defensive allocations
-    bfs = _bfs_distances_state(state, faction_id)
+    if perception is not None:
+        _visible = set(perception.perceived_spaces.keys())
+        bfs = _bfs_distances_visible(state, faction.capital_id, _visible)
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
     raw: dict[str, float] = {}
 
     # Offensive: profit from conquest
     for nid in offense_targets:
         d = bfs.get(nid, -1)
         if d <= 0:
-            d = 1  # capital's direct neighbour or unreachable — treat as dist 1
+            d = 1  # capital's direct neighbour or unreachable ï¿½ treat as dist 1
         raw[nid] = state.nodes[nid].spice_flow / d
 
     # Defensive: threat mitigation

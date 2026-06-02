@@ -168,6 +168,12 @@ button#btn-autorun.running {
   color: var(--success);
 }
 
+button#btn-reverse-run.running {
+  background: #3a1a1a;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 #speed-slider { accent-color: var(--accent); width: 120px; }
 #speed-label { color: var(--text-muted); min-width: 3.5ch; }
 
