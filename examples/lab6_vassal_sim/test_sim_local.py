@@ -1,4 +1,4 @@
-"""Tests for Lab 6 — Behavior Logistics multi-agent simulation.
+"""Tests for Lab 6 — Vassal multi-agent simulation.
 
 These tests live in examples and are NOT part of the tracked tests/ tree.
 Run with:

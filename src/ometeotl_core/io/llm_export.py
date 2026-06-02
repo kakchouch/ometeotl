@@ -524,6 +524,35 @@ class LLMViewBuilder:
                 "assumptions": relations.get("projection_assumption", []),
             }
 
+        # Expose the strategy tree with branch-level projected states
+        raw_nodes = strategy_dict.get("nodes") or []
+        if raw_nodes:
+            view["tree"] = {
+                "root_node_id": strategy_dict.get("root_node_id"),
+                "nodes": [
+                    {
+                        "node_id": node["node_id"],
+                        "action_id": node["action_id"],
+                        "source_perception_id": node.get("source_perception_id"),
+                        "branches": [
+                            {
+                                "branch_id": branch["branch_id"],
+                                "label": branch.get("label"),
+                                "child_node_id": branch.get("child_node_id"),
+                                "probability": branch.get("probability"),
+                                "projected_perception_id": (
+                                    branch["projected_state"]["perception"]["id"]
+                                    if branch.get("projected_state")
+                                    else None
+                                ),
+                            }
+                            for branch in (node.get("outcome_branches") or [])
+                        ],
+                    }
+                    for node in raw_nodes
+                ],
+            }
+
         return view
 
     def goal_view(

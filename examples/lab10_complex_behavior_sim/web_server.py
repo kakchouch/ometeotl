@@ -16,6 +16,7 @@ Usage:
 
 from __future__ import annotations
 
+import copy
 import json
 import threading
 import time
@@ -33,6 +34,9 @@ _DEFAULT_CONFIG = SimConfig()
 SIM_STATE: SimState = create_sim(_DEFAULT_CONFIG)
 _state_lock = threading.Lock()
 
+_history: list[SimState] = []
+_MAX_HISTORY = 200
+
 # Auto-run state
 _autorun_running = False
 _autorun_interval_s = 1.0
@@ -47,6 +51,12 @@ PORT = 8774  # Dedicated Lab 10 port
 # --------------------------------------------------------------------------- #
 
 
+def _push_history(state: SimState) -> None:
+    _history.append(copy.deepcopy(state))
+    if len(_history) > _MAX_HISTORY:
+        _history.pop(0)
+
+
 def _autorun_loop() -> None:
     global SIM_STATE, _autorun_running
     while _autorun_running:
@@ -54,6 +64,7 @@ def _autorun_loop() -> None:
             if SIM_STATE.game_over:
                 _autorun_running = False
                 break
+            _push_history(SIM_STATE)
             step(SIM_STATE)
         time.sleep(_autorun_interval_s)
 
@@ -146,6 +157,7 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/state":
             with _state_lock:
                 data = serialize_state(SIM_STATE)
+                data["history_size"] = len(_history)
             self._send_json(data)
         else:
             self._serve_static(path)
@@ -158,8 +170,18 @@ class _Handler(BaseHTTPRequestHandler):
 
         if path == "/api/step":
             with _state_lock:
+                _push_history(SIM_STATE)
                 step(SIM_STATE)
                 data = serialize_state(SIM_STATE)
+                data["history_size"] = len(_history)
+            self._send_json(data)
+
+        elif path == "/api/step_back":
+            with _state_lock:
+                if _history:
+                    SIM_STATE = _history.pop()
+                data = serialize_state(SIM_STATE)
+                data["history_size"] = len(_history)
             self._send_json(data)
 
         elif path == "/api/reset":
@@ -173,7 +195,9 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             with _state_lock:
                 SIM_STATE = new_state
+                _history.clear()
                 data = serialize_state(SIM_STATE)
+                data["history_size"] = 0
             self._send_json(data)
 
         elif path == "/api/config":
@@ -190,7 +214,9 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             with _state_lock:
                 SIM_STATE = new_state
+                _history.clear()
                 data = serialize_state(SIM_STATE)
+                data["history_size"] = 0
             self._send_json(data)
 
         elif path == "/api/autorun":

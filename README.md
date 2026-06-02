@@ -59,7 +59,7 @@ As of May 2026, the repository includes:
   - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
   - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
   - Four runnable demo scenarios in `generation/examples.py`.
-- A test suite currently collecting `396` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
+- A test suite currently collecting `418` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
 
 ## Current Architecture
 
@@ -78,8 +78,7 @@ The implemented architecture follows the separation defined in `specs_EN.md`:
 
 - Add a full generation roundtrip integration test covering the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate) and a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
 - Extend the `game/` layer beyond current utility/ranking primitives with richer solver-facing abstractions.
-- Extend the strategy layer to support one action producing several alternative projected outcomes, with branch-specific successor perceived states carried by `StrategyOutcomeBranch` rather than duplicated on `StrategyNode`.
-- Add reference examples and end-to-end demo worlds in `examples/`.
+- Extend reference examples in `examples/` with additional end-to-end demo worlds.
 
 ## Join the Journey
 

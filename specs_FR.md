@@ -108,7 +108,7 @@ La V1 doit d’abord démontrer le cœur du système avec un périmètre réduit
 6. - **Deux exemples** : un monde simple et un cas multi-acteurs hiérarchique.
 
 
-## État actuel du dépôt (mai 2026)
+## État actuel du dépôt (juin 2026)
 
 Le projet dispose d'un large cœur fonctionnel V1. Toutes les couches, du modèle à la validation, de l'IO à l'export LLM et au pipeline de génération contextuelle, sont implémentées et testées.
 
@@ -152,7 +152,8 @@ Les tests locaux révèlent que l'architecture actuelle est trop abstraite pour 
     - Support des liens de composition perçus et des changements projetés de composition.
 7. Couche stratégie :
     - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
-    - Builders linéaires et branchants pilotés par les perceptions projetées successives.
+    - Builders `build_linear_strategy(...)` et `build_branching_strategy(...)` pilotés par les perceptions projetées successives.
+    - États perceptifs projetés portés par `StrategyOutcomeBranch`, permettant à une seule action d'émettre des issues distinctes par branche.
 8. Couches téléologie et utilité :
     - `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
@@ -188,15 +189,15 @@ Les tests locaux révèlent que l'architecture actuelle est trop abstraite pour 
     - Quatre scénarios de démonstration exécutables dans `generation/examples.py`.
 15. Contrôle qualité :
     - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, et `tests/ometeotl_core/generation/`.
-    - Base actuelle : `396` tests collectés.
+    - Base actuelle : `418` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
 - `src/ometeotl_core/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
-- `src/ometeotl_core/examples/` pour les mondes de référence et démonstrations de bout en bout.
 - Tests d'intégration de la génération : un test de bout en bout couvrant la chaîne complète (contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate), et un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
+- `examples/` à compléter avec des démonstrations de bout en bout supplémentaires (les labs 2–10 et la démo strategy game sont présents ; d'autres sont prévus).
 
 ### Arborescence source actuelle
 
@@ -234,7 +235,6 @@ ometeotl/
 │       │   ├── epistemic.py
 │       │   ├── completeness.py
 │       │   └── diagnostic.py
-│       ├── examples/           # prévu
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
@@ -253,6 +253,17 @@ ometeotl/
 │           ├── strategies.py
 │           ├── utility.py
 │           └── world.py
+├── examples/
+│   ├── multi_agent_sim/
+│   ├── lab3_perception_sim/
+│   ├── lab4_logistics_sim/
+│   ├── lab5_behavior_sim/
+│   ├── lab6_vassal_sim/
+│   ├── lab7_centralization_sim/
+│   ├── lab8_relations_sim/
+│   ├── lab9_globalization_sim/
+│   ├── lab10_complex_behavior_sim/
+│   └── strategy_game/
 └── tests/ometeotl_core/
     ├── generic/
     ├── game/
@@ -270,8 +281,7 @@ La V1 est validée sur la chaîne complète : ontologie, perception, projection,
 
 1. Ajouter un test d'intégration de bout en bout couvrant la chaîne complète : contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate. Ajouter un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
 2. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
-3. Étendre la couche stratégie pour supporter un branchement où une seule action produit plusieurs issues projetées, avec des états perceptifs successeurs portés par `StrategyOutcomeBranch` plutôt que par `StrategyNode`.
-4. Ajouter des exemples de référence et des démos complètes de bout en bout.
+3. Compléter `examples/` avec des démonstrations de bout en bout supplémentaires au-delà de la série de labs existante.
 
 ## Status
 Le document `specs_EN.md` est la source de vérité pour l'architecture et le comportement du module.

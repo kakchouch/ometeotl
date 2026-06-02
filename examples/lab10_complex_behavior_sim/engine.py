@@ -15,6 +15,7 @@ Ometeotl is used for the ontological / relational graph layer:
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass, field
 from typing import Optional
@@ -292,36 +293,44 @@ class SimState:
 
 
 # --------------------------------------------------------------------------- #
-# Colour palette for factions                                                  #
+# Colour derived from genome                                                   #
 # --------------------------------------------------------------------------- #
 
-_FACTION_COLORS = [
-    "#e63946",  # red
-    "#457b9d",  # blue
-    "#2a9d8f",  # teal
-    "#f4a261",  # orange
-    "#8338ec",  # violet
-    "#ffbe0b",  # amber
-    "#06d6a0",  # green
-    "#fb5607",  # burnt orange
-    "#3a86ff",  # sky blue
-    "#ff006e",  # pink
-    "#8ecae6",  # light blue
-    "#95d5b2",  # light green
-]
-_color_index = 0
+def _hsl_to_hex(h: float, s: float, l: float) -> str:
+    """Convert HSL (h in degrees 0–360, s/l in [0,1]) to #rrggbb hex."""
+    c = (1.0 - abs(2.0 * l - 1.0)) * s
+    x = c * (1.0 - abs((h / 60.0) % 2.0 - 1.0))
+    m = l - c / 2.0
+    sector = int(h / 60.0) % 6
+    r1, g1, b1 = [
+        (c, x, 0.0), (x, c, 0.0), (0.0, c, x),
+        (0.0, x, c), (x, 0.0, c), (c, 0.0, x),
+    ][sector]
+    r = max(0, min(255, round((r1 + m) * 255)))
+    g = max(0, min(255, round((g1 + m) * 255)))
+    b = max(0, min(255, round((b1 + m) * 255)))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
-def _next_color() -> str:
-    global _color_index
-    color = _FACTION_COLORS[_color_index % len(_FACTION_COLORS)]
-    _color_index += 1
-    return color
+def _genome_to_color(genome: list[int]) -> str:
+    """Derive a faction color from the genome via circular projection.
 
-
-def _reset_color_index() -> None:
-    global _color_index
-    _color_index = 0
+    Each bit i projects a unit vector at angle 2π·i/L onto the unit circle.
+    Hue = direction of the resultant vector (all bits contribute equally; no
+    fixed bit-to-channel mapping; invariant to genome length).
+    A single bit flip shifts the resultant by at most arcsin(1/M) where M is
+    the current magnitude — typically ≤ 20–30° for random genomes.
+    Lightness = overall bit mean (0.35–0.55); saturation fixed at 0.75.
+    """
+    L = len(genome)
+    if L == 0:
+        return "#888888"
+    cx = sum(genome[i] * math.cos(2.0 * math.pi * i / L) for i in range(L))
+    cy = sum(genome[i] * math.sin(2.0 * math.pi * i / L) for i in range(L))
+    mag = math.hypot(cx, cy)
+    hue = (math.degrees(math.atan2(cy, cx))) % 360.0 if mag > 1e-9 else 0.0
+    lum = 0.35 + (sum(genome) / L) * 0.20  # 0.35–0.55
+    return _hsl_to_hex(hue, 0.75, lum)
 
 
 # --------------------------------------------------------------------------- #
@@ -342,6 +351,28 @@ def _bfs_distances_state(state: SimState, source: str) -> dict[str, int]:
                 dist[nb] = dist[current] + 1
                 queue.append(nb)
     for nid in state.nodes:
+        if nid not in dist:
+            dist[nid] = -1
+    return dist
+
+
+def _bfs_distances_visible(
+    state: SimState,
+    source: str,
+    visible_ids: set[str],
+) -> dict[str, int]:
+    """BFS from *source* restricted to *visible_ids*."""
+    dist: dict[str, int] = {source: 0}
+    queue = [source]
+    head = 0
+    while head < len(queue):
+        current = queue[head]
+        head += 1
+        for nb in state.neighbors_of(current):
+            if nb not in dist and nb in visible_ids:
+                dist[nb] = dist[current] + 1
+                queue.append(nb)
+    for nid in visible_ids:
         if nid not in dist:
             dist[nid] = -1
     return dist
@@ -403,29 +434,69 @@ def _effective_behavior(faction: Faction) -> BehaviorProfile:
     )
 
 
-def _symbolic_snapshot(state: SimState, faction: Faction) -> dict[str, float]:
+def _symbolic_snapshot(
+    state: SimState,
+    faction: Faction,
+    perception: Optional[Perception] = None,
+) -> dict[str, float]:
     """Compute high-level signals used by symbolic deliberation."""
     owned = state.nodes_owned_by(faction.faction_id)
-    total_nodes = max(1, len(state.nodes))
+
+    if perception is not None:
+        visible_ids = set(perception.perceived_spaces.keys())
+    else:
+        visible_ids = set(state.nodes.keys())
+
+    total_nodes = max(1, len(visible_ids))
     node_share = len(owned) / total_nodes
 
     total_pressure = sum(state.nodes[nid].pressure_accumulated for nid in owned)
     mean_pressure = total_pressure / max(1, len(owned))
 
     relation_values: list[float] = []
-    for other in state.factions:
-        if other == faction.faction_id:
-            continue
-        rel = state.relation_between(faction.faction_id, other)
+    if perception is not None:
+        visible_faction_ids = {
+            state.nodes[nid].owner_id
+            for nid in visible_ids
+            if state.nodes[nid].owner_id not in (None, faction.faction_id)
+        }
+    else:
+        visible_faction_ids = set(state.factions.keys()) - {faction.faction_id}
+    for other_fid in visible_faction_ids:
+        rel = state.relation_between(faction.faction_id, other_fid)
         if rel is not None:
             relation_values.append(rel)
     mean_relation = sum(relation_values) / len(relation_values) if relation_values else 0.5
 
     disconnected_owned = 0
-    bfs = _bfs_distances_state(state, faction.capital_id)
-    for nid in owned:
-        if bfs.get(nid, -1) < 0:
-            disconnected_owned += 1
+    if perception is not None:
+        perceived_adj: dict[str, list[str]] = {nid: [] for nid in visible_ids}
+        for perceived_rel in perception.perceived_relations:
+            inner = perceived_rel.relation
+            if inner.relation_type == "adjacent_to":
+                a, b = inner.source_space_id, inner.target_space_id
+                if a in perceived_adj:
+                    perceived_adj[a].append(b)
+                if b in perceived_adj:
+                    perceived_adj[b].append(a)
+        seen: set[str] = {faction.capital_id}
+        bfs_queue: list[str] = [faction.capital_id]
+        bfs_head = 0
+        while bfs_head < len(bfs_queue):
+            cur = bfs_queue[bfs_head]
+            bfs_head += 1
+            for nb in perceived_adj.get(cur, []):
+                if nb not in seen:
+                    seen.add(nb)
+                    bfs_queue.append(nb)
+        for nid in owned:
+            if nid not in seen:
+                disconnected_owned += 1
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
+        for nid in owned:
+            if bfs.get(nid, -1) < 0:
+                disconnected_owned += 1
     disconnected_ratio = disconnected_owned / max(1, len(owned))
 
     return {
@@ -631,9 +702,13 @@ def _build_goal_and_strategy(
     )
 
 
-def _run_symbolic_deliberation(state: SimState, faction: Faction) -> None:
+def _run_symbolic_deliberation(
+    state: SimState,
+    faction: Faction,
+    perception: Optional[Perception] = None,
+) -> None:
     """Compute and attach a fresh symbolic intent for the current tick."""
-    snapshot = _symbolic_snapshot(state, faction)
+    snapshot = _symbolic_snapshot(state, faction, perception)
     faction.symbolic_intent = _build_goal_and_strategy(state, faction, snapshot)
 
 
@@ -692,7 +767,11 @@ def _plan_moves(
         if node.pressure_accumulated > 0:
             defense_targets[nid] = node.pressure_accumulated * (1.0 + node.spice_flow)
 
-    bfs = _bfs_distances_state(state, faction.capital_id)
+    if perception is not None:
+        _visible = set(perception.perceived_spaces.keys())
+        bfs = _bfs_distances_visible(state, faction.capital_id, _visible)
+    else:
+        bfs = _bfs_distances_state(state, faction.capital_id)
     offense_scores: dict[str, float] = {}
     for nid in offense_targets:
         d = max(1, bfs.get(nid, 1))
@@ -1136,7 +1215,7 @@ def _secede(state: SimState, node_id: str, parent_faction: Faction) -> str:
         capital_id=node_id,
         genome=new_genome,
         behavior=inherited_behavior,
-        color=_next_color(),
+        color=_genome_to_color(new_genome),
     )
     state.factions[new_fid] = new_faction
     node.owner_id = new_fid
@@ -1294,10 +1373,10 @@ def step(state: SimState) -> None:
     _apply_globalization(state)
 
     for faction in state.active_factions():
-        _run_symbolic_deliberation(state, faction)
         perception = None
         if state.config.perception_mode == "limited":
             perception = get_faction_perception(state, faction.faction_id)
+        _run_symbolic_deliberation(state, faction, perception)
         _plan_moves(state, faction, perception)
         _plan_centralization(state, faction)
 
@@ -1328,13 +1407,11 @@ def create_sim(config: SimConfig) -> SimState:
     7. Seed node spice stocks to config.initial_node_spice
     """
     config.validate()
-    _reset_color_index()
-
     rng = random.Random(config.seed)
     raw = build_graph(config)
 
     # ---- Ometeotl world layer ----
-    world = World(id="lab8-relations-sim-world")
+    world = World(id="lab10-complex-behavior-sim-world")
     relation_graph = SpaceRelationGraph()
 
     for raw_node in raw.nodes:
@@ -1370,7 +1447,7 @@ def create_sim(config: SimConfig) -> SimState:
             capital_id=cap_id,
             genome=genome,
             behavior=_random_behavior(config, rng),
-            color=_next_color(),
+            color=_genome_to_color(genome),
         )
         factions[fid] = faction
 

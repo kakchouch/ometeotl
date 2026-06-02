@@ -39,7 +39,9 @@ const symbolicMeta = document.getElementById("symbolic-meta");
 const symbolicList = document.getElementById("symbolic-list");
 const speedSlider  = document.getElementById("speed-slider");
 const speedLabel   = document.getElementById("speed-label");
+const btnStepBack  = document.getElementById("btn-step-back");
 const btnStep      = document.getElementById("btn-step");
+const btnReverseRun = document.getElementById("btn-reverse-run");
 const btnAutorun   = document.getElementById("btn-autorun");
 const btnReset     = document.getElementById("btn-reset");
 const configForm   = document.getElementById("config-form");
@@ -49,6 +51,7 @@ const configForm   = document.getElementById("config-form");
 // ─────────────────────────────────────────────────────────── //
 
 let autorunTimer   = null;
+let reverseTimer   = null;
 let lastState      = null;
 let factionColors  = {};  // faction_id → hex colour (cached for edge colouring)
 
@@ -433,6 +436,10 @@ function render(state) {
   lastState = state;
   tickCounter.textContent = `Tick: ${state.tick}`;
 
+  const canStepBack = (state.history_size ?? 0) > 0;
+  btnStepBack.disabled = !canStepBack;
+  btnReverseRun.disabled = !canStepBack;
+
   if (state.game_over) {
     statusText.textContent = state.winner_id
       ? `🏆 ${state.winner_id} wins!`
@@ -442,7 +449,6 @@ function render(state) {
     btnStep.disabled = true;
     btnAutorun.disabled = true;
   } else {
-    const factionCount = Object.keys(state.factions).length;
     const activeCount = Object.values(state.factions)
       .filter(f => !f.is_eliminated && (f.node_count ?? 0) > 0).length;
     statusText.textContent = `${activeCount} faction${activeCount !== 1 ? "s" : ""} active · ${relationSummary(state)}`;
@@ -472,6 +478,11 @@ async function postStep() {
   return res.json();
 }
 
+async function postStepBack() {
+  const res = await fetch(`${API}/api/step_back`, { method: "POST" });
+  return res.json();
+}
+
 async function postReset(config = {}) {
   const res = await fetch(`${API}/api/reset`, {
     method: "POST",
@@ -489,8 +500,42 @@ function getIntervalMs() {
   return parseInt(speedSlider.value, 10);
 }
 
+function startReverseRun() {
+  if (reverseTimer !== null) return;
+  stopAutorun();
+  btnReverseRun.textContent = "⏸ Pause";
+  btnReverseRun.classList.add("running");
+
+  async function tick() {
+    if (reverseTimer === null) return;
+    const state = await postStepBack();
+    render(state);
+    if ((state.history_size ?? 0) > 0) {
+      reverseTimer = setTimeout(tick, getIntervalMs());
+    } else {
+      stopReverseRun();
+    }
+  }
+  reverseTimer = setTimeout(tick, 0);
+}
+
+function stopReverseRun() {
+  if (reverseTimer !== null) {
+    clearTimeout(reverseTimer);
+    reverseTimer = null;
+  }
+  btnReverseRun.textContent = "◀ Reverse";
+  btnReverseRun.classList.remove("running");
+}
+
+function toggleReverseRun() {
+  if (reverseTimer !== null) stopReverseRun();
+  else startReverseRun();
+}
+
 function startAutorun() {
   if (autorunTimer !== null) return;
+  stopReverseRun();
   btnAutorun.textContent = "⏸ Pause";
   btnAutorun.classList.add("running");
 
@@ -558,10 +603,22 @@ function populateConfigForm(config) {
 // Event wiring                                               //
 // ─────────────────────────────────────────────────────────── //
 
+btnStepBack.addEventListener("click", async () => {
+  stopAutorun();
+  stopReverseRun();
+  const state = await postStepBack();
+  render(state);
+});
+
 btnStep.addEventListener("click", async () => {
   stopAutorun();
+  stopReverseRun();
   const state = await postStep();
   render(state);
+});
+
+btnReverseRun.addEventListener("click", () => {
+  toggleReverseRun();
 });
 
 btnAutorun.addEventListener("click", () => {
