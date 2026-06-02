@@ -15,6 +15,7 @@ Ometeotl is used for the ontological / relational graph layer:
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass, field
 from typing import Optional
@@ -292,36 +293,44 @@ class SimState:
 
 
 # --------------------------------------------------------------------------- #
-# Colour palette for factions                                                  #
+# Colour derived from genome                                                   #
 # --------------------------------------------------------------------------- #
 
-_FACTION_COLORS = [
-    "#e63946",  # red
-    "#457b9d",  # blue
-    "#2a9d8f",  # teal
-    "#f4a261",  # orange
-    "#8338ec",  # violet
-    "#ffbe0b",  # amber
-    "#06d6a0",  # green
-    "#fb5607",  # burnt orange
-    "#3a86ff",  # sky blue
-    "#ff006e",  # pink
-    "#8ecae6",  # light blue
-    "#95d5b2",  # light green
-]
-_color_index = 0
+def _hsl_to_hex(h: float, s: float, l: float) -> str:
+    """Convert HSL (h in degrees 0–360, s/l in [0,1]) to #rrggbb hex."""
+    c = (1.0 - abs(2.0 * l - 1.0)) * s
+    x = c * (1.0 - abs((h / 60.0) % 2.0 - 1.0))
+    m = l - c / 2.0
+    sector = int(h / 60.0) % 6
+    r1, g1, b1 = [
+        (c, x, 0.0), (x, c, 0.0), (0.0, c, x),
+        (0.0, x, c), (x, 0.0, c), (c, 0.0, x),
+    ][sector]
+    r = max(0, min(255, round((r1 + m) * 255)))
+    g = max(0, min(255, round((g1 + m) * 255)))
+    b = max(0, min(255, round((b1 + m) * 255)))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
-def _next_color() -> str:
-    global _color_index
-    color = _FACTION_COLORS[_color_index % len(_FACTION_COLORS)]
-    _color_index += 1
-    return color
+def _genome_to_color(genome: list[int]) -> str:
+    """Derive a faction color from the genome via circular projection.
 
-
-def _reset_color_index() -> None:
-    global _color_index
-    _color_index = 0
+    Each bit i projects a unit vector at angle 2π·i/L onto the unit circle.
+    Hue = direction of the resultant vector (all bits contribute equally; no
+    fixed bit-to-channel mapping; invariant to genome length).
+    A single bit flip shifts the resultant by at most arcsin(1/M) where M is
+    the current magnitude — typically ≤ 20–30° for random genomes.
+    Lightness = overall bit mean (0.35–0.55); saturation fixed at 0.75.
+    """
+    L = len(genome)
+    if L == 0:
+        return "#888888"
+    cx = sum(genome[i] * math.cos(2.0 * math.pi * i / L) for i in range(L))
+    cy = sum(genome[i] * math.sin(2.0 * math.pi * i / L) for i in range(L))
+    mag = math.hypot(cx, cy)
+    hue = (math.degrees(math.atan2(cy, cx))) % 360.0 if mag > 1e-9 else 0.0
+    lum = 0.35 + (sum(genome) / L) * 0.20  # 0.35–0.55
+    return _hsl_to_hex(hue, 0.75, lum)
 
 
 # --------------------------------------------------------------------------- #
@@ -1206,7 +1215,7 @@ def _secede(state: SimState, node_id: str, parent_faction: Faction) -> str:
         capital_id=node_id,
         genome=new_genome,
         behavior=inherited_behavior,
-        color=_next_color(),
+        color=_genome_to_color(new_genome),
     )
     state.factions[new_fid] = new_faction
     node.owner_id = new_fid
@@ -1398,8 +1407,6 @@ def create_sim(config: SimConfig) -> SimState:
     7. Seed node spice stocks to config.initial_node_spice
     """
     config.validate()
-    _reset_color_index()
-
     rng = random.Random(config.seed)
     raw = build_graph(config)
 
@@ -1440,7 +1447,7 @@ def create_sim(config: SimConfig) -> SimState:
             capital_id=cap_id,
             genome=genome,
             behavior=_random_behavior(config, rng),
-            color=_next_color(),
+            color=_genome_to_color(genome),
         )
         factions[fid] = faction
 
