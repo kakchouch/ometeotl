@@ -107,7 +107,7 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 5. Minimal game-theory interface.
 6. Two examples: a simple world and a hierarchical multi-actor case.
 
-## Current repository state (April 2026)
+## Current repository state (June 2026)
 
 The repository now contains a broader functional V1-incremental core spanning model, perception, projection, strategy, and authority/runtime boundaries.
 
@@ -143,6 +143,7 @@ The repository now contains a broader functional V1-incremental core spanning mo
 6. Projection and strategy layers:
 	- `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`.
 	- `DefaultProjectionTool`, `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
+	- `build_linear_strategy(...)` and `build_branching_strategy(...)` builders driven by projected successor perceptions; projected states carried by `StrategyOutcomeBranch`, enabling one action to emit distinct outcomes per branch.
 7. Teleology and utility layers:
 	- `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
 	- `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`, `GoalAdmissibilityChecker`.
@@ -169,17 +170,16 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- Four runnable demo scenarios in `generation/examples.py`.
 12. Quality gate:
 	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
-	- Current baseline: `396` collected tests.
+	- Current baseline: `418` collected tests.
 
 ### Still incomplete or planned
 
 - `src/ometeotl_core/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
-- `src/ometeotl_core/examples/` for reference worlds and end-to-end demos.
 - Generation integration testing: a full roundtrip test of the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
+- `examples/` further extended with additional end-to-end demo worlds (labs 2–10 and the strategy game demo are present; more are planned).
 
 ### Current TODO priorities
 
 1. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
 2. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
-3. Extend the strategy layer to support one-action-to-many-outcomes branching with branch-specific projected successor perceptions.
-4. Add examples and end-to-end demonstrations.
+3. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.
