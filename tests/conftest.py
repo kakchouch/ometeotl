@@ -52,7 +52,9 @@ def _record_json_artifact(*, layer: str, label: str, payload: Any) -> None:
     _safe_write_json(layer=layer, name=name, payload=payload)
 
 
-def _record_text_artifact(*, layer: str, label: str, content: str, extension: str) -> None:
+def _record_text_artifact(
+    *, layer: str, label: str, content: str, extension: str
+) -> None:
     if not _CURRENT_TEST_NODEID:
         return
     _LAYER_COUNTERS[layer] += 1
@@ -145,7 +147,9 @@ def _install_io_export_wrappers() -> None:
     io_module = importlib.import_module("ometeotl_core.io")
     _wrap_function(io_module, "world_to_json", "exports/io/world_to_json", "json")
     _wrap_function(io_module, "world_to_yaml", "exports/io/world_to_yaml", "yaml")
-    _wrap_function(io_module, "world_to_llm_view", "exports/io/world_to_llm_view", "dict")
+    _wrap_function(
+        io_module, "world_to_llm_view", "exports/io/world_to_llm_view", "dict"
+    )
 
 
 _install_model_export_wrappers()

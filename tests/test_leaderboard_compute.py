@@ -6,16 +6,12 @@ from importlib.util import (
 from pathlib import Path
 
 MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "leaderboard"
-    / "compute_leaderboard.py"
+    Path(__file__).resolve().parents[1] / "leaderboard" / "compute_leaderboard.py"
 )
 
 
 def load_leaderboard_module():
-    spec = spec_from_file_location(
-        "leaderboard_compute", MODULE_PATH
-    )
+    spec = spec_from_file_location("leaderboard_compute", MODULE_PATH)
     module = module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -29,9 +25,7 @@ class DummyUser:
 
 class DummyCommitMetadata:
     def __init__(self, date):
-        self.author = type(
-            "AuthorMetadata", (), {"date": date}
-        )()
+        self.author = type("AuthorMetadata", (), {"date": date})()
 
 
 class DummyCommit:
@@ -117,9 +111,7 @@ def test_load_founder_identity_from_object_config():
     )
 
     assert founder_identity.username == "kakchouch"
-    assert founder_identity.aliases == frozenset(
-        {"kakchouch", "founder-alt"}
-    )
+    assert founder_identity.aliases == frozenset({"kakchouch", "founder-alt"})
 
 
 def test_collect_events_merges_founder_aliases_and_excludes_shares(
@@ -130,12 +122,8 @@ def test_collect_events_merges_founder_aliases_and_excludes_shares(
         username="kakchouch",
         aliases=frozenset({"kakchouch", "founder-alt"}),
     )
-    monkeypatch.setattr(
-        leaderboard, "FOUNDER_IDENTITY", founder_identity
-    )
-    monkeypatch.setattr(
-        leaderboard, "FOUNDER", founder_identity.username
-    )
+    monkeypatch.setattr(leaderboard, "FOUNDER_IDENTITY", founder_identity)
+    monkeypatch.setattr(leaderboard, "FOUNDER", founder_identity.username)
     monkeypatch.setattr(
         leaderboard,
         "NOW",
@@ -157,9 +145,7 @@ def test_collect_events_merges_founder_aliases_and_excludes_shares(
                 reviews=[DummyReview("bob", merged_at)],
             ),
         ],
-        issues=[
-            DummyIssue(login="kakchouch", created_at=merged_at)
-        ],
+        issues=[DummyIssue(login="kakchouch", created_at=merged_at)],
     )
 
     events = leaderboard.collect_events(repo)

@@ -16,9 +16,7 @@ def test_admissibility_validator_accepts_admissible_goal():
     )
     actor = Actor(id="actor-1")
     actor.add_goal(goal.id)
-    perception = Perception(
-        id="p-1", actor_id="actor-1", source_id="world-1"
-    )
+    perception = Perception(id="p-1", actor_id="actor-1", source_id="world-1")
 
     result = AdmissibilityValidator().validate(
         {"goal": goal, "actor": actor, "perception": perception},
@@ -37,9 +35,7 @@ def test_admissibility_validator_rejects_actor_mismatch():
     )
     actor = Actor(id="actor-1")
     actor.add_goal(goal.id)
-    perception = Perception(
-        id="p-2", actor_id="actor-1", source_id="world-1"
-    )
+    perception = Perception(id="p-2", actor_id="actor-1", source_id="world-1")
 
     result = AdmissibilityValidator().validate(
         {"goal": goal, "actor": actor, "perception": perception},

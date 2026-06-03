@@ -1,0 +1,1 @@
+# LLM-Runtime centered abstraction used for wiring an LLM Runtime adapter

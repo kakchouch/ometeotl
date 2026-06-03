@@ -6,14 +6,10 @@ Source:
 - [src/ometeotl_core/model/strategies.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/strategies.py)
 
 Local role:
-One branch edge leaving a [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) toward an optional child node.
+One outcome branch leaving a [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) toward an optional child node. Carries the projected successor perceived state produced by the parent node's action.
 
 Big-picture role:
-Strategy tree edge model used to encode labels, probabilities, conditions, and child-node references.
-
-Current note:
-- The current implementation keeps projected successor state on the node, not on the branch.
-- A future TODO prefers branch-specific projected outcomes here if one action later supports several distinct projected outcomes.
+Strategy tree edge that encodes the projected outcome of one action execution: its successor perceived state, probability, condition labels, and child-node reference. One action can now produce several distinct outcomes across sibling branches.
 
 Inheritance:
 - dataclass
@@ -22,6 +18,7 @@ Parameters and fields:
 - branch_id: str
 - label: str
 - child_node_id: Optional[str]
+- projected_state: Optional[[ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)]
 - probability: Optional[float]
 - condition: dict
 - metadata: dict
@@ -30,6 +27,12 @@ Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> StrategyOutcomeBranch`
 
+Important behavior:
+- if `projected_state` is present, `validate_tree()` on [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) enforces that its `generating_action_id` matches the parent node's `action_id`
+- terminal branches (no `child_node_id`) may still carry a `projected_state` to expose the final successor perception to utility evaluation
+- `probability` must be in `[0, 1]` when set
+
 See also:
 - [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/)
+- [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)

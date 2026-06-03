@@ -20,9 +20,7 @@ from ometeotl_core.validation import (
     ValidationResult,
 )
 
-SUPPORTED_WORLD_INPUT_FORMATS: frozenset[str] = frozenset(
-    {"json", "yaml", "auto"}
-)
+SUPPORTED_WORLD_INPUT_FORMATS: frozenset[str] = frozenset({"json", "yaml", "auto"})
 
 
 @dataclass(frozen=True)
@@ -147,9 +145,7 @@ def _world_from_serialized(
     raise_on_error: bool,
 ) -> WorldImportResult:
     raw_text = _coerce_text(payload)
-    parsed_payload, parsed_format = _parse_world_payload(
-        raw_text, format_hint
-    )
+    parsed_payload, parsed_format = _parse_world_payload(raw_text, format_hint)
     validation = _validate_world_payload(
         serialized_payload=raw_text,
         parsed_payload=parsed_payload,
@@ -192,9 +188,7 @@ def _validate_world_payload(
 
     for validator in validators:
         # Syntactic validation requires serialized text; skip it for native mappings.
-        if source_format == "native" and isinstance(
-            validator, SyntacticValidator
-        ):
+        if source_format == "native" and isinstance(validator, SyntacticValidator):
             continue
 
         stage_pipeline = ValidationPipeline([validator])
@@ -210,28 +204,18 @@ def _validate_world_payload(
         stage_result = stage_pipeline.validate(
             stage_target,
             mode=mode,
-            context=ValidationContext(
-                metadata={"format": source_format}
-            ),
+            context=ValidationContext(metadata={"format": source_format}),
             stage_modes=stage_modes,
             raise_on_error=False,
         )
         issues.extend(stage_result.issues)
         executed_validators.append(validator.name)
-        effective_mode = (
-            stage_modes.get(validator.name, mode)
-            if stage_modes
-            else mode
-        )
+        effective_mode = stage_modes.get(validator.name, mode) if stage_modes else mode
         effective_stage_modes[validator.name] = effective_mode
 
     return ValidationResult(
         issues=issues,
-        stage=(
-            executed_validators[-1]
-            if executed_validators
-            else ""
-        ),
+        stage=(executed_validators[-1] if executed_validators else ""),
         policy_mode=mode,
         metadata={
             "executed_validators": executed_validators,
@@ -248,12 +232,8 @@ def _coerce_text(payload: str | bytes) -> str:
         try:
             return payload.decode("utf-8")
         except UnicodeDecodeError as exc:
-            raise ValueError(
-                "Serialized world payload must be UTF-8 text"
-            ) from exc
-    raise ValueError(
-        "Serialized world payload must be str or bytes"
-    )
+            raise ValueError("Serialized world payload must be UTF-8 text") from exc
+    raise ValueError("Serialized world payload must be str or bytes")
 
 
 def _parse_world_payload(
@@ -262,9 +242,7 @@ def _parse_world_payload(
 ) -> tuple[dict[str, Any], str]:
     normalized_format = str(format_hint).lower()
     if normalized_format not in SUPPORTED_WORLD_INPUT_FORMATS:
-        raise ValueError(
-            f"Unsupported world input format: {format_hint}"
-        )
+        raise ValueError(f"Unsupported world input format: {format_hint}")
 
     if normalized_format == "json":
         parsed = _parse_json(payload)
@@ -277,9 +255,7 @@ def _parse_world_payload(
     json_error: ValueError | None = None
     try:
         return (
-            _require_mapping_payload(
-                _parse_json(payload), "json"
-            ),
+            _require_mapping_payload(_parse_json(payload), "json"),
             "json",
         )
     except ValueError as exc:
@@ -287,9 +263,7 @@ def _parse_world_payload(
 
     try:
         return (
-            _require_mapping_payload(
-                _parse_yaml(payload), "yaml"
-            ),
+            _require_mapping_payload(_parse_yaml(payload), "yaml"),
             "yaml",
         )
     except ValueError as exc:
@@ -313,9 +287,7 @@ def _parse_yaml(payload: str) -> Any:
         raise ValueError(str(exc)) from exc
 
 
-def _require_mapping_payload(
-    payload: Any, payload_format: str
-) -> dict[str, Any]:
+def _require_mapping_payload(payload: Any, payload_format: str) -> dict[str, Any]:
     if not isinstance(payload, Mapping):
         raise ValueError(
             f"World {payload_format} payload must decode to a mapping, got "

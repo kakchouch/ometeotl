@@ -22,9 +22,7 @@ def test_syntactic_validator_accepts_valid_yaml_payload():
     validator = SyntacticValidator()
     context = ValidationContext(metadata={"format": "yaml"})
 
-    result = validator.validate(
-        "id: obj-1\nobject_type: generic\n", context
-    )
+    result = validator.validate("id: obj-1\nobject_type: generic\n", context)
 
     assert result.valid is True
     assert result.metadata["parsed_format"] == "yaml"

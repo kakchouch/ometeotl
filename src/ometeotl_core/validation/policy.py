@@ -75,9 +75,7 @@ def build_stage_modes(
             }
         )
 
-    for stage_name, mode in dict(
-        stage_mode_overrides or {}
-    ).items():
+    for stage_name, mode in dict(stage_mode_overrides or {}).items():
         normalized_mode = str(mode or MODE_WARN_ONLY)
         if normalized_mode not in VALID_PIPELINE_MODES:
             raise ValueError(

@@ -40,11 +40,11 @@ def test_strategy_instantiation():
                 node_id="node-root",
                 action_id="action-1",
                 source_perception_id="perception-root",
-                projected_state=root_projection.projected_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="success",
                         label="success",
+                        projected_state=root_projection.projected_state,
                     )
                 ],
             )
@@ -60,7 +60,7 @@ def test_strategy_instantiation():
     assert len(strategy.nodes) == 1
     assert strategy.nodes[0].source_perception_id == "perception-root"
     assert (
-        strategy.nodes[0].successor_perception_id
+        strategy.nodes[0].outcome_branches[0].projected_state.perception.id
         == "projection-perception-root-action-1"
     )
 
@@ -96,12 +96,10 @@ def test_strategy_serialization_is_deterministic():
                     StrategyOutcomeBranch(
                         branch_id="z",
                         label="late",
-                        child_node_id="node-a",
                     ),
                     StrategyOutcomeBranch(
                         branch_id="a",
                         label="early",
-                        child_node_id="node-a",
                     ),
                 ],
             ),
@@ -109,7 +107,13 @@ def test_strategy_serialization_is_deterministic():
                 node_id="node-a",
                 action_id="action-1",
                 source_perception_id="perception-chain-root",
-                projected_state=root_projected_state,
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="success",
+                        child_node_id="node-b",
+                        projected_state=root_projected_state,
+                    )
+                ],
             ),
         ],
     )
@@ -124,7 +128,7 @@ def test_strategy_serialization_is_deterministic():
     assert payload["goal_id"] is None
     assert payload["nodes"][0]["source_perception_id"] == "perception-chain-root"
     assert (
-        payload["nodes"][0]["projected_state"]["perception"]["id"]
+        payload["nodes"][0]["outcome_branches"][0]["projected_state"]["perception"]["id"]
         == "projection-perception-chain-root-action-1"
     )
     assert [
@@ -173,7 +177,6 @@ def test_strategy_from_dict_defaults_goal_id_to_none_when_missing():
                 "node_id": "node-root",
                 "action_id": "action-1",
                 "source_perception_id": None,
-                "projected_state": None,
                 "outcome_branches": [],
                 "metadata": {},
             }
@@ -210,7 +213,7 @@ def test_strategy_validate_tree_rejects_unknown_child_node():
 
 
 def test_strategy_validate_tree_rejects_child_not_chained_to_parent_projection():
-    """Child nodes must start from the parent projected successor perception."""
+    """Child nodes must start from the branch projected successor perception."""
     root_projection = DefaultProjectionTool().project_action(
         Action(
             id="action-root",
@@ -236,11 +239,11 @@ def test_strategy_validate_tree_rejects_child_not_chained_to_parent_projection()
                 node_id="node-root",
                 action_id="action-root",
                 source_perception_id="perception-strategy-root",
-                projected_state=root_projected_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="success",
                         child_node_id="node-child",
+                        projected_state=root_projected_state,
                     )
                 ],
             ),
@@ -254,13 +257,13 @@ def test_strategy_validate_tree_rejects_child_not_chained_to_parent_projection()
 
     with pytest.raises(
         ValueError,
-        match="consume the parent projected perception",
+        match="consume the branch projected perception",
     ):
         strategy.validate_tree()
 
 
 def test_strategy_validate_tree_accepts_child_chained_to_parent_projection():
-    """Child nodes can explicitly consume the parent successor projected perception."""
+    """Child nodes can explicitly consume the branch successor projected perception."""
     root_projection = DefaultProjectionTool().project_action(
         Action(
             id="action-root-ok",
@@ -286,11 +289,11 @@ def test_strategy_validate_tree_accepts_child_chained_to_parent_projection():
                 node_id="node-root",
                 action_id="action-root-ok",
                 source_perception_id="perception-strategy-ok-root",
-                projected_state=root_projected_state,
                 outcome_branches=[
                     StrategyOutcomeBranch(
                         branch_id="success",
                         child_node_id="node-child",
+                        projected_state=root_projected_state,
                     )
                 ],
             ),
@@ -343,16 +346,20 @@ def test_build_linear_strategy_chains_nodes_from_ordered_actions_sequence():
         "node-0002-action-build-2",
     ]
     assert strategy.nodes[0].source_perception_id == "perception-build-root"
+    success_branch = strategy.nodes[0].outcome_branches[0]
+    assert success_branch.child_node_id == "node-0002-action-build-2"
+    assert success_branch.projected_state is not None
     assert (
         strategy.nodes[1].source_perception_id
-        == strategy.nodes[0].successor_perception_id
+        == success_branch.projected_state.perception.id
     )
-    assert (
-        strategy.nodes[0].outcome_branches[0].child_node_id
-        == "node-0002-action-build-2"
-    )
-    assert strategy.nodes[1].projected_state is not None
-    assert strategy.nodes[1].projected_state.perception.context["step"] == 2
+    assert success_branch.projected_state.perception.context["step"] == 1
+    # terminal node has one terminal branch (no child, carries the projected outcome)
+    assert len(strategy.nodes[1].outcome_branches) == 1
+    terminal_branch = strategy.nodes[1].outcome_branches[0]
+    assert terminal_branch.child_node_id is None
+    assert terminal_branch.projected_state is not None
+    assert terminal_branch.projected_state.perception.context["step"] == 2
 
 
 def test_build_linear_strategy_rejects_empty_action_sequence():
@@ -455,12 +462,24 @@ def test_build_branching_strategy_creates_tree_from_recursive_steps():
         "left",
         "right",
     ]
-    assert left_node.source_perception_id == root_node.successor_perception_id
-    assert right_node.source_perception_id == root_node.successor_perception_id
-    assert left_node.projected_state is not None
-    assert right_node.projected_state is not None
-    assert left_node.projected_state.perception.context["phase"] == "left"
-    assert right_node.projected_state.perception.context["phase"] == "right"
+    left_branch = root_node.outcome_branches[0]
+    right_branch = root_node.outcome_branches[1]
+
+    # branches carry the root action's projected state (deterministic projection)
+    assert left_branch.projected_state is not None
+    assert right_branch.projected_state is not None
+
+    # child nodes consume the branch projected perception
+    assert left_node.source_perception_id == left_branch.projected_state.perception.id
+    assert right_node.source_perception_id == right_branch.projected_state.perception.id
+
+    # leaf nodes each have one terminal branch (no child, carries projected outcome)
+    assert len(left_node.outcome_branches) == 1
+    assert left_node.outcome_branches[0].child_node_id is None
+    assert left_node.outcome_branches[0].projected_state is not None
+    assert len(right_node.outcome_branches) == 1
+    assert right_node.outcome_branches[0].child_node_id is None
+    assert right_node.outcome_branches[0].projected_state is not None
 
 
 def test_build_branching_strategy_rejects_blocked_child_step():
@@ -566,3 +585,236 @@ def test_strategy_from_context_forwards_validate_flag(monkeypatch):
 
     assert isinstance(strategy, Strategy)
     assert strategy.id == "strategy-ctx-forward-1"
+
+
+# ---------------------------------------------------------------------------
+# New tests for branch-level projected states (one-action-to-many-outcomes)
+# ---------------------------------------------------------------------------
+
+
+def test_strategy_outcome_branch_carries_projected_state():
+    """StrategyOutcomeBranch stores and round-trips its projected_state."""
+    projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-branch-ps",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-branch-ps-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    projected_state = projection.projected_state
+    assert projected_state is not None
+
+    branch = StrategyOutcomeBranch(
+        branch_id="outcome-a",
+        label="outcome-a",
+        projected_state=projected_state,
+    )
+
+    payload = branch.to_dict()
+    assert payload["projected_state"] is not None
+    assert (
+        payload["projected_state"]["perception"]["id"]
+        == "projection-perception-branch-ps-root-action-branch-ps"
+    )
+
+    restored = StrategyOutcomeBranch.from_dict(payload)
+    assert restored.projected_state is not None
+    assert (
+        restored.projected_state.perception.id
+        == projected_state.perception.id
+    )
+
+
+def test_strategy_outcome_branch_without_projected_state_serializes_null():
+    """A branch without projected_state serializes projected_state as null."""
+    branch = StrategyOutcomeBranch(branch_id="bare-branch", label="success")
+    payload = branch.to_dict()
+    assert payload["projected_state"] is None
+    restored = StrategyOutcomeBranch.from_dict(payload)
+    assert restored.projected_state is None
+
+
+def test_strategy_validate_tree_rejects_branch_projected_state_wrong_action():
+    """validate_tree rejects a branch whose projected_state was not generated by the parent action."""
+    projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-other",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-mismatch-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    projected_state = projection.projected_state
+    assert projected_state is not None
+
+    strategy = Strategy(
+        id="strategy-mismatch",
+        actor_id="actor-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-root",  # different from projected_state.generating_action_id
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="bad-branch",
+                        projected_state=projected_state,  # generated by "action-other"
+                    )
+                ],
+            )
+        ],
+    )
+
+    with pytest.raises(ValueError, match="generated by the parent node action"):
+        strategy.validate_tree()
+
+
+def test_strategy_validate_tree_accepts_terminal_branch_with_projected_state():
+    """A branch with projected_state but no child_node_id (terminal) is valid."""
+    projection = DefaultProjectionTool().project_action(
+        Action(
+            id="action-terminal",
+            actor_id="actor-1",
+            world_id="world-1",
+            space_id="space-1",
+            action_type="move",
+        ),
+        Perception(
+            id="perception-terminal-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+    )
+    projected_state = projection.projected_state
+    assert projected_state is not None
+
+    strategy = Strategy(
+        id="strategy-terminal-branch",
+        actor_id="actor-1",
+        root_node_id="node-root",
+        nodes=[
+            StrategyNode(
+                node_id="node-root",
+                action_id="action-terminal",
+                source_perception_id="perception-terminal-root",
+                outcome_branches=[
+                    StrategyOutcomeBranch(
+                        branch_id="done",
+                        label="success",
+                        child_node_id=None,
+                        projected_state=projected_state,
+                    )
+                ],
+            )
+        ],
+    )
+
+    strategy.validate_tree()  # must not raise
+
+
+def test_build_branching_strategy_branches_carry_root_projected_state():
+    """Each branch from the root node carries the root action's projected state."""
+    strategy = build_branching_strategy(
+        "strategy-branch-ps",
+        Perception(
+            id="perception-branch-ps-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        StrategyBuildStep(
+            action=Action(
+                id="action-root-ps",
+                actor_id="actor-1",
+                world_id="world-1",
+                space_id="space-1",
+                action_type="plan",
+            ),
+            children=[
+                StrategyBuildStep(
+                    action=Action(
+                        id="action-child-a",
+                        actor_id="actor-1",
+                        world_id="world-1",
+                        space_id="space-1",
+                        action_type="explore",
+                    ),
+                    branch_label="option-a",
+                ),
+                StrategyBuildStep(
+                    action=Action(
+                        id="action-child-b",
+                        actor_id="actor-1",
+                        world_id="world-1",
+                        space_id="space-1",
+                        action_type="secure",
+                    ),
+                    branch_label="option-b",
+                ),
+            ],
+        ),
+    )
+
+    root_node = strategy.get_node("node-0001-action-root-ps")
+    assert root_node is not None
+    assert len(root_node.outcome_branches) == 2
+    for branch in root_node.outcome_branches:
+        assert branch.projected_state is not None
+        assert branch.projected_state.generating_action_id == "action-root-ps"
+
+
+def test_build_linear_strategy_success_branch_carries_projected_state():
+    """The success branch of each non-terminal node carries the projected state."""
+    strategy = build_linear_strategy(
+        "strategy-linear-ps",
+        Perception(
+            id="perception-linear-ps-root",
+            actor_id="actor-1",
+            source_id="world-1",
+        ),
+        [
+            Action(
+                id="action-step-1",
+                actor_id="actor-1",
+                world_id="world-1",
+                space_id="space-1",
+                action_type="move",
+                state_changes={"context_updates": {"step": 1}},
+            ),
+            Action(
+                id="action-step-2",
+                actor_id="actor-1",
+                world_id="world-1",
+                space_id="space-1",
+                action_type="observe",
+                state_changes={"context_updates": {"step": 2}},
+            ),
+        ],
+    )
+
+    node1 = strategy.nodes[0]
+    node2 = strategy.nodes[1]
+
+    assert len(node1.outcome_branches) == 1
+    branch = node1.outcome_branches[0]
+    assert branch.projected_state is not None
+    assert branch.projected_state.generating_action_id == "action-step-1"
+    assert branch.projected_state.perception.id == node2.source_perception_id
+    # terminal node has one terminal branch (no child, carries projected outcome)
+    assert len(node2.outcome_branches) == 1
+    terminal_branch = node2.outcome_branches[0]
+    assert terminal_branch.child_node_id is None
+    assert terminal_branch.projected_state is not None
+    assert terminal_branch.projected_state.generating_action_id == "action-step-2"

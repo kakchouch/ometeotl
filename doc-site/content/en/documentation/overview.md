@@ -48,7 +48,7 @@ Candidate actions can then be projected from that perceived state into explicit 
 
 - [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/) derives projection assumptions and successor perceived states
 - [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/) stores the projected successor perception for one action
-- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action to one input perception and one projected successor perceived state
+- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action and its input perceived state to an ordered set of [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/) links; each branch carries its own projected successor perceived state
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) groups nodes into a linear or branching perception-driven tree
 
 Teleology and utility/ranking are now implemented as model and game extensions:
@@ -221,12 +221,15 @@ The strategy layer is implemented in [Strategy](/ometeotl/documentation/class-re
 The important rule is that a strategy node is anchored to:
 
 - one action id
-- one source perception id
-- one projected successor perceived state
+- one source perception id (the perceived state the action is applied from)
+- an ordered list of [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/) links, each carrying its own projected successor perceived state
 
-`validate_tree()` enforces that a child node must consume the parent node's projected successor perception when a branch links the two nodes.
+`validate_tree()` enforces two invariants per branch:
 
-This makes strategy hops explicitly perception-driven rather than action-list driven.
+1. if a branch's `projected_state` is present, its `generating_action_id` must match the parent node's `action_id`
+2. if a branch links to a child node and carries a `projected_state`, the child node's `source_perception_id` must equal the branch's projected perception id
+
+This makes strategy hops explicitly perception-driven and allows one action to produce several distinct outcomes across sibling branches.
 
 ### 8. Builder seam
 
@@ -235,10 +238,9 @@ Two minimal builders exist today in `src/ometeotl_core/model/strategies.py`:
 - `build_linear_strategy(...)` for ordered action sequences
 - `build_branching_strategy(...)` for recursive action trees built from [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)
 
-Both builders project each action from the currently active perceived state and pass the resulting successor perceived state to the next node or subtree.
+Both builders project each action from the currently active perceived state and attach the resulting successor perceived state to the outgoing branches of each node.
 
-The current implementation intentionally keeps one projected successor perceived state per node.
-Future support for one-action-to-many-outcomes branching is tracked as a TODO in the strategy layer, with the preferred direction being branch-specific projected outcomes on [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/).
+`build_branching_strategy(...)` allows one action to branch into several sibling child steps: all sibling branches from a node share the same parent action's projected state, while each child subtree is projected from that shared successor perception onward.
 
 ### 9. Teleology and game utility seam
 

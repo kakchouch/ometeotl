@@ -41,9 +41,7 @@ def test_utility_frame_vector_instantiation():
 
 def test_utility_frame_empty_framework_id_rejected():
     """UtilityFrame rejects empty framework_id."""
-    with pytest.raises(
-        ValueError, match="framework_id cannot be empty"
-    ):
+    with pytest.raises(ValueError, match="framework_id cannot be empty"):
         UtilityFrame(
             value=0.5,
             framework_id="",
@@ -52,9 +50,7 @@ def test_utility_frame_empty_framework_id_rejected():
 
 def test_utility_frame_vector_criteria_labels_length_mismatch():
     """UtilityFrame rejects mismatched criteria_labels and vector length."""
-    with pytest.raises(
-        ValueError, match="criteria_labels length must match"
-    ):
+    with pytest.raises(ValueError, match="criteria_labels length must match"):
         UtilityFrame(
             value=[0.8, 0.6],
             framework_id="test",
@@ -81,9 +77,7 @@ def test_utility_frame_scalar_value_property_on_vector_raises():
         value=[0.8, 0.6],
         framework_id="test",
     )
-    with pytest.raises(
-        ValueError, match="Cannot extract scalar_value"
-    ):
+    with pytest.raises(ValueError, match="Cannot extract scalar_value"):
         _ = frame.scalar_value
 
 
@@ -104,10 +98,7 @@ def test_utility_frame_serialization_scalar():
     recovered_frame = UtilityFrame.from_dict(frame_dict)
     assert recovered_frame.value == frame.value
     assert recovered_frame.framework_id == frame.framework_id
-    assert (
-        recovered_frame.is_multi_criteria
-        == frame.is_multi_criteria
-    )
+    assert recovered_frame.is_multi_criteria == frame.is_multi_criteria
 
 
 def test_utility_frame_serialization_vector():
@@ -126,9 +117,7 @@ def test_utility_frame_serialization_vector():
 
     recovered_frame = UtilityFrame.from_dict(frame_dict)
     assert recovered_frame.value == frame.value
-    assert (
-        recovered_frame.criteria_labels == frame.criteria_labels
-    )
+    assert recovered_frame.criteria_labels == frame.criteria_labels
     assert recovered_frame.is_multi_criteria is True
 
 
@@ -351,14 +340,9 @@ def test_utility_function_resolve_numeric_metrics_default_zero_policy():
     )
 
     assert frame.value == 5.5
-    assert (
-        frame.metadata["missing_metric_policy"]
-        == "default_neutral"
-    )
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
     assert frame.metadata["missing_metric_default"] == 0.0
-    assert (
-        frame.metadata["missing_metric_strict_invalid"] is False
-    )
+    assert frame.metadata["missing_metric_strict_invalid"] is False
     assert frame.metadata["missing_metrics"] == [
         "bad",
         "missing",
@@ -368,22 +352,10 @@ def test_utility_function_resolve_numeric_metrics_default_zero_policy():
     assert frame.metadata["fallback_ratio"] == 0.5
     assert frame.metadata["fallback_dominance_threshold"] == 0.5
     assert frame.metadata["fallback_dominates"] is False
-    assert (
-        frame.metadata["metric_sources"]["known"]
-        == "perception.context"
-    )
-    assert (
-        frame.metadata["metric_sources"]["override"]
-        == "context.metric_overrides"
-    )
-    assert (
-        frame.metadata["metric_sources"]["missing"]
-        == "default_missing"
-    )
-    assert (
-        frame.metadata["metric_sources"]["bad"]
-        == "default_invalid"
-    )
+    assert frame.metadata["metric_sources"]["known"] == "perception.context"
+    assert frame.metadata["metric_sources"]["override"] == "context.metric_overrides"
+    assert frame.metadata["metric_sources"]["missing"] == "default_missing"
+    assert frame.metadata["metric_sources"]["bad"] == "default_invalid"
 
 
 def test_utility_function_resolve_numeric_metrics_default_pessimistic_policy():
@@ -406,9 +378,7 @@ def test_utility_function_resolve_numeric_metrics_default_pessimistic_policy():
                 context=context,
             )
             return self.build_utility_frame(
-                value=values["known"]
-                + values["missing"]
-                + values["invalid"],
+                value=values["known"] + values["missing"] + values["invalid"],
                 metadata=trace,
             )
 
@@ -425,23 +395,14 @@ def test_utility_function_resolve_numeric_metrics_default_pessimistic_policy():
     )
 
     assert frame.value == 2.0  # 4.0 + (-1.0) + (-1.0)
-    assert (
-        frame.metadata["missing_metric_policy"]
-        == "default_pessimistic"
-    )
+    assert frame.metadata["missing_metric_policy"] == "default_pessimistic"
     assert frame.metadata["missing_metric_default"] == -1.0
     assert frame.metadata["missing_metrics"] == [
         "invalid",
         "missing",
     ]
-    assert (
-        frame.metadata["metric_sources"]["missing"]
-        == "default_missing"
-    )
-    assert (
-        frame.metadata["metric_sources"]["invalid"]
-        == "default_invalid"
-    )
+    assert frame.metadata["metric_sources"]["missing"] == "default_missing"
+    assert frame.metadata["metric_sources"]["invalid"] == "default_invalid"
 
 
 def test_utility_function_resolve_numeric_metrics_policy_is_easily_overridable():
@@ -482,10 +443,7 @@ def test_utility_function_resolve_numeric_metrics_policy_is_easily_overridable()
     )
 
     assert frame.value == -0.5
-    assert (
-        frame.metadata["missing_metric_policy"]
-        == "default_neutral"
-    )
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
     assert frame.metadata["missing_metric_default"] == -0.25
 
 
@@ -520,20 +478,13 @@ def test_utility_function_resolve_numeric_metrics_invalid_policy_falls_back_to_d
             source_id="world-1",
         ),
         actor=Actor(id="actor-1"),
-        context={
-            "missing_metric_policy": "aggressive_unknown_mode"
-        },
+        context={"missing_metric_policy": "aggressive_unknown_mode"},
     )
 
     assert frame.value == 0.0
-    assert (
-        frame.metadata["missing_metric_policy"]
-        == "default_neutral"
-    )
+    assert frame.metadata["missing_metric_policy"] == "default_neutral"
     assert frame.metadata["missing_metric_default"] == 0.0
-    assert frame.metadata["missing_metrics"] == [
-        "missing_metric"
-    ]
+    assert frame.metadata["missing_metrics"] == ["missing_metric"]
 
 
 def test_utility_function_resolve_numeric_metrics_pessimistic_policy_custom_default_override():
@@ -576,16 +527,10 @@ def test_utility_function_resolve_numeric_metrics_pessimistic_policy_custom_defa
     )
 
     assert frame.value == -1.5
-    assert (
-        frame.metadata["missing_metric_policy"]
-        == "default_pessimistic"
-    )
+    assert frame.metadata["missing_metric_policy"] == "default_pessimistic"
     assert frame.metadata["missing_metric_default"] == -3.5
     assert frame.metadata["missing_metrics"] == ["unknown"]
-    assert (
-        frame.metadata["metric_sources"]["unknown"]
-        == "default_missing"
-    )
+    assert frame.metadata["metric_sources"]["unknown"] == "default_missing"
 
 
 def test_utility_function_resolve_numeric_metrics_strict_invalid_raises():
@@ -607,9 +552,7 @@ def test_utility_function_resolve_numeric_metrics_strict_invalid_raises():
                 perception=perception,
                 context=context,
             )
-            return self.build_utility_frame(
-                value=values["known"], metadata=trace
-            )
+            return self.build_utility_frame(value=values["known"], metadata=trace)
 
     utility = StrictPolicyUtility()
     with pytest.raises(ValueError, match="non-numeric value"):
@@ -644,9 +587,7 @@ def test_utility_function_resolve_numeric_metrics_exposes_fallback_dominance_fla
                 perception=perception,
                 context=context,
             )
-            return self.build_utility_frame(
-                value=sum(values.values()), metadata=trace
-            )
+            return self.build_utility_frame(value=sum(values.values()), metadata=trace)
 
     utility = DominanceUtility()
     frame = utility.evaluate(

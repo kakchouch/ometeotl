@@ -54,9 +54,7 @@ def test_world_registry_duplicate_id_raises():
     """Registering a different object under an existing ID raises ValueError."""
     registry = WorldModelRegistry()
     registry.register(Actor(id="actor-dup"))
-    with pytest.raises(
-        ValueError, match="Duplicate model object id"
-    ):
+    with pytest.raises(ValueError, match="Duplicate model object id"):
         registry.register(Actor(id="actor-dup"))
 
 
@@ -94,9 +92,7 @@ def test_world_registry_mutation_guard_raises_on_unauthorized_mutation():
         raise PermissionError("mutation not allowed")
 
     registry.set_mutation_guard(strict_guard)
-    with pytest.raises(
-        PermissionError, match="mutation not allowed"
-    ):
+    with pytest.raises(PermissionError, match="mutation not allowed"):
         registry.register(Actor(id="blocked"))
 
 
@@ -110,9 +106,7 @@ def test_world_registry_mutation_guard_authorised_token_passes():
             raise PermissionError("bad token")
 
     registry.set_mutation_guard(lenient_guard)
-    registry.register(
-        Actor(id="guarded-actor"), authority_token=allowed_token
-    )
+    registry.register(Actor(id="guarded-actor"), authority_token=allowed_token)
     assert registry.exists("guarded-actor") is True
 
 
@@ -148,9 +142,7 @@ def test_minimal_registry_duplicate_id_raises():
     """Registering a different object under an existing ID raises with the correct message."""
     MinimalModelRegistry.clear()
     MinimalModelRegistry.register(Resource(id="res-dup"))
-    with pytest.raises(
-        ValueError, match="Duplicate model object id: res-dup"
-    ):
+    with pytest.raises(ValueError, match="Duplicate model object id: res-dup"):
         MinimalModelRegistry.register(Resource(id="res-dup"))
     MinimalModelRegistry.clear()
 
@@ -159,9 +151,7 @@ def test_minimal_registry_clear_isolates_tests():
     """clear() removes all global state from MinimalModelRegistry."""
     MinimalModelRegistry.register(Actor(id="isolation-actor"))
     MinimalModelRegistry.clear()
-    assert (
-        MinimalModelRegistry.exists("isolation-actor") is False
-    )
+    assert MinimalModelRegistry.exists("isolation-actor") is False
 
 
 def test_minimal_registry_does_not_share_state_with_world_registry():
@@ -171,9 +161,7 @@ def test_minimal_registry_does_not_share_state_with_world_registry():
     actor = Actor(id="isolation-check")
     world_registry.register(actor)
 
-    assert (
-        MinimalModelRegistry.exists("isolation-check") is False
-    )
+    assert MinimalModelRegistry.exists("isolation-check") is False
     MinimalModelRegistry.clear()
 
 
@@ -224,9 +212,7 @@ def test_reconstruct_model_object_custom_factory():
         sentinel["called"] = True
         return Actor.from_dict(raw)
 
-    reconstruct_model_object(
-        payload, object_factories={"actor": custom_factory}
-    )
+    reconstruct_model_object(payload, object_factories={"actor": custom_factory})
     assert sentinel["called"] is True
 
 
