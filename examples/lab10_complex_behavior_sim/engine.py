@@ -58,23 +58,26 @@ def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
-def _drift_behavior(
-    behavior: BehaviorProfile,
-    rng: random.Random,
-    magnitude: float,
-) -> BehaviorProfile:
-    """Return a drifted behavior profile (small bounded random walk in [0, 1])."""
-    mag = max(0.0, magnitude)
+def _genome_to_ecloz(genome: list[int]) -> BehaviorProfile:
+    """Derive the ECLOZ behavior profile deterministically from the genome bitfield.
+
+    Bits are assigned to the 5 axes by position mod 5, so axis k owns bits
+    k, k+5, k+10, …  Each axis value = mean of its bits ∈ [0, 1].
+
+    A single-bit mutation shifts at most one axis by 1/⌈N/5⌉, keeping ECLOZ
+    stable under small perturbations while remaining sensitive to accumulated
+    genetic change.  Works for any N ≥ 1.
+    """
+    axes: list[list[int]] = [[], [], [], [], []]
+    for i, bit in enumerate(genome):
+        axes[i % 5].append(bit)
+    vals = [sum(a) / len(a) if a else 0.5 for a in axes]
     return BehaviorProfile(
-        engagement_threshold=_clamp01(
-            behavior.engagement_threshold + rng.uniform(-mag, mag)
-        ),
-        concentration=_clamp01(behavior.concentration + rng.uniform(-mag, mag)),
-        liquidity_preference=_clamp01(
-            behavior.liquidity_preference + rng.uniform(-mag, mag)
-        ),
-        objective_bias=_clamp01(behavior.objective_bias + rng.uniform(-mag, mag)),
-        centralization=_clamp01(behavior.centralization + rng.uniform(-mag, mag)),
+        engagement_threshold=vals[0],
+        concentration=vals[1],
+        liquidity_preference=vals[2],
+        objective_bias=vals[3],
+        centralization=vals[4],
     )
 
 
@@ -377,31 +380,6 @@ def _bfs_distances_visible(
             dist[nid] = -1
     return dist
 
-
-def _random_behavior(config: SimConfig, rng: random.Random) -> BehaviorProfile:
-    """Sample a behavior profile from configured ranges."""
-    return BehaviorProfile(
-        engagement_threshold=rng.uniform(
-            config.behavior_engagement_min,
-            config.behavior_engagement_max,
-        ),
-        concentration=rng.uniform(
-            config.behavior_concentration_min,
-            config.behavior_concentration_max,
-        ),
-        liquidity_preference=rng.uniform(
-            config.behavior_liquidity_min,
-            config.behavior_liquidity_max,
-        ),
-        objective_bias=rng.uniform(
-            config.behavior_objective_min,
-            config.behavior_objective_max,
-        ),
-        centralization=rng.uniform(
-            config.behavior_centralization_min,
-            config.behavior_centralization_max,
-        ),
-    )
 
 
 def _relation_pressure_factor(
@@ -1172,11 +1150,6 @@ def _mutate_and_check_secession(state: SimState) -> list[str]:
             p_mutate = min(1.0, state.config.mutation_rate * (depth + 1))
             if state._rng.random() < p_mutate:
                 node.genome = _mutate_genome(node.genome, state._rng)
-                # Genetic drift also nudges strategy/teleology parameters.
-                drift_mag = min(0.2, 0.02 + 0.03 * min(depth, 5))
-                faction.behavior = _drift_behavior(
-                    faction.behavior, state._rng, drift_mag
-                )
 
             _apply_centralization(state, faction, node)
 
@@ -1207,14 +1180,11 @@ def _secede(state: SimState, node_id: str, parent_faction: Faction) -> str:
     node = state.nodes[node_id]
     new_genome = node.genome[:]
 
-    # Secession inherits parent behavior with a stronger local drift.
-    inherited_behavior = _drift_behavior(parent_faction.behavior, state._rng, 0.12)
-
     new_faction = Faction(
         faction_id=new_fid,
         capital_id=node_id,
         genome=new_genome,
-        behavior=inherited_behavior,
+        behavior=_genome_to_ecloz(new_genome),
         color=_genome_to_color(new_genome),
     )
     state.factions[new_fid] = new_faction
@@ -1446,7 +1416,7 @@ def create_sim(config: SimConfig) -> SimState:
             faction_id=fid,
             capital_id=cap_id,
             genome=genome,
-            behavior=_random_behavior(config, rng),
+            behavior=_genome_to_ecloz(genome),
             color=_genome_to_color(genome),
         )
         factions[fid] = faction

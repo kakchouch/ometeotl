@@ -128,78 +128,55 @@ def test_behavior_ranges_are_validated():
 
 
 def test_create_sim_assigns_behavior_per_faction():
+    """ECLOZ must be the genome projection, not a random sample."""
+    from examples.lab10_complex_behavior_sim.engine import _genome_to_ecloz
+
     cfg = SimConfig(seed=4, num_nodes=8, num_factions=3)
     state = create_sim(cfg)
     for faction in state.factions.values():
         b = faction.behavior
-        assert (
-            cfg.behavior_engagement_min
-            <= b.engagement_threshold
-            <= cfg.behavior_engagement_max
-        )
-        assert (
-            cfg.behavior_concentration_min
-            <= b.concentration
-            <= cfg.behavior_concentration_max
-        )
-        assert (
-            cfg.behavior_liquidity_min
-            <= b.liquidity_preference
-            <= cfg.behavior_liquidity_max
-        )
-        assert (
-            cfg.behavior_objective_min <= b.objective_bias <= cfg.behavior_objective_max
-        )
-        assert (
-            cfg.behavior_centralization_min
-            <= b.centralization
-            <= cfg.behavior_centralization_max
-        )
+        # All axes in [0, 1]
+        assert 0.0 <= b.engagement_threshold <= 1.0
+        assert 0.0 <= b.concentration <= 1.0
+        assert 0.0 <= b.liquidity_preference <= 1.0
+        assert 0.0 <= b.objective_bias <= 1.0
+        assert 0.0 <= b.centralization <= 1.0
+        # Exactly matches the genome projection
+        expected = _genome_to_ecloz(faction.genome)
+        assert b == expected, f"ECLOZ mismatch for {faction.faction_id}"
 
 
-def test_genetic_drift_also_changes_behavior_values():
-    """With high mutation pressure, at least one behavior axis should drift."""
+def test_faction_ecloz_invariant_under_node_genome_drift():
+    """ECLOZ must stay constant while node genomes drift (faction genome is fixed)."""
+    from examples.lab10_complex_behavior_sim.engine import _genome_to_ecloz
+
     cfg = SimConfig(
         seed=11,
         num_nodes=10,
         num_factions=2,
         mutation_rate=1.0,
         max_ticks=0,
-        behavior_engagement_min=0.5,
-        behavior_engagement_max=0.5,
-        behavior_concentration_min=0.5,
-        behavior_concentration_max=0.5,
-        behavior_liquidity_min=0.5,
-        behavior_liquidity_max=0.5,
-        behavior_objective_min=0.5,
-        behavior_objective_max=0.5,
-        behavior_centralization_min=0.5,
-        behavior_centralization_max=0.5,
+        drift_threshold_fraction=0.99,  # suppress secession so factions survive
     )
     state = create_sim(cfg)
 
     fid = sorted(state.factions.keys())[0]
-    b0 = state.factions[fid].behavior
-    start = (
-        b0.engagement_threshold,
-        b0.concentration,
-        b0.liquidity_preference,
-        b0.objective_bias,
-        b0.centralization,
-    )
+    genome_before = state.factions[fid].genome[:]
+    behavior_before = state.factions[fid].behavior
 
-    for _ in range(3):
+    for _ in range(5):
         step(state)
+        if state.game_over:
+            break
 
-    b1 = state.factions[fid].behavior
-    end = (
-        b1.engagement_threshold,
-        b1.concentration,
-        b1.liquidity_preference,
-        b1.objective_bias,
-        b1.centralization,
-    )
-    assert end != start, "Expected behavior axes to drift over ticks"
+    if fid not in state.factions:
+        return  # faction eliminated — nothing to check
+
+    # Faction genome must not have changed (only node genomes drift)
+    assert state.factions[fid].genome == genome_before, "Faction genome should be immutable"
+    # ECLOZ must equal the genome projection and must not have drifted
+    assert state.factions[fid].behavior == behavior_before, "ECLOZ must not drift"
+    assert state.factions[fid].behavior == _genome_to_ecloz(genome_before)
 
 
 # --------------------------------------------------------------------------- #
@@ -751,11 +728,17 @@ def test_high_z_plans_admin_transport_and_reduces_drift():
         transport_base_cost=0.0,
         transport_gas_fee=0.0,
         centralization_admin_cost=1.0,
-        behavior_centralization_min=1.0,
-        behavior_centralization_max=1.0,
     )
     state = create_sim(cfg)
     faction = state.factions["faction-0"]
+    # Force Z=1.0 as a unit-test fixture (testing _plan_centralization, not genome derivation)
+    faction.behavior = BehaviorProfile(
+        engagement_threshold=faction.behavior.engagement_threshold,
+        concentration=faction.behavior.concentration,
+        liquidity_preference=faction.behavior.liquidity_preference,
+        objective_bias=faction.behavior.objective_bias,
+        centralization=1.0,
+    )
     neighbors = state.neighbors_of(faction.capital_id)
     if not neighbors:
         pytest.skip("Capital has no neighbors")
@@ -787,11 +770,17 @@ def test_low_z_skips_admin_transport():
         num_factions=1,
         genome_length=8,
         mutation_rate=0.0,
-        behavior_centralization_min=0.0,
-        behavior_centralization_max=0.0,
     )
     state = create_sim(cfg)
     faction = state.factions["faction-0"]
+    # Force Z=0.0 as a unit-test fixture (testing _plan_centralization, not genome derivation)
+    faction.behavior = BehaviorProfile(
+        engagement_threshold=faction.behavior.engagement_threshold,
+        concentration=faction.behavior.concentration,
+        liquidity_preference=faction.behavior.liquidity_preference,
+        objective_bias=faction.behavior.objective_bias,
+        centralization=0.0,
+    )
     neighbors = state.neighbors_of(faction.capital_id)
     if not neighbors:
         pytest.skip("Capital has no neighbors")
