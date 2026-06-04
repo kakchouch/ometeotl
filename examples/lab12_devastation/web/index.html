@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lab 11 - Technology Simulation</title>
+  <title>Lab 12 - Devastation Simulation</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -286,6 +286,43 @@
           <div class="field-row">
             <label for="cfg-tech-neighbor-accel">Neighbor acceleration</label>
             <input type="number" id="cfg-tech-neighbor-accel" name="tech_neighbor_acceleration" min="0" max="1" step="0.01" value="0.3" />
+          </div>
+          <div class="field-group-label">Devastation</div>
+          <div class="field-row">
+            <label for="cfg-devas-window">Window size (ticks)</label>
+            <input type="number" id="cfg-devas-window" name="devastation_window_size" min="1" max="50" step="1" value="10" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-flip-inc">Flip increment</label>
+            <input type="number" id="cfg-devas-flip-inc" name="devastation_flip_increment" min="0.0" max="1.0" step="0.05" value="0.3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-recovery">Recovery rate</label>
+            <input type="number" id="cfg-devas-recovery" name="devastation_recovery_rate" min="0.0" max="0.5" step="0.005" value="0.01" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-cap-pen">Cap penalty</label>
+            <input type="number" id="cfg-devas-cap-pen" name="devastation_cap_penalty" min="0.0" max="1.0" step="0.05" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-prod-pen">Production penalty</label>
+            <input type="number" id="cfg-devas-prod-pen" name="devastation_production_penalty" min="0.0" max="1.0" step="0.05" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-attr-pen">Attractiveness penalty</label>
+            <input type="number" id="cfg-devas-attr-pen" name="devastation_attractiveness_penalty" min="0.0" max="1.0" step="0.05" value="0.7" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-base-node-prod">Base node production</label>
+            <input type="number" id="cfg-base-node-prod" name="base_node_production" min="0.0" max="20.0" step="0.5" value="2.0" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-stock-cap">Min stock cap</label>
+            <input type="number" id="cfg-min-stock-cap" name="min_stock_cap" min="0.0" max="10.0" step="0.5" value="1.0" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-node-prod">Min node production</label>
+            <input type="number" id="cfg-min-node-prod" name="min_node_production" min="0.0" max="5.0" step="0.1" value="0.0" />
           </div>
           <button type="submit" id="btn-apply">Apply &amp; Reset</button>
         </form>

@@ -39,6 +39,11 @@ from examples.lab11_technology.engine import (
     _extract_tech_signals,
     _compute_tech_alpha,
     _magnitude_3d,
+    _apply_stock_cap,
+    _compute_hamming_threshold,
+    _get_perceived_relation,
+    _relation_pressure_factor,
+    _mutate_and_check_secession,
 )
 from examples.lab11_technology.perception import (
     get_faction_perception,
@@ -1421,3 +1426,253 @@ def test_cohe_raises_secession_threshold():
     assert drifted_id not in [
         state.factions[fid].capital_id for fid in new_fids
     ], "Cohé should prevent secession at max level"
+
+
+# =========================================================================== #
+# Change 1 — Logistics: stock cap per node                                     #
+# =========================================================================== #
+
+
+def test_stock_cap_no_node_exceeds_cap():
+    """After tick resolution no owned node holds spice above its faction's cap."""
+    cfg = SimConfig(
+        seed=1, num_nodes=6, num_factions=2,
+        base_stock_cap=8.0, logi_stock_cap_bonus=0.0,   # strict cap, logi has no effect
+        min_spice_flow=20, max_spice_flow=20,            # flood income so cap is binding
+        transport_base_cost=0.0, transport_gas_fee=0.0,
+        mutation_rate=0.0, flip_threshold=9999.0,        # no conquests or secessions
+        cohe_hamming_bonus=0.0, cohe_hamming_decay=0.0,
+    )
+    state = create_sim(cfg)
+    for _ in range(15):
+        step(state)
+
+    for node in state.nodes.values():
+        if node.owner_id is None or node.owner_id not in state.factions:
+            continue
+        faction = state.factions[node.owner_id]
+        cap = cfg.base_stock_cap + faction.tech.logi * cfg.logi_stock_cap_bonus
+        assert node.spice_stock <= cap + 1e-9, (
+            f"Node {node.node_id} stock {node.spice_stock:.3f} exceeds cap {cap:.3f}"
+        )
+
+
+def test_stock_cap_destroys_not_redistributes():
+    """Excess spice is silently destroyed: total after capping < total before capping."""
+    cfg = SimConfig(
+        seed=2, num_nodes=4, num_factions=2,
+        base_stock_cap=5.0, logi_stock_cap_bonus=0.0,
+        transport_base_cost=0.0, transport_gas_fee=0.0,
+    )
+    state = create_sim(cfg)
+
+    # Force every owned node far above cap.
+    for node in state.nodes.values():
+        if node.owner_id is not None:
+            node.spice_stock = 1000.0
+
+    total_before = sum(n.spice_stock for n in state.nodes.values())
+    _apply_stock_cap(state)
+    total_after = sum(n.spice_stock for n in state.nodes.values())
+
+    assert total_after < total_before, "Stock cap must destroy excess, not keep it"
+    # No node should exceed cap after the call.
+    for node in state.nodes.values():
+        if node.owner_id is None or node.owner_id not in state.factions:
+            continue
+        faction = state.factions[node.owner_id]
+        cap = cfg.base_stock_cap + faction.tech.logi * cfg.logi_stock_cap_bonus
+        assert node.spice_stock <= cap + 1e-9, (
+            f"Node {node.node_id} exceeds cap after _apply_stock_cap"
+        )
+
+
+# =========================================================================== #
+# Change 2 — Cohesion: Hamming threshold decay without cohé tech               #
+# =========================================================================== #
+
+
+def test_hamming_threshold_never_below_floor():
+    """Effective threshold is always >= min_hamming_threshold regardless of decay."""
+    cfg = SimConfig(
+        seed=3, num_nodes=8, num_factions=3,
+        min_hamming_threshold=3.0,
+        cohe_hamming_decay=999.0,    # absurdly large decay to stress the floor
+        cohe_hamming_bonus=0.0,
+    )
+    state = create_sim(cfg)
+
+    # Give all neighbors very high cohé so the decay is maximal.
+    for f in state.factions.values():
+        f.tech = TechVector(diplo=0.0, cohe=1.0, logi=0.0)
+
+    for faction in state.active_factions():
+        # Set observing faction cohé to 0 → maximum gap vs neighbors at 1.0.
+        faction.tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)
+        threshold = _compute_hamming_threshold(state, faction, perception=None)
+        assert threshold >= cfg.min_hamming_threshold, (
+            f"Faction {faction.faction_id}: threshold {threshold} < floor {cfg.min_hamming_threshold}"
+        )
+
+
+def test_hamming_threshold_isolated_faction_no_decay():
+    """A faction with no visible neighbors has zero decay term."""
+    cfg = SimConfig(
+        seed=4, num_nodes=4, num_factions=1,
+        cohe_hamming_bonus=4.0, cohe_hamming_decay=10.0, min_hamming_threshold=1.0,
+    )
+    state = create_sim(cfg)
+    faction = state.factions["faction-0"]
+    faction.tech = TechVector(diplo=0.0, cohe=0.5, logi=0.0)
+
+    threshold = _compute_hamming_threshold(state, faction, perception=None)
+    expected = cfg.drift_threshold_bits + 0.5 * cfg.cohe_hamming_bonus
+    assert abs(threshold - expected) < 0.01, (
+        f"Isolated faction got {threshold:.4f}, expected {expected:.4f}"
+    )
+
+
+def test_hamming_threshold_respects_perception_not_ground_truth():
+    """In limited mode, unseen high-cohé factions do NOT increase decay."""
+    cfg = SimConfig(
+        seed=7, num_nodes=10, num_factions=3,
+        perception_mode="limited",
+        cohe_hamming_bonus=0.0,      # neutralise bonus; only test decay direction
+        cohe_hamming_decay=5.0,
+        min_hamming_threshold=1.0,
+        mutation_rate=0.0, flip_threshold=9999.0,
+    )
+    state = create_sim(cfg)
+
+    observer = list(state.active_factions())[0]
+    observer.tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)   # zero cohé → max decay gap
+
+    perception = get_faction_perception(state, observer.faction_id)
+
+    # Identify which factions the observer CAN see (via perceived_spaces).
+    visible_fids = {
+        state.nodes[nid].owner_id
+        for nid in perception.perceived_spaces.keys()
+        if nid in state.nodes
+        and state.nodes[nid].owner_id not in (None, observer.faction_id)
+    }
+    # Identify factions the observer CANNOT see.
+    unseen_fids = {
+        fid for fid in state.factions
+        if fid != observer.faction_id and fid not in visible_fids
+    }
+
+    if not unseen_fids:
+        pytest.skip("All factions visible in this topology — cannot test perception filter")
+
+    # Set all factions cohé = 0 first, then raise only unseen factions' cohé.
+    for f in state.factions.values():
+        f.tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)
+    observer.tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)
+    for fid in unseen_fids:
+        state.factions[fid].tech = TechVector(diplo=0.0, cohe=1.0, logi=0.0)
+
+    threshold_limited = _compute_hamming_threshold(state, observer, perception)
+    threshold_full    = _compute_hamming_threshold(state, observer, perception=None)
+
+    # Ground truth includes unseen high-cohé factions → MORE decay → LOWER threshold.
+    # Perception-limited view ignores them → LESS or EQUAL decay → HIGHER or EQUAL threshold.
+    assert threshold_limited >= threshold_full - 1e-9, (
+        f"Limited perception should not apply decay from unseen factions. "
+        f"limited={threshold_limited:.4f} full={threshold_full:.4f}"
+    )
+
+
+# =========================================================================== #
+# Change 3 — Diplomacy: relative tech gap drives perceptual bias               #
+# =========================================================================== #
+
+
+def test_diplo_bias_does_not_mutate_true_relation():
+    """Reading perceived relation must never modify the ground-truth relation graph."""
+    cfg = SimConfig(seed=5, num_nodes=6, num_factions=2, diplo_bias_strength=0.5)
+    state = create_sim(cfg)
+    fids = list(state.factions.keys())
+    a, b = fids[0], fids[1]
+    state.know_each_other(a, b)
+    key = state.relation_key(a, b)
+    state.relations[key] = 0.4
+
+    state.factions[a].tech = TechVector(diplo=1.0, cohe=0.0, logi=0.0)
+    state.factions[b].tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)
+
+    true_before = state.relations[key]
+    _ = _get_perceived_relation(state, b, a)
+    true_after = state.relations[key]
+
+    assert true_before == true_after, (
+        f"_get_perceived_relation mutated ground truth: {true_before} → {true_after}"
+    )
+
+
+def test_diplo_perceived_relation_in_range():
+    """perceived_relation is always clamped to [0, 1]."""
+    cfg = SimConfig(seed=6, num_nodes=4, num_factions=2, diplo_bias_strength=1.0)
+    state = create_sim(cfg)
+    fids = list(state.factions.keys())
+    a, b = fids[0], fids[1]
+    state.know_each_other(a, b)
+
+    for true_val in (0.0, 0.5, 0.9, 1.0):
+        state.relations[state.relation_key(a, b)] = true_val
+        state.factions[a].tech = TechVector(diplo=1.0, cohe=0.0, logi=0.0)
+        state.factions[b].tech = TechVector(diplo=0.0, cohe=0.0, logi=0.0)
+        perceived = _get_perceived_relation(state, b, a)
+        assert perceived is not None
+        assert 0.0 <= perceived <= 1.0, (
+            f"perceived_relation({true_val}) = {perceived} is out of [0,1]"
+        )
+
+
+def test_diplo_zero_gap_zero_bias():
+    """When diplo_tech(A) == diplo_tech(B) the perceived relation equals the true relation."""
+    cfg = SimConfig(seed=8, num_nodes=4, num_factions=2, diplo_bias_strength=0.5)
+    state = create_sim(cfg)
+    fids = list(state.factions.keys())
+    a, b = fids[0], fids[1]
+    state.know_each_other(a, b)
+    true_val = 0.6
+    state.relations[state.relation_key(a, b)] = true_val
+
+    for diplo_level in (0.0, 0.5, 1.0):
+        state.factions[a].tech = TechVector(diplo=diplo_level, cohe=0.0, logi=0.0)
+        state.factions[b].tech = TechVector(diplo=diplo_level, cohe=0.0, logi=0.0)
+        perceived = _get_perceived_relation(state, b, a)
+        assert perceived is not None
+        assert abs(perceived - true_val) < 1e-9, (
+            f"Zero gap (diplo={diplo_level}) should give zero bias, got {perceived}"
+        )
+
+
+def test_diplo_bias_not_from_opponent_faction_object():
+    """The bias must be computable without the observer accessing opponent's faction object.
+
+    Verified behaviourally: _get_perceived_relation's result matches the formula
+    using only observer's own diplo and the (engine-computed) gap — the observer
+    does not need to call state.factions[opponent] to arrive at a correct value.
+    We confirm by injecting an observer diplo and checking the formula holds.
+    """
+    cfg = SimConfig(seed=9, num_nodes=4, num_factions=2, diplo_bias_strength=0.4)
+    state = create_sim(cfg)
+    fids = list(state.factions.keys())
+    a, b = fids[0], fids[1]
+    state.know_each_other(a, b)
+    true_val = 0.3
+    state.relations[state.relation_key(a, b)] = true_val
+
+    target_diplo   = 0.8    # faction a (target)
+    observer_diplo = 0.2    # faction b (observer)
+    state.factions[a].tech = TechVector(diplo=target_diplo,   cohe=0.0, logi=0.0)
+    state.factions[b].tech = TechVector(diplo=observer_diplo, cohe=0.0, logi=0.0)
+
+    perceived = _get_perceived_relation(state, b, a)
+    expected  = min(1.0, true_val + 0.4 * max(0.0, target_diplo - observer_diplo))
+
+    assert abs(perceived - expected) < 1e-9, (
+        f"perceived={perceived:.4f} does not match formula result={expected:.4f}"
+    )

@@ -1,5 +1,5 @@
 /**
- * app.js — Lab 11 Technology Simulation client
+ * app.js — Lab 12 Devastation Simulation client
  *
  * Responsibilities:
  *  - Fetch /api/state and render SVG graph (nodes, edges, ownership colours)
@@ -7,14 +7,16 @@
  *  - Faction legend sidebar: total spice, income, ECLOZ, tech levels
  *  - Config form submission → POST /api/reset
  *  - Pressure ring arcs on nodes to show conquest progress
+ *  - Devastation ring arcs on nodes to show devastation level
  *  - Node label shows spice_stock held at that node
  *  - Edge thickness reflects link max_flow capacity
  *  - Technology panel: per-faction Diplo / Cohé / Logi progress bars + α vector
+ *  - Auto-untangle: force-directed layout with edge-crossing resolution
  */
 
 "use strict";
 
-const API = "http://127.0.0.1:8774";  // Lab 11 server port
+const API = "http://127.0.0.1:8775";  // Lab 12 server port
 
 // SVG viewport dimensions (must match viewBox in HTML)
 const SVG_W = 800;
@@ -118,6 +120,17 @@ function topologyKey(nodes, edges) {
   return `${nids};${eids}`;
 }
 
+// ── Segment intersection test (strict: excludes shared endpoints) //
+function segmentsIntersect(p1, p2, p3, p4) {
+  const d1x = p2.x - p1.x, d1y = p2.y - p1.y;
+  const d2x = p4.x - p3.x, d2y = p4.y - p3.y;
+  const denom = d1x * d2y - d1y * d2x;
+  if (Math.abs(denom) < 1e-10) return false;
+  const t = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / denom;
+  const u = ((p3.x - p1.x) * d1y - (p3.y - p1.y) * d1x) / denom;
+  return t > 0.02 && t < 0.98 && u > 0.02 && u < 0.98;
+}
+
 // ── Client-side force-directed layout ─────────────────────── //
 function runForceLayout(nodes, edges) {
   if (nodes.length < 2) return;
@@ -166,6 +179,62 @@ function runForceLayout(nodes, edges) {
       const f = (dist - k) / dist;
       fx[e.b] -= dx * f; fy[e.b] -= dy * f;
       fx[e.a] += dx * f; fy[e.a] += dy * f;
+    }
+
+    // Node-edge clearance: bidirectional — repel node from edge AND edge endpoints from node
+    const nodeR_rl = nodes.length >= 30 ? 14 : nodes.length >= 22 ? 17 : NODE_R;
+    const clearRL  = nodeR_rl * 3.5;
+    for (const node of nodes) {
+      const np = pos[node.node_id];
+      if (!np) continue;
+      for (const edge of edges) {
+        if (edge.a === node.node_id || edge.b === node.node_id) continue;
+        const ap = pos[edge.a], bp = pos[edge.b];
+        if (!ap || !bp) continue;
+        const edx = bp.x - ap.x, edy = bp.y - ap.y;
+        const edLen2 = edx * edx + edy * edy;
+        if (edLen2 < 1) continue;
+        const t = Math.max(0.05, Math.min(0.95,
+          ((np.x - ap.x) * edx + (np.y - ap.y) * edy) / edLen2));
+        const cx = ap.x + t * edx, cy = ap.y + t * edy;
+        const d  = Math.hypot(np.x - cx, np.y - cy) || 0.5;
+        if (d < clearRL) {
+          const px = np.x - cx, py = np.y - cy;
+          const f  = (clearRL - d) / d * 2.0;
+          fx[node.node_id] += px * f; fy[node.node_id] += py * f;
+          if (!pinnedNodes.has(edge.a)) { fx[edge.a] -= px * f * (1 - t) * 0.5; fy[edge.a] -= py * f * (1 - t) * 0.5; }
+          if (!pinnedNodes.has(edge.b)) { fx[edge.b] -= px * f * t       * 0.5; fy[edge.b] -= py * f * t       * 0.5; }
+        }
+      }
+    }
+
+    // Edge-edge crossing force: strong push to resolve actual crossings
+    for (let i = 0; i < edges.length; i++) {
+      for (let j = i + 1; j < edges.length; j++) {
+        const e1 = edges[i], e2 = edges[j];
+        if (e1.a === e2.a || e1.a === e2.b || e1.b === e2.a || e1.b === e2.b) continue;
+        const p1 = pos[e1.a], p2 = pos[e1.b], p3 = pos[e2.a], p4 = pos[e2.b];
+        if (!p1 || !p2 || !p3 || !p4) continue;
+        if (!segmentsIntersect(p1, p2, p3, p4)) continue;
+        const m1x = (p1.x + p2.x) / 2, m1y = (p1.y + p2.y) / 2;
+        const m2x = (p3.x + p4.x) / 2, m2y = (p3.y + p4.y) / 2;
+        const dx = m2x - m1x, dy = m2y - m1y;
+        const dist = Math.hypot(dx, dy) || 0.5;
+        const f  = 2.5 * k * k / dist;
+        const ux = (dx / dist) * f * 0.5, uy = (dy / dist) * f * 0.5;
+        if (!pinnedNodes.has(e1.a)) { fx[e1.a] -= ux; fy[e1.a] -= uy; }
+        if (!pinnedNodes.has(e1.b)) { fx[e1.b] -= ux; fy[e1.b] -= uy; }
+        if (!pinnedNodes.has(e2.a)) { fx[e2.a] += ux; fy[e2.a] += uy; }
+        if (!pinnedNodes.has(e2.b)) { fx[e2.b] += ux; fy[e2.b] += uy; }
+      }
+    }
+
+    // Gravity toward canvas center — prevents nodes clustering at periphery
+    const gx = SVG_W / 2, gy = SVG_H / 2;
+    const GRAVITY = 3.50;
+    for (const id of ids) {
+      fx[id] += GRAVITY * (gx - pos[id].x);
+      fy[id] += GRAVITY * (gy - pos[id].y);
     }
 
     // Apply with cooling + boundary clamping
@@ -237,7 +306,61 @@ function computeForceStep(nodes, edges, temperature) {
     if (!pinnedNodes.has(e.a)) { fx[e.a] += dx * f; fy[e.a] += dy * f; }
   }
 
-  // 3. Apply forces capped by temperature
+  // 3. Node-edge clearance: bidirectional — repel node from edge AND edge endpoints from node
+  const clearance = nodeR * 3.5;
+  for (const node of nodes) {
+    const np = pos[node.node_id];
+    for (const edge of edges) {
+      if (edge.a === node.node_id || edge.b === node.node_id) continue;
+      const ap = pos[edge.a], bp = pos[edge.b];
+      if (!ap || !bp) continue;
+      const edx = bp.x - ap.x, edy = bp.y - ap.y;
+      const edLen2 = edx * edx + edy * edy;
+      if (edLen2 < 1) continue;
+      const t = Math.max(0.05, Math.min(0.95,
+        ((np.x - ap.x) * edx + (np.y - ap.y) * edy) / edLen2));
+      const cx = ap.x + t * edx, cy = ap.y + t * edy;
+      const d  = Math.hypot(np.x - cx, np.y - cy) || 0.5;
+      if (d < clearance) {
+        const px = np.x - cx, py = np.y - cy;
+        const f  = (clearance - d) / d * 2.0;
+        if (!pinnedNodes.has(node.node_id)) { fx[node.node_id] += px * f; fy[node.node_id] += py * f; }
+        if (!pinnedNodes.has(edge.a)) { fx[edge.a] -= px * f * (1 - t) * 0.5; fy[edge.a] -= py * f * (1 - t) * 0.5; }
+        if (!pinnedNodes.has(edge.b)) { fx[edge.b] -= px * f * t       * 0.5; fy[edge.b] -= py * f * t       * 0.5; }
+      }
+    }
+  }
+
+  // 3b. Edge-edge crossing force: strong push to resolve actual crossings
+  for (let i = 0; i < edges.length; i++) {
+    for (let j = i + 1; j < edges.length; j++) {
+      const e1 = edges[i], e2 = edges[j];
+      if (e1.a === e2.a || e1.a === e2.b || e1.b === e2.a || e1.b === e2.b) continue;
+      const p1 = pos[e1.a], p2 = pos[e1.b], p3 = pos[e2.a], p4 = pos[e2.b];
+      if (!p1 || !p2 || !p3 || !p4) continue;
+      if (!segmentsIntersect(p1, p2, p3, p4)) continue;
+      const m1x = (p1.x + p2.x) / 2, m1y = (p1.y + p2.y) / 2;
+      const m2x = (p3.x + p4.x) / 2, m2y = (p3.y + p4.y) / 2;
+      const dx  = m2x - m1x, dy = m2y - m1y;
+      const dist = Math.hypot(dx, dy) || 0.5;
+      const f   = 2.5 * k * k / dist;
+      const ux  = (dx / dist) * f * 0.5, uy = (dy / dist) * f * 0.5;
+      if (!pinnedNodes.has(e1.a)) { fx[e1.a] -= ux; fy[e1.a] -= uy; }
+      if (!pinnedNodes.has(e1.b)) { fx[e1.b] -= ux; fy[e1.b] -= uy; }
+      if (!pinnedNodes.has(e2.a)) { fx[e2.a] += ux; fy[e2.a] += uy; }
+      if (!pinnedNodes.has(e2.b)) { fx[e2.b] += ux; fy[e2.b] += uy; }
+    }
+  }
+
+  // 4. Gravity toward canvas center — prevents nodes clustering at periphery
+  const gx = SVG_W / 2, gy = SVG_H / 2;
+  const GRAVITY = 0.15;
+  for (const id of ids) {
+    fx[id] += GRAVITY * (gx - pos[id].x);
+    fy[id] += GRAVITY * (gy - pos[id].y);
+  }
+
+  // 5. Apply forces capped by temperature
   const maxStep = Math.max(0.3, temperature);
   let maxDisp = 0;
   for (const id of ids) {
@@ -455,6 +578,18 @@ function renderGraph(state) {
       const arc = svgNS("path", {
         class: "pressure-ring",
         d: describeArc(cx, cy, r + 5, startAngle, endAngle),
+      });
+      nodesLayer.appendChild(arc);
+    }
+
+    // ── Devastation arc (outer ring, rose-red) ──
+    const devastation = typeof node.devastation === "number" ? node.devastation : 0;
+    if (devastation > 0.01) {
+      const startAngle = -Math.PI / 2;
+      const endAngle   = startAngle + devastation * 2 * Math.PI;
+      const arc = svgNS("path", {
+        class: "devastation-ring",
+        d: describeArc(cx, cy, r + 10, startAngle, endAngle),
       });
       nodesLayer.appendChild(arc);
     }
@@ -771,6 +906,10 @@ function showNodeInfo(node, state) {
   const flipThreshold = state.config?.flip_threshold ?? 1;
   const pressurePct = Math.min(100, (node.pressure_accumulated / flipThreshold * 100)).toFixed(0);
   const stock = node.spice_stock != null ? Math.round(node.spice_stock) : 0;
+  const devasPct = typeof node.devastation === "number" ? (node.devastation * 100).toFixed(0) + "%" : "—";
+  const effCap = node.effective_stock_cap != null ? node.effective_stock_cap.toFixed(1) : "—";
+  const effProd = node.effective_production != null ? node.effective_production.toFixed(2) : "—";
+  const flipsWin = node.flip_count_in_window ?? "—";
 
   document.getElementById("node-info-content").innerHTML = `
     <div class="ni-title">${node.node_id}${isCapital ? " ★" : ""}</div>
@@ -779,6 +918,10 @@ function showNodeInfo(node, state) {
     <div class="ni-row">Stock <span>♦${stock}</span></div>
     <div class="ni-row">Links <span>${linkCount}</span></div>
     <div class="ni-row">Pressure <span>${pressurePct}%</span></div>
+    <div class="ni-row">Devastation <span class="devas-value">${devasPct}</span></div>
+    <div class="ni-row">Eff. cap <span>${effCap}</span></div>
+    <div class="ni-row">Eff. prod <span>${effProd}</span></div>
+    <div class="ni-row">Flips (win) <span>${flipsWin}</span></div>
     <div class="ni-row">Pinned <span>${pinnedNodes.has(node.node_id) ? "yes" : "no"}</span></div>
   `;
 
@@ -787,7 +930,7 @@ function showNodeInfo(node, state) {
   const panelPos = svgViewboxToPanel(ov.x * SVG_W, ov.y * SVG_H);
   const panelEl  = document.getElementById("map-panel");
   const maxLeft  = panelEl.clientWidth  - 180;
-  const maxTop   = panelEl.clientHeight - 220;
+  const maxTop   = panelEl.clientHeight - 280;
   panel.style.left = Math.max(4, Math.min(maxLeft, panelPos.x + 20)) + "px";
   panel.style.top  = Math.max(4, Math.min(maxTop,  panelPos.y - 20)) + "px";
   panel.classList.remove("hidden");
@@ -992,7 +1135,7 @@ function readConfigForm() {
     cfg[key] = isNaN(num) ? val : num;
   }
   // Coerce integer fields
-  for (const intKey of ["num_nodes", "num_factions", "seed", "min_spice_flow", "max_spice_flow", "genome_length", "max_ticks", "tech_rnd_history_window"]) {
+  for (const intKey of ["num_nodes", "num_factions", "seed", "min_spice_flow", "max_spice_flow", "genome_length", "max_ticks", "tech_rnd_history_window", "devastation_window_size"]) {
     if (intKey in cfg) cfg[intKey] = Math.round(cfg[intKey]);
   }
   return cfg;
