@@ -11,7 +11,8 @@ monotonically via a 7-step stochastic pipeline (v0 → v6) running every tick:
   v3  O-direction deformation — Hadamard product of α signal vector and O-weighted bias
   v4  Z-smoothing — exponential blend with previous pending vector
   v5  rubberbanding — leader pays extra; follower accelerates when behind a neighbor
-  v6  economic truncation — scales magnitude only (direction strictly preserved)
+  v6  economic weight — soft scale in [0.5, 1.0] based on available spice; never zeroes out
+  v6 is then multiplied by tech_investment_scale (≈0.002) to calibrate ~500+ ticks to reach 1.0
 
 Tech effects (committed at tick T+1 start, one-tick delay):
   Diplo → inflates attacker's perceived relation with the Diplo holder, reducing
@@ -1261,6 +1262,16 @@ def _secede(state: SimState, node_id: str, parent_faction: Faction) -> str:
         genome=new_genome,
         behavior=_genome_to_ecloz(new_genome),
         color=_genome_to_color(new_genome),
+        tech=TechVector(
+            diplo=parent_faction.tech.diplo,
+            cohe=parent_faction.tech.cohe,
+            logi=parent_faction.tech.logi,
+        ),
+        tech_pending=TechVector(
+            diplo=parent_faction.tech_pending.diplo,
+            cohe=parent_faction.tech_pending.cohe,
+            logi=parent_faction.tech_pending.logi,
+        ),
     )
     state.factions[new_fid] = new_faction
     node.owner_id = new_fid
@@ -1611,7 +1622,10 @@ def _compute_tech_investment_debug(
     else:
         v5 = v4
 
-    # --- Step 7: Economic constraint — scalar truncation, direction strictly preserved ---
+    # --- Step 7: Economic weight — smooth scaling, never fully zeros out ---
+    # Uses available spice as a soft multiplier in [0.5, 1.0]: even broke factions
+    # invest at half rate.  Step 5 (L spend-rate) already captures liquidity preference;
+    # this step just ensures rich factions invest faster.
     base_cost = cfg.transport_base_cost
     planned_spend = sum(
         amt + base_cost
@@ -1620,15 +1634,16 @@ def _compute_tech_investment_debug(
     available = max(0.0, total_spice - planned_spend)
     v5_mag = _magnitude_3d(*v5)
     required = v5_mag * cfg.tech_rnd_base_cost
-    scale = (available / required) if required > 1e-12 and available < required else 1.0
-    v6 = (v5[0] * scale, v5[1] * scale, v5[2] * scale)
+    eco_scale = min(1.0, max(0.5, available / required)) if required > 1e-12 else 1.0
+    v6 = (v5[0] * eco_scale, v5[1] * eco_scale, v5[2] * eco_scale)
 
     # Only permitted side-effect: record α for audit
     faction.tech_alpha = alpha
 
+    inv_scale = cfg.tech_investment_scale
     return (
-        TechVector(diplo=v6[0], cohe=v6[1], logi=v6[2]),
-        TechVector(diplo=v5[0], cohe=v5[1], logi=v5[2]),
+        TechVector(diplo=v6[0] * inv_scale, cohe=v6[1] * inv_scale, logi=v6[2] * inv_scale),
+        TechVector(diplo=v5[0] * inv_scale, cohe=v5[1] * inv_scale, logi=v5[2] * inv_scale),
     )
 
 

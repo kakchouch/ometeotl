@@ -209,12 +209,13 @@ class SimConfig:
     tech_alpha_weight_known_ratio_inv_diplo: float = 0.2
     tech_leader_cost_multiplier: float = 1.5
     tech_neighbor_acceleration: float = 0.3
-    tech_rnd_base_cost: float = 10.0
+    tech_rnd_base_cost: float = 2.0
     tech_rnd_history_window: int = 5
     tech_diplo_perception_effect: float = 0.3
     tech_cohe_threshold_bonus: float = 0.3
     tech_logi_cost_reduction: float = 0.5
     tech_reserve_reference: float = 50.0
+    tech_investment_scale: float = 0.002  # per-tick damper; with typical v5 magnitude ~0.87 gives ~575 ticks to reach 1.0
 
     # ------------------------------------------------------------------ #
     # Derived / validated accessors                                         #
@@ -354,6 +355,8 @@ class SimConfig:
             raise ValueError("tech_logi_cost_reduction must be in [0, 1]")
         if self.tech_reserve_reference <= 0.0:
             raise ValueError("tech_reserve_reference must be > 0")
+        if self.tech_investment_scale <= 0.0:
+            raise ValueError("tech_investment_scale must be > 0")
 
     @classmethod
     def from_dict(cls, d: dict) -> "SimConfig":
@@ -424,4 +427,5 @@ class SimConfig:
             "tech_cohe_threshold_bonus": self.tech_cohe_threshold_bonus,
             "tech_logi_cost_reduction": self.tech_logi_cost_reduction,
             "tech_reserve_reference": self.tech_reserve_reference,
+            "tech_investment_scale": self.tech_investment_scale,
         }
