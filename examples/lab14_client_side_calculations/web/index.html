@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Abstract Geopolitical simulation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="page-header">
+    <h1>Abstract Geopolitical simulation</h1>
+    <span id="page-subtitle">Lab 14 &middot; Agent-based simulation</span>
+  </header>
+  <div id="app">
+    <!-- ---------------------------------------------------------------- -->
+    <!-- LEFT PANEL — SVG map                                             -->
+    <!-- ---------------------------------------------------------------- -->
+    <div id="map-panel">
+      <div id="map-header">
+        <span id="tick-counter">Tick: 0</span>
+        <span id="status-text"></span>
+      </div>
+      <div id="node-info" class="hidden">
+        <button id="node-info-close" title="Close">×</button>
+        <div id="node-info-content"></div>
+      </div>
+      <svg id="graph-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+        <g id="edges-layer"></g>
+        <g id="nodes-layer"></g>
+        <g id="labels-layer"></g>
+      </svg>
+      <div id="controls">
+        <button id="btn-step-back" disabled>⏮ Step back</button>
+        <button id="btn-step">⏭ Step</button>
+        <button id="btn-reverse-run" disabled>◀ Reverse</button>
+        <button id="btn-autorun">▶ Auto-run</button>
+        <label for="speed-slider">Speed</label>
+        <input type="range" id="speed-slider" min="100" max="3000" step="100" value="1000" />
+        <span id="speed-label">1.0 s</span>
+        <button id="btn-reset">↺ Reset</button>
+        <button id="btn-reset-layout" title="Re-run force layout; clears manual pin positions">⊡ Layout</button>
+      </div>
+      <div id="event-log">
+        <div id="event-log-title">Event log</div>
+        <ul id="event-list"></ul>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------------- -->
+    <!-- RIGHT PANEL — config + faction legend                            -->
+    <!-- ---------------------------------------------------------------- -->
+    <div id="side-panel">
+      <div id="side-tabs">
+        <button class="side-tab active" data-tab="sim">Simulation</button>
+        <button class="side-tab" data-tab="about">About</button>
+      </div>
+
+      <div id="tab-sim">
+      <section id="faction-legend">
+        <h2>Factions</h2>
+        <div id="faction-list"></div>
+      </section>
+
+      <section id="relations-panel">
+        <details id="relations-details">
+          <summary>
+            <span>Relations</span>
+            <span id="relations-meta">no known relations</span>
+          </summary>
+          <div id="relations-list"></div>
+        </details>
+      </section>
+
+      <section id="symbolic-panel">
+        <details id="symbolic-details">
+          <summary>
+            <span>Symbolic AI</span>
+            <span id="symbolic-meta">no active intents</span>
+          </summary>
+          <div id="symbolic-list"></div>
+        </details>
+      </section>
+
+      <section id="tech-panel">
+        <details id="tech-details">
+          <summary>
+            <span>Technology</span>
+            <span id="tech-meta">no data</span>
+          </summary>
+          <div id="tech-list"></div>
+        </details>
+      </section>
+
+      <section id="config-section">
+        <h2>Configuration</h2>
+        <form id="config-form">
+          <div class="field-row">
+            <label for="cfg-num-nodes">Nodes</label>
+            <input type="number" id="cfg-num-nodes" name="num_nodes" min="4" max="60" value="14" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-num-factions">Factions</label>
+            <input type="number" id="cfg-num-factions" name="num_factions" min="1" max="12" value="3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-seed">RNG seed</label>
+            <input type="number" id="cfg-seed" name="seed" value="42" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-spice">Min spice flow</label>
+            <input type="number" id="cfg-min-spice" name="min_spice_flow" min="1" max="20" value="1" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-max-spice">Max spice flow</label>
+            <input type="number" id="cfg-max-spice" name="max_spice_flow" min="1" max="50" value="8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-density">Graph density</label>
+            <input type="number" id="cfg-density" name="graph_density" min="0.05" max="1.0" step="0.05" value="0.25" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-flip">Flip threshold</label>
+            <input type="number" id="cfg-flip" name="flip_threshold" min="1" max="500" step="1" value="20" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-drift">Drift threshold</label>
+            <input type="number" id="cfg-drift" name="drift_threshold_fraction" min="0.1" max="1.0" step="0.05" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-genome">Genome length</label>
+            <input type="number" id="cfg-genome" name="genome_length" min="4" max="64" step="4" value="16" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-mutation">Mutation rate</label>
+            <input type="number" id="cfg-mutation" name="mutation_rate" min="0.0" max="1.0" step="0.01" value="0.05" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-max-ticks">Max ticks (0=∞)</label>
+            <input type="number" id="cfg-max-ticks" name="max_ticks" min="0" max="10000" value="0" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-layout">Layout</label>
+            <select id="cfg-layout" name="layout">
+              <option value="ring" selected>Ring</option>
+              <option value="grid">Grid</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="cfg-graph-mode">Graph mode</label>
+            <select id="cfg-graph-mode" name="graph_mode">
+              <option value="uniform">Uniform random</option>
+              <option value="geographic" selected>Geographic map-like</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="cfg-geo-preset">Geography preset</label>
+            <select id="cfg-geo-preset" name="geography_preset">
+              <option value="pangea">Pangea (one mass + leafs)</option>
+              <option value="continents" selected>Continents (few corridors)</option>
+              <option value="archipelago">Archipelago (many small masses)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="cfg-node-distance">Node distance</label>
+            <input type="number" id="cfg-node-distance" name="layout_min_node_distance" min="0.06" max="0.30" step="0.01" value="0.13" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-perception-mode">Perception mode</label>
+            <select id="cfg-perception-mode" name="perception_mode">
+              <option value="limited" selected>Limited (neighbors only)</option>
+              <option value="full">Full omniscience</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="cfg-initial-spice">Initial node spice</label>
+            <input type="number" id="cfg-initial-spice" name="initial_node_spice" min="0" max="100" step="0.5" value="5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-link">Min link capacity</label>
+            <input type="number" id="cfg-min-link" name="min_link_flow" min="0.5" max="50" step="0.5" value="3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-max-link">Max link capacity</label>
+            <input type="number" id="cfg-max-link" name="max_link_flow" min="1" max="100" step="0.5" value="12" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-move-fraction">Max move fraction</label>
+            <input type="number" id="cfg-move-fraction" name="max_spice_move_fraction" min="0.1" max="1.0" step="0.05" value="0.7" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-base-cost">Transport base cost</label>
+            <input type="number" id="cfg-base-cost" name="transport_base_cost" min="0" max="20" step="0.1" value="1" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-gas-fee">Transport gas fee</label>
+            <input type="number" id="cfg-gas-fee" name="transport_gas_fee" min="0" max="0.99" step="0.01" value="0.05" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-engage-min">Engagement min</label>
+            <input type="number" id="cfg-engage-min" name="behavior_engagement_min" min="0" max="1" step="0.01" value="0.2" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-engage-max">Engagement max</label>
+            <input type="number" id="cfg-engage-max" name="behavior_engagement_max" min="0" max="1" step="0.01" value="0.8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-concentration-min">Concentration min</label>
+            <input type="number" id="cfg-concentration-min" name="behavior_concentration_min" min="0" max="1" step="0.01" value="0.2" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-concentration-max">Concentration max</label>
+            <input type="number" id="cfg-concentration-max" name="behavior_concentration_max" min="0" max="1" step="0.01" value="0.8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-liquidity-min">Liquidity min</label>
+            <input type="number" id="cfg-liquidity-min" name="behavior_liquidity_min" min="0" max="1" step="0.01" value="0.2" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-liquidity-max">Liquidity max</label>
+            <input type="number" id="cfg-liquidity-max" name="behavior_liquidity_max" min="0" max="1" step="0.01" value="0.8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-objective-min">Objective min</label>
+            <input type="number" id="cfg-objective-min" name="behavior_objective_min" min="0" max="1" step="0.01" value="0.2" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-objective-max">Objective max</label>
+            <input type="number" id="cfg-objective-max" name="behavior_objective_max" min="0" max="1" step="0.01" value="0.8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-centralization-min">Centralization min</label>
+            <input type="number" id="cfg-centralization-min" name="behavior_centralization_min" min="0" max="1" step="0.01" value="0.2" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-centralization-max">Centralization max</label>
+            <input type="number" id="cfg-centralization-max" name="behavior_centralization_max" min="0" max="1" step="0.01" value="0.8" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-centralization-cost">Admin cost</label>
+            <input type="number" id="cfg-centralization-cost" name="centralization_admin_cost" min="0" max="20" step="0.1" value="1" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-relation-initial">Relation initial</label>
+            <input type="number" id="cfg-relation-initial" name="relation_initial" min="0" max="1" step="0.01" value="0.85" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-relation-growth">Relation growth</label>
+            <input type="number" id="cfg-relation-growth" name="relation_growth_rate" min="0" max="1" step="0.001" value="0.01" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-relation-impact">Pressure impact</label>
+            <input type="number" id="cfg-relation-impact" name="relation_pressure_impact" min="0" max="1" step="0.001" value="0.015" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-relation-bias">Relation offense bias</label>
+            <input type="number" id="cfg-relation-bias" name="relation_offense_bias" min="0" max="1" step="0.01" value="0.6" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-disconnected">Allow disconnected regions</label>
+            <input type="number" id="cfg-disconnected" name="allow_disconnected_regions" min="0" max="1" step="1" value="1" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-global-grow">Global link growth chance</label>
+            <input type="number" id="cfg-global-grow" name="globalization_link_growth_chance" min="0" max="1" step="0.001" value="0.01" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-global-bridge">Global bridge spawn chance</label>
+            <input type="number" id="cfg-global-bridge" name="globalization_bridge_spawn_chance" min="0" max="1" step="0.001" value="0.005" />
+          </div>
+          <div class="field-group-label">Technology</div>
+          <div class="field-row">
+            <label for="cfg-tech-rnd-cost">R&amp;D base cost</label>
+            <input type="number" id="cfg-tech-rnd-cost" name="tech_rnd_base_cost" min="0" max="100" step="1" value="10" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-reserve">Reserve reference</label>
+            <input type="number" id="cfg-tech-reserve" name="tech_reserve_reference" min="1" max="500" step="1" value="50" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-diplo-effect">Diplo perception effect</label>
+            <input type="number" id="cfg-tech-diplo-effect" name="tech_diplo_perception_effect" min="0" max="1" step="0.01" value="0.3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-cohe-bonus">Cohé threshold bonus</label>
+            <input type="number" id="cfg-tech-cohe-bonus" name="tech_cohe_threshold_bonus" min="0" max="1" step="0.01" value="0.3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-logi-reduction">Logi cost reduction</label>
+            <input type="number" id="cfg-tech-logi-reduction" name="tech_logi_cost_reduction" min="0" max="1" step="0.01" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-leader-cost">Leader cost multiplier</label>
+            <input type="number" id="cfg-tech-leader-cost" name="tech_leader_cost_multiplier" min="1" max="5" step="0.1" value="1.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-tech-neighbor-accel">Neighbor acceleration</label>
+            <input type="number" id="cfg-tech-neighbor-accel" name="tech_neighbor_acceleration" min="0" max="1" step="0.01" value="0.3" />
+          </div>
+          <div class="field-group-label">Devastation</div>
+          <div class="field-row">
+            <label for="cfg-devas-window">Window size (ticks)</label>
+            <input type="number" id="cfg-devas-window" name="devastation_window_size" min="1" max="50" step="1" value="10" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-flip-inc">Flip increment</label>
+            <input type="number" id="cfg-devas-flip-inc" name="devastation_flip_increment" min="0.0" max="1.0" step="0.05" value="0.3" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-recovery">Recovery rate</label>
+            <input type="number" id="cfg-devas-recovery" name="devastation_recovery_rate" min="0.0" max="0.5" step="0.005" value="0.01" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-cap-pen">Cap penalty</label>
+            <input type="number" id="cfg-devas-cap-pen" name="devastation_cap_penalty" min="0.0" max="1.0" step="0.05" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-prod-pen">Production penalty</label>
+            <input type="number" id="cfg-devas-prod-pen" name="devastation_production_penalty" min="0.0" max="1.0" step="0.05" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-attr-pen">Attractiveness penalty</label>
+            <input type="number" id="cfg-devas-attr-pen" name="devastation_attractiveness_penalty" min="0.0" max="1.0" step="0.05" value="0.7" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-base-node-prod">Base node production</label>
+            <input type="number" id="cfg-base-node-prod" name="base_node_production" min="0.0" max="20.0" step="0.5" value="2.0" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-stock-cap">Min stock cap</label>
+            <input type="number" id="cfg-min-stock-cap" name="min_stock_cap" min="0.0" max="10.0" step="0.5" value="1.0" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-min-node-prod">Min node production</label>
+            <input type="number" id="cfg-min-node-prod" name="min_node_production" min="0.0" max="5.0" step="0.1" value="0.0" />
+          </div>
+          <button type="submit" id="btn-apply">Apply &amp; Reset</button>
+        </form>
+      </section>
+      </div><!-- #tab-sim -->
+
+      <div id="tab-about" class="hidden">
+        <div class="about-section">
+          <h3>What this is</h3>
+          <p>An agent-based geopolitical simulation. Factions compete for territorial control over resource nodes using economic accumulation, military pressure, diplomacy, and technology investment.</p>
+          <p>The Python server runs the simulation. This browser computes all display values from raw state, keeping the server a thin, concurrent-friendly state store.</p>
+        </div>
+
+        <div class="about-section">
+          <h3>Core loop</h3>
+          <p>Each tick: nodes collect spice (spice lives in nodes, not a faction pool), factions direct nodes to ship spice toward targets and invest in R&amp;D. Spice delivered to an enemy or neutral node becomes pressure there. When pressure exceeds the flip threshold the node changes owner; its stock is seized and deposited at the conqueror's capital.</p>
+        </div>
+
+        <div class="about-section">
+          <h3>Mechanics</h3>
+          <div class="about-mechanic">
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Nodes</span>
+              <span>Fixed positions on a graph. Each produces spice per tick; stock accumulates up to a capacity.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Conquest</span>
+              <span>Factions ship spice along multi-hop graph routes to any reachable enemy or neutral node. Delivered spice becomes pressure on that node. Pressure resets when the node flips; on flip the node's stored spice is seized.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Devastation</span>
+              <span>Repeated ownership changes degrade a node's production and stock capacity. Recovers slowly over time.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Genomes</span>
+              <span>Each entity has a binary genome. Nodes secede if their genomes drift significantly from their faction's genome (measured by Hamming distance). Defines the faction personality and skews its strategic choices.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Relations</span>
+              <span>Bilateral relations [0–1] per faction pair. Relations grow passively each tick; spice pressure delivered to a faction degrades them. Affects how aggressively factions target each other.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Technology</span>
+              <span><b class="t-diplo">Diplo</b> — reduces retaliation from other factions. <b class="t-cohe">Cohé</b> — increases tolerance of genetic drift. <b class="t-logi">Logi</b> — higher spice stock capacity and decreased movement costs.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Symbolic AI</span>
+              <span>Each tick a faction computes a mode from context signals (stabilize, connect, expand, reconcile, balanced) which shifts its behavior axes (E/C/L/O/Z) before planning. Current mode and goal are visible in the Symbolic AI panel.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Globalization</span>
+              <span>New edges appear stochastically over time, widening the network and opening new strategic corridors.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Secession</span>
+              <span>Nodes drift from their faction's genome through mutation. When a node's Hamming distance to the faction genome exceeds the secession threshold, it breaks off as a new independent faction with its own genome.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Victory</span>
+              <span>Last faction standing wins, or the faction with the most nodes when the tick limit is reached.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <h3>Reading the map</h3>
+          <div class="about-mechanic">
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Node color</span>
+              <span>Owner faction's color. Grey = unclaimed.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">White arc</span>
+              <span>Conquest pressure as a fraction of the flip threshold.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Red arc</span>
+              <span>Devastation level — reduces production and stock capacity.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">&#9733; star</span>
+              <span>Faction capital. Larger circle. Losing it weakens the faction.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Edge color</span>
+              <span>Blue = high-capacity link. Red = low-capacity link.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">♦ label</span>
+              <span>Node label shows income/tick and [stock held].</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- #tab-about -->
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
