@@ -178,6 +178,16 @@ class TestNormalFormGame:
         gs = _make_two_player_game_state()
         game = NormalFormGame.from_game_state(gs, IndependentPayoffFunction())
 
+    def test_rejects_duplicate_player_ids(self):
+        gs = _make_two_player_game_state()
+        game = NormalFormGame.from_game_state(gs, IndependentPayoffFunction())
+        dup_players = [game.players[0], game.players[0]]
+
+        with pytest.raises(ValueError, match="distinct actor ids"):
+            NormalFormGame(
+                id="game-dup", players=dup_players, payoff_vectors=game.payoff_vectors
+            )
+
         with pytest.raises(ValueError, match="id cannot be empty"):
             NormalFormGame(
                 id="", players=game.players, payoff_vectors=game.payoff_vectors
