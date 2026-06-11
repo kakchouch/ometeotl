@@ -159,8 +159,11 @@ Les tests locaux révèlent que l'architecture actuelle est trop abstraite pour 
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
     - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
     - `UtilityFunction`, `UtilityFrame`.
-9. Couche utilité/ranking game dans `src/ometeotl_core/game/` :
+9. Couche game dans `src/ometeotl_core/game/` :
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
+    - `PlayerProfile`, `GameState` — snapshot de jeu multi-acteurs (G-1, G-2, G-3).
+    - `PayoffFunction` (abstrait), `IndependentPayoffFunction`, `PayoffVector`, `NormalFormGame` — matrice de gains sur profils de stratégies (G-7, G-8, G-9).
+    - `BestResponseResult`, `BestResponseCalculator` — calcul de meilleure réponse sur un `NormalFormGame` préconstitué.
 10. Infrastructure runtime dans `src/ometeotl_core/generic/` :
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` et `build_runtime(...)`.
@@ -188,16 +191,14 @@ Les tests locaux révèlent que l'architecture actuelle est trop abstraite pour 
     - Méthodes de classe `from_context()` sur `World`, `Actor`, `Strategy`, et `Goal`.
     - Quatre scénarios de démonstration exécutables dans `generation/examples.py`.
 15. Contrôle qualité :
-    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, et `tests/ometeotl_core/generation/`.
-    - Base actuelle : `418` tests collectés.
+    - Tests automatisés dans `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, `tests/ometeotl_core/generation/`, et `tests/ometeotl_core/integration/`.
+    - Base actuelle : `453` tests collectés.
 
 ### Présent mais encore incomplet ou partiellement scaffoldé
 
 Les couches suivantes restent incomplètes au regard de l'architecture cible et de la roadmap :
 
-- `src/ometeotl_core/game/` pour des abstractions game orientées solveurs plus riches au-delà des primitives actuelles utilité/ranking.
-- Tests d'intégration de la génération : un test de bout en bout couvrant la chaîne complète (contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate), et un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
-- `examples/` à compléter avec des démonstrations de bout en bout supplémentaires (les labs 2–10 et la démo strategy game sont présents ; d'autres sont prévus).
+- `examples/` à compléter avec des démonstrations de bout en bout supplémentaires (les labs 2–15 et la démo strategy game sont présents ; d'autres sont prévus).
 
 ### Arborescence source actuelle
 
@@ -222,7 +223,10 @@ ometeotl/
 │       │   ├── rule_engine.py
 │       │   └── rules.py        # ré-export compat ascendante
 │       ├── game/
-│       │   └── utility.py
+│       │   ├── utility.py
+│       │   ├── game_state.py
+│       │   ├── normal_form.py
+│       │   └── best_response.py
 │       ├── validation/
 │       │   ├── base.py
 │       │   ├── pipeline.py
@@ -268,6 +272,7 @@ ometeotl/
     ├── generic/
     ├── game/
     ├── generation/
+    ├── integration/
     ├── io/
     ├── model/
     └── validation/
@@ -275,13 +280,11 @@ ometeotl/
 
 ### Lecture pratique de la V1
 
-La V1 est validée sur la chaîne complète : ontologie, perception, projection, stratégie, téléologie/utilité, ranking game, autorité/runtime, validation, IO (JSON/YAML + export LLM), et génération contextuelle avec moteur de règles enfichable et adaptateur LLM. Les éléments restants de la roadmap sont les tests d'intégration de la génération (test de la chaîne complète contexte-vers-sortie-validée, et un monde de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité) et les extensions de solveur pour la couche game.
+La V1 est validée sur la chaîne complète : ontologie, perception, projection, stratégie, téléologie/utilité, ranking game, structures de jeu multi-acteurs (matrice de gains en forme normale, meilleure réponse), autorité/runtime, validation, IO (JSON/YAML + export LLM), et génération contextuelle avec moteur de règles enfichable et adaptateur LLM.
 
 ### Priorités TODO actuelles
 
-1. Ajouter un test d'intégration de bout en bout couvrant la chaîne complète : contexte → pipeline → objets générés → export IO → `to_llm_view()` → parse → validate. Ajouter un scénario de jeu concret à 2 acteurs câblant objectifs, stratégies et classement d'utilité.
-2. Étendre la couche game au-delà des primitives actuelles utilité/ranking avec des structures orientées solveurs.
-3. Compléter `examples/` avec des démonstrations de bout en bout supplémentaires au-delà de la série de labs existante.
+1. Étendre `examples/` avec des démonstrations de bout en bout supplémentaires au-delà de la série de labs existante.
 
 ## Status
 Le document `specs_EN.md` est la source de vérité pour l'architecture et le comportement du module.

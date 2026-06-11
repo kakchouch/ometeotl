@@ -124,6 +124,9 @@ class NormalFormGame:
             raise ValueError("NormalFormGame id cannot be empty")
         if not self.players:
             raise ValueError("NormalFormGame requires at least one player")
+        actor_ids = [p.actor.id for p in self.players]
+        if len(actor_ids) != len(set(actor_ids)):
+            raise ValueError("NormalFormGame players must have distinct actor ids")
 
     @classmethod
     def from_game_state(

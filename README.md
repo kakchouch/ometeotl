@@ -47,6 +47,7 @@ As of May 2026, the repository includes:
 - A strategy layer with strategy nodes, outcome branches, linear and branching builders, and perception-driven chaining.
 - A teleology layer with first-class `Goal` objects, decomposition trees, feasibility/admissibility tools, and goal-strategy linkage.
 - A utility stack with the abstract `UtilityFunction` interface and concrete game-layer combinators/rankers (`WeightedSumUtility`, `LexicographicUtility`, `StrategyRanker`).
+- A multi-actor game layer with `PlayerProfile`, `GameState`, `NormalFormGame`, `IndependentPayoffFunction`, `BestResponseResult`, and `BestResponseCalculator` — enabling payoff matrix construction and best-response reasoning over strategy profiles.
 - A sensor pipeline with coverage rules, noise rules, deterministic timestamp-aware perception ids, and epistemic status validation.
 - A server-authoritative core runtime with `AuthorityCommandHandler`, command envelopes/results, audit entries, and runtime bootstrap helpers.
 - A dedicated validation layer with syntactic, structural, temporal, spatial, admissibility, epistemic, and completeness validators, plus policy-based hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`) and diagnostics.
@@ -59,7 +60,7 @@ As of May 2026, the repository includes:
   - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
   - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
   - Four runnable demo scenarios in `generation/examples.py`.
-- A test suite currently collecting `418` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
+- A test suite currently collecting `453` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, `tests/ometeotl_core/generation/`, and `tests/ometeotl_core/integration/`.
 
 ## Current Architecture
 
@@ -72,12 +73,10 @@ The implemented architecture follows the separation defined in `specs_EN.md`:
 - Projection derives successor perceived states from actions without mutating ontological truth directly.
 - Strategy building consumes projected perceptions rather than bypassing the perception layer.
 - Goal feasibility/admissibility is model-level and actor-perception grounded, preserving teleological neutrality.
-- Game-layer utility/ranking consumes model abstractions without embedding domain constants in core layers.
+- Game-layer utility/ranking and multi-actor game structures consume model abstractions without embedding domain constants in core layers.
 
 ## Near-Term TODOs
 
-- Add a full generation roundtrip integration test covering the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate) and a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
-- Extend the `game/` layer beyond current utility/ranking primitives with richer solver-facing abstractions.
 - Extend reference examples in `examples/` with additional end-to-end demo worlds.
 
 ## Join the Journey
