@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Abstract Geopolitical simulation</title>
+  <title>Abstract Geopolitical simulation — Lab 15: Enhanced Local Mechanics</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header id="page-header">
     <h1>Abstract Geopolitical simulation</h1>
-    <span id="page-subtitle">Lab 14 &middot; Agent-based simulation</span>
+    <span id="page-subtitle">Lab 15 &middot; Enhanced Local Mechanics</span>
   </header>
   <div id="app">
     <!-- ---------------------------------------------------------------- -->
@@ -231,6 +231,22 @@
             <label for="cfg-drift">Drift threshold</label>
             <input type="number" id="cfg-drift" name="drift_threshold_fraction" min="0.1" max="1.0" step="0.05" value="0.5" />
           </div>
+          <div class="field-row">
+            <label for="cfg-mut-spice">Mut. spice weight</label>
+            <input type="number" id="cfg-mut-spice" name="mutation_spice_weight" min="0" max="5" step="0.1" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-mut-devas">Mut. devas weight</label>
+            <input type="number" id="cfg-mut-devas" name="mutation_devastation_weight" min="0" max="5" step="0.1" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-mut-pressure">Mut. pressure weight</label>
+            <input type="number" id="cfg-mut-pressure" name="mutation_pressure_weight" min="0" max="5" step="0.1" value="0.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-mut-border">Mut. border weight</label>
+            <input type="number" id="cfg-mut-border" name="mutation_border_weight" min="0" max="5" step="0.1" value="0.5" />
+          </div>
 
           <div class="field-group-label">Behavior (ECLOZ)</div>
           <div class="field-row">
@@ -299,6 +315,14 @@
             <label for="cfg-relation-bias">Offense bias</label>
             <input type="number" id="cfg-relation-bias" name="relation_offense_bias" min="0" max="1" step="0.01" value="0.6" />
           </div>
+          <div class="field-row">
+            <label for="cfg-defense-rate">Defense spice rate</label>
+            <input type="number" id="cfg-defense-rate" name="pressure_defense_rate" min="0" max="10" step="0.1" value="1.5" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-pressure-decay">Pressure decay rate</label>
+            <input type="number" id="cfg-pressure-decay" name="pressure_decay_rate" min="0" max="1" step="0.01" value="0.1" />
+          </div>
 
           <div class="field-group-label">Technology</div>
           <div class="field-row">
@@ -355,6 +379,14 @@
             <label for="cfg-devas-attr-pen">Attractiveness penalty</label>
             <input type="number" id="cfg-devas-attr-pen" name="devastation_attractiveness_penalty" min="0.0" max="1.0" step="0.05" value="0.7" />
           </div>
+          <div class="field-row">
+            <label for="cfg-devas-pressure-rate">Pressure rate</label>
+            <input type="number" id="cfg-devas-pressure-rate" name="devastation_pressure_rate" min="0" max="0.1" step="0.001" value="0.01" />
+          </div>
+          <div class="field-row">
+            <label for="cfg-devas-defense-rate">Defense rate</label>
+            <input type="number" id="cfg-devas-defense-rate" name="devastation_defense_rate" min="0" max="0.1" step="0.001" value="0.01" />
+          </div>
         </form>
       </section>
       </div><!-- #tab-sim -->
@@ -363,6 +395,7 @@
         <div class="about-section">
           <h3>What this is</h3>
           <p>An agent-based geopolitical simulation. Factions compete for territorial control over resource nodes using economic accumulation, military pressure, diplomacy, and technology investment.</p>
+          <p>Lab 15 extends Lab 14 with three new node-level mechanics that make local conditions matter more for both conquest stability and genetic divergence.</p>
           <p>The Python server runs the simulation. This browser computes all display values from raw state, keeping the server a thin, concurrent-friendly state store.</p>
         </div>
 
@@ -372,7 +405,29 @@
         </div>
 
         <div class="about-section">
-          <h3>Mechanics</h3>
+          <h3>Lab 15 — New mechanics</h3>
+          <div class="about-mechanic">
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Pressure defense</span>
+              <span>Spice delivered to an owned node with active pressure is consumed for defense first, at rate <em>pressure_defense_rate</em> (1 spice removes that many accumulated pressure points). The remainder goes to stock as normal. The AI already routes spice defensively, so defense activates automatically whenever a node is under attack.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Pressure decay</span>
+              <span>Accumulated pressure decays each tick when not continuously applied, at rate <em>pressure_decay_rate</em>. Attackers who stop applying spice progressively lose their toehold — sustained campaigns are required to flip a node.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Local mutation rate</span>
+              <span>Each node's effective mutation probability is scaled by a local multiplier (shown as "Mut. multiplier" in the node panel) combining four signals: high local spice concentration, devastation, incoming pressure, and number of distinct neighboring foreign factions. Contested, devastated, overstocked border nodes secede faster.</span>
+            </div>
+            <div class="about-mechanic-row">
+              <span class="about-mechanic-name">Conflict devastation</span>
+              <span>Devastation now accumulates from warfare intensity, not just ownership flips. Each unit of pressure applied (attacker) and each unit of spice spent on defense (defender) both increment the node's devastation score. A prolonged siege degrades the node even if it never changes hands; successful defense is also costly.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <h3>Core mechanics</h3>
           <div class="about-mechanic">
             <div class="about-mechanic-row">
               <span class="about-mechanic-name">Nodes</span>
@@ -380,15 +435,15 @@
             </div>
             <div class="about-mechanic-row">
               <span class="about-mechanic-name">Conquest</span>
-              <span>Factions ship spice along multi-hop graph routes to any reachable enemy or neutral node. Delivered spice becomes pressure on that node. Pressure resets when the node flips; on flip the node's stored spice is seized.</span>
+              <span>Factions ship spice along multi-hop graph routes to any reachable enemy or neutral node. Delivered spice becomes pressure on that node. Pressure decays if the attacker stops and can be countered by the defender spending spice. When pressure exceeds the flip threshold the node changes owner.</span>
             </div>
             <div class="about-mechanic-row">
               <span class="about-mechanic-name">Devastation</span>
-              <span>Repeated ownership changes degrade a node's production and stock capacity. Recovers slowly over time.</span>
+              <span>A measure of warfare intensity on a node. Increases on each ownership flip, but also accumulates from every unit of pressure applied (attacker side) and every unit of spice spent on defense (defender side). Reduces production and stock capacity; recovers slowly each stable tick.</span>
             </div>
             <div class="about-mechanic-row">
               <span class="about-mechanic-name">Genomes</span>
-              <span>Each entity has a binary genome. Nodes secede if their genomes drift significantly from their faction's genome (measured by Hamming distance). Defines the faction personality and skews its strategic choices.</span>
+              <span>Each entity has a binary genome. Nodes secede if their genomes drift significantly from their faction's genome (measured by Hamming distance). Local conditions amplify mutation speed at contested or stressed nodes.</span>
             </div>
             <div class="about-mechanic-row">
               <span class="about-mechanic-name">Relations</span>

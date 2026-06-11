@@ -236,6 +236,7 @@ class World(Space):
             GenerationContext,
             GenerationPlacement,
         )
+        from ometeotl_core.generation.context import _base_context_kwargs
         from ometeotl_core.validation import (
             StructuralValidator,
             ValidationException,
@@ -267,23 +268,8 @@ class World(Space):
                     GenerationContext(
                         kind=str(nested_payload.get("kind") or kind),
                         id=nested_id,
-                        label=str(nested_payload.get("label") or ""),
-                        attributes=dict(nested_payload.get("attributes") or {}),
-                        relations={
-                            str(name): [str(item) for item in values or []]
-                            for name, values in dict(
-                                nested_payload.get("relations") or {}
-                            ).items()
-                        },
-                        state=dict(nested_payload.get("state") or {}),
-                        context=dict(nested_payload.get("context") or {}),
-                        provenance=dict(nested_payload.get("provenance") or {}),
+                        **_base_context_kwargs(nested_payload),
                         metadata=dict(nested_payload.get("metadata") or {}),
-                        validate=bool(nested_payload.get("validate", True)),
-                        validation_mode=str(
-                            nested_payload.get("validation_mode") or "strict"
-                        ),
-                        stage_modes=dict(nested_payload.get("stage_modes") or {}),
                     )
                 )
             return parsed
@@ -314,23 +300,12 @@ class World(Space):
         generation_context = GenerationContext(
             kind="world",
             id=world_id,
-            label=str(payload.get("label") or ""),
-            attributes=dict(payload.get("attributes") or {}),
-            relations={
-                str(name): [str(item) for item in values or []]
-                for name, values in dict(payload.get("relations") or {}).items()
-            },
-            state=dict(payload.get("state") or {}),
-            context=dict(payload.get("context") or {}),
-            provenance=dict(payload.get("provenance") or {}),
+            **_base_context_kwargs(payload),
             metadata=dict(payload.get("metadata") or {}),
             spaces=_parse_contexts(payload.get("spaces"), "space"),
             actors=_parse_contexts(payload.get("actors"), "actor"),
             resources=_parse_contexts(payload.get("resources"), "resource"),
             placements=placements,
-            validate=bool(payload.get("validate", True)),
-            validation_mode=str(payload.get("validation_mode") or "strict"),
-            stage_modes=dict(payload.get("stage_modes") or {}),
         )
 
         pipeline = ContextualGenerationPipeline(

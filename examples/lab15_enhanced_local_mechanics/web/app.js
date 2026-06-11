@@ -22,7 +22,7 @@
 
 "use strict";
 
-const API = "http://127.0.0.1:8777";  // Lab 14 server port
+const API = "http://127.0.0.1:8778";  // Lab 15 server port
 
 // SVG viewport dimensions (must match viewBox in HTML)
 const SVG_W = 800;
@@ -847,12 +847,25 @@ function showNodeInfo(node, state) {
   );
   const isCapital = capitals.has(node.node_id);
   const linkCount = (state.edges || []).filter(e => e.a === node.node_id || e.b === node.node_id).length;
-  const flipThreshold = state.config?.flip_threshold ?? 1;
+  const cfg = state.config ?? {};
+  const flipThreshold = cfg.flip_threshold ?? 1;
   const pressurePct = Math.min(100, (node.pressure_accumulated / flipThreshold * 100)).toFixed(0);
   const stock = node.spice_stock != null ? Math.round(node.spice_stock) : 0;
   const devasPct = typeof node.devastation === "number" ? (node.devastation * 100).toFixed(0) + "%" : "—";
-  const effCap = node.effective_stock_cap != null ? node.effective_stock_cap.toFixed(1) : "—";
-  const effProd = node.effective_production != null ? node.effective_production.toFixed(2) : "—";
+
+  // Cap chain: base_stock_cap → logi_cap (tech) → eff_cap (devastation)
+  const baseCap  = cfg.base_stock_cap ?? 0;
+  const logiCap  = faction
+    ? baseCap + (faction.tech?.logi ?? 0) * (cfg.logi_stock_cap_bonus ?? 0)
+    : baseCap;
+  const effCap   = node.effective_stock_cap != null ? node.effective_stock_cap.toFixed(1) : "—";
+  const logiCapFmt = logiCap.toFixed(1);
+
+  // Prod chain: spice_flow + base_node_production (tech) → eff_prod (devastation)
+  const techProd = node.spice_flow + (cfg.base_node_production ?? 0);
+  const effProd  = node.effective_production != null ? node.effective_production.toFixed(2) : "—";
+  const techProdFmt = techProd.toFixed(2);
+
   const flipsWin = node.flip_count_in_window ?? "—";
 
   document.getElementById("node-info-content").innerHTML = `
@@ -863,9 +876,12 @@ function showNodeInfo(node, state) {
     <div class="ni-row">Links <span>${linkCount}</span></div>
     <div class="ni-row">Pressure <span>${pressurePct}%</span></div>
     <div class="ni-row">Devastation <span class="devas-value">${devasPct}</span></div>
+    <div class="ni-row">Cap (Logi) <span>${logiCapFmt}</span></div>
     <div class="ni-row">Eff. cap <span>${effCap}</span></div>
+    <div class="ni-row">Prod (tech) <span>${techProdFmt}</span></div>
     <div class="ni-row">Eff. prod <span>${effProd}</span></div>
     <div class="ni-row">Flips (win) <span>${flipsWin}</span></div>
+    <div class="ni-row">Mut. multiplier <span>${node.mutation_local_mul != null ? node.mutation_local_mul.toFixed(2) + "×" : "—"}</span></div>
     <div class="ni-row">Pinned <span>${pinnedNodes.has(node.node_id) ? "yes" : "no"}</span></div>
   `;
 

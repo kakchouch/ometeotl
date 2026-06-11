@@ -48,7 +48,7 @@ def _condition_value_matches(expected: Any, actual: Any) -> bool:
             if not _condition_value_matches(expected_value, actual[key]):
                 return False
         return True
-    return expected == actual
+    return bool(expected == actual)
 
 
 def _projected_condition_view(

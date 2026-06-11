@@ -18,6 +18,12 @@ from __future__ import annotations
 from typing import Any, Mapping, Set, Optional
 from dataclasses import dataclass, field
 
+from ometeotl_core.model.perception import (
+    _sort_key_perceived_membership,
+    _sort_key_perceived_relation,
+    _sort_key_perceived_component_link,
+)
+
 
 @dataclass
 class LLMViewContext:
@@ -229,33 +235,21 @@ class LLMViewBuilder:
                 membership.to_dict()
                 for membership in sorted(
                     getattr(perception, "perceived_memberships", []),
-                    key=lambda x: (
-                        x.membership.space_id,
-                        x.membership.object_id,
-                        x.membership.role,
-                    ),
+                    key=_sort_key_perceived_membership,
                 )
             ],
             "perceived_relations": [
                 relation.to_dict()
                 for relation in sorted(
                     getattr(perception, "perceived_relations", []),
-                    key=lambda x: (
-                        x.relation.source_space_id,
-                        x.relation.target_space_id,
-                        x.relation.relation_type,
-                    ),
+                    key=_sort_key_perceived_relation,
                 )
             ],
             "perceived_component_links": [
                 link.to_dict()
                 for link in sorted(
                     getattr(perception, "perceived_component_links", []),
-                    key=lambda x: (
-                        x.composite_id,
-                        x.component_id,
-                        x.link_id,
-                    ),
+                    key=_sort_key_perceived_component_link,
                 )
             ],
         }
@@ -275,11 +269,7 @@ class LLMViewBuilder:
 
         for membership in sorted(
             getattr(perception, "perceived_memberships", []),
-            key=lambda x: (
-                x.membership.space_id,
-                x.membership.object_id,
-                x.membership.role,
-            ),
+            key=_sort_key_perceived_membership,
         ):
             grouped.setdefault(membership.epistemic_status, []).append(
                 {
@@ -291,11 +281,7 @@ class LLMViewBuilder:
 
         for relation in sorted(
             getattr(perception, "perceived_relations", []),
-            key=lambda x: (
-                x.relation.source_space_id,
-                x.relation.target_space_id,
-                x.relation.relation_type,
-            ),
+            key=_sort_key_perceived_relation,
         ):
             grouped.setdefault(relation.epistemic_status, []).append(
                 {
@@ -307,11 +293,7 @@ class LLMViewBuilder:
 
         for link in sorted(
             getattr(perception, "perceived_component_links", []),
-            key=lambda x: (
-                x.composite_id,
-                x.component_id,
-                x.link_id,
-            ),
+            key=_sort_key_perceived_component_link,
         ):
             grouped.setdefault(link.epistemic_status, []).append(
                 {

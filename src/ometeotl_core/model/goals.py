@@ -152,7 +152,7 @@ class Goal(ModelObject):
     def from_dict(cls, data: Mapping[str, Any]) -> "Goal":
         """Reconstruct a goal from its canonical representation."""
         raw_priority = data.get("priority")
-        priority_value = float(raw_priority) if raw_priority not in (None, "") else 1.0
+        priority_value = float(raw_priority) if raw_priority is not None and raw_priority != "" else 1.0
         return cls(
             **_base_kwargs_from_typed_payload(data, "goal"),
             actor_id=_require_non_null_string(data, "actor_id"),
@@ -180,6 +180,7 @@ class Goal(ModelObject):
             ContextualGenerationPipeline,
             GenerationContext,
         )
+        from ometeotl_core.generation.context import _base_context_kwargs
         from ometeotl_core.validation import (
             StructuralValidator,
             ValidationException,
@@ -206,19 +207,8 @@ class Goal(ModelObject):
         generation_context = GenerationContext(
             kind="goal",
             id=goal_id,
-            label=str(payload.get("label") or ""),
-            attributes=dict(payload.get("attributes") or {}),
-            relations={
-                str(name): [str(item) for item in values or []]
-                for name, values in dict(payload.get("relations") or {}).items()
-            },
-            state=dict(payload.get("state") or {}),
-            context=dict(payload.get("context") or {}),
-            provenance=dict(payload.get("provenance") or {}),
+            **_base_context_kwargs(payload),
             metadata=metadata,
-            validate=bool(payload.get("validate", True)),
-            validation_mode=str(payload.get("validation_mode") or "strict"),
-            stage_modes=dict(payload.get("stage_modes") or {}),
         )
 
         pipeline = ContextualGenerationPipeline(
