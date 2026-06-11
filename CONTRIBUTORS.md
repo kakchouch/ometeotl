@@ -5,10 +5,12 @@
 ### @kakchouch
 
 - **Rank:** Emperor
-- **Merged PRs:** 38
+- **Merged PRs:** 40
 
 #### Merged Pull Requests
 
+- [#120 Test/generation round trip](https://github.com/kakchouch/ometeotl/pull/120)
+- [#119 Merge branch 'develop' of https://github.com/kakchouch/ometeotl into develop](https://github.com/kakchouch/ometeotl/pull/119)
 - [#117 Feature/strategy branching](https://github.com/kakchouch/ometeotl/pull/117)
 - [#105 Feature/generation layer](https://github.com/kakchouch/ometeotl/pull/105)
 - [#101 Feature/llm export](https://github.com/kakchouch/ometeotl/pull/101)
