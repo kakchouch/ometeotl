@@ -28,6 +28,20 @@ Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> ProjectionAssumption`
 
+Example:
+
+```python
+tool = DefaultProjectionTool()
+proj = tool.project_action(action, perception, resources=[resource])
+
+for assumption in proj.assumptions:
+    # assumption_type: "actor_binding", "resource_effect", "prerequisite", ...
+    print(assumption.assumption_type)
+    print(assumption.satisfied)        # True | False | None
+    print(assumption.description)
+    print(assumption.epistemic_status) # "projected" by default
+```
+
 See also:
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)
 - [ProjectionTool](/ometeotl/documentation/class-reference/model/projection/projection-tool/)

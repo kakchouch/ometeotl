@@ -24,5 +24,22 @@ Methods:
 - `from_dict(...)`
 - `__post_init__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.perception import PerceivedMembership
+
+pm = PerceivedMembership(
+    membership=membership,
+    epistemic_status="believed",
+    noise_metadata={"confidence": 0.9},
+)
+print(pm.membership.object_id)
+print(pm.epistemic_status)   # "believed"
+
+data = pm.to_dict()
+pm2 = PerceivedMembership.from_dict(data)
+```
+
 See also:
 - [PerceivedSpace](/ometeotl/documentation/class-reference/model/perception/perceived-space/)

@@ -20,6 +20,27 @@ Constructor:
 Method:
 - `evaluate(perception, actor, context) -> UtilityFrame`
 
+Example:
+
+```python
+from ometeotl_core.game.utility import LexicographicUtility
+
+# Safety is paramount; speed is the tiebreaker
+utility = LexicographicUtility(
+    framework_id="safety_first",
+    metric_order=["safety", "speed"],
+    metric_directions={"safety": "max", "speed": "max"},
+)
+frame = utility.evaluate(
+    perception,
+    actor,
+    context={"safety": 0.9, "speed": 0.5},
+)
+print(frame.value)            # [0.9, 0.5]
+print(frame.criteria_labels)  # ["safety", "speed"]
+print(frame.is_multi_criteria) # True
+```
+
 See also:
 - [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/)
 - [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/)

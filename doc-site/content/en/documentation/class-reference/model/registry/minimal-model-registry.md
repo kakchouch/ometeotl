@@ -20,5 +20,20 @@ Parameters and fields:
 Methods:
 - `register`, `unregister`, `exists`, `get`, `clear`, `all_ids`
 
+Example:
+
+```python
+from ometeotl_core.model.registry import MinimalModelRegistry
+
+# Class-level global registry — shared across all calls in the process
+MinimalModelRegistry.register(actor)
+assert MinimalModelRegistry.exists("actor-1")
+
+obj = MinimalModelRegistry.get("actor-1")
+MinimalModelRegistry.unregister("actor-1")
+
+# Prefer WorldModelRegistry for world-scoped isolation in production code
+```
+
 See also:
 - [World](/ometeotl/documentation/class-reference/model/world/world/)

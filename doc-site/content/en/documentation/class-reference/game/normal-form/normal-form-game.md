@@ -33,6 +33,23 @@ Methods:
 - `payoffs_for_profile(profile) -> PayoffVector | None` — lookup by strategy ids; returns `None` if not found
 - `to_dict() -> JsonMap`
 
+Example:
+
+```python
+from ometeotl_core.game.normal_form import NormalFormGame, IndependentPayoffFunction
+
+# Build the full payoff matrix from a game state
+payoff_fn = IndependentPayoffFunction()
+game = NormalFormGame.from_game_state(game_state, payoff_fn)
+
+# Look up payoffs for a specific strategy combination
+profile = {pp.actor.id: pp.strategies[0] for pp in game_state.players}
+vector = game.payoffs_for_profile(profile)
+if vector:
+    for actor_id, frame in vector.payoffs.items():
+        print(actor_id, frame.scalar_value)
+```
+
 See also:
 - [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/)
 - [PayoffVector](/ometeotl/documentation/class-reference/game/normal-form/payoff-vector/)

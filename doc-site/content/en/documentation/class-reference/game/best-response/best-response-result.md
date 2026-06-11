@@ -24,6 +24,27 @@ Fields:
 Methods:
 - `to_dict() -> JsonMap`
 
+Example:
+
+```python
+calc = BestResponseCalculator()
+result = calc.compute(
+    actor_id="actor-1",
+    opponent_profile={"actor-2": actor2_strategy},
+    game=game,
+)
+
+print(result.actor_id)
+print(result.best_strategy.id)
+print(result.best_utility.scalar_value)
+
+# Full ranking of all available responses, descending by utility
+for strategy, frame in result.all_responses:
+    print(strategy.id, frame.scalar_value)
+
+data = result.to_dict()
+```
+
 See also:
 - [BestResponseCalculator](/ometeotl/documentation/class-reference/game/best-response/best-response-calculator/)
 - [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/)

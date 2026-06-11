@@ -26,6 +26,24 @@ Methods:
 - `to_dict() -> JsonMap`
 - from_dict(data) -> [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/)
 
+Example:
+
+```python
+from ometeotl_core.generic.authority import CommandEnvelope
+import datetime
+
+envelope = CommandEnvelope(
+    command_id="cmd-001",
+    actor_id="actor-1",
+    command_type="add_space",
+    payload={"space": space.to_dict()},
+    sequence=1,
+    issued_at=datetime.datetime.utcnow().isoformat(),
+)
+data = envelope.to_dict()
+envelope2 = CommandEnvelope.from_dict(data)
+```
+
 See also:
 - [CommandResult](/ometeotl/documentation/class-reference/core/command-result/)
 - [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/)

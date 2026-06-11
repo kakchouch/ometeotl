@@ -40,6 +40,27 @@ Notes:
 - Unknown `object_type` values fall back to `ModelObject.from_dict`.
 - When `object_factories` is provided a shallow copy of the default table is taken so the cache is never mutated.
 
+Example:
+
+```python
+from ometeotl_core.model.registry import reconstruct_model_object
+
+# Round-trip: serialize then reconstruct any model object by type
+raw = actor.to_dict()          # {"object_type": "actor", "id": "actor-1", ...}
+obj = reconstruct_model_object(raw)
+assert obj.id == "actor-1"
+
+# Extend with a custom domain type
+class Vehicle(Actor):
+    pass
+
+raw_v = {"object_type": "vehicle", "id": "v-1", ...}
+obj2 = reconstruct_model_object(
+    raw_v,
+    object_factories={"vehicle": Vehicle.from_dict},
+)
+```
+
 See also:
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)
 - [MinimalModelRegistry](/ometeotl/documentation/class-reference/model/registry/minimal-model-registry/)

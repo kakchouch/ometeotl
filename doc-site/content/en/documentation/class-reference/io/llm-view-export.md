@@ -48,3 +48,29 @@ Shared model-level entrypoint dispatching to `LLMViewBuilder` by object type. Un
 - This exporter does not run validation.
 - It assumes input objects are already structurally valid.
 - It is a projection layer, not a business-logic layer.
+
+Example:
+
+```python
+from ometeotl_core.io.llm_export import (
+    world_to_llm_view,
+    actor_to_llm_view,
+    perception_to_llm_view,
+)
+
+# World view: reality block + sorted member id lists
+world_view = world_to_llm_view(world)
+print(world_view["reality"]["actors"])
+
+# Actor view with attached perception
+actor_view = actor_to_llm_view(actor, perception=perception)
+print(actor_view["epistemic"])
+
+# Perception view: grouped by epistemic status
+perc_view = perception_to_llm_view(perception)
+print(perc_view["certain"])
+print(perc_view["believed"])
+
+# Via model object shortcut
+llm_view = actor.to_llm_view()
+```

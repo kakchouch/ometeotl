@@ -24,5 +24,24 @@ Methods:
 - queries: `get_space`, `spaces_where_object_exists`, `shared_spaces_ids_for_objects`, `list_objects_in_space`
 - serialization: `to_dict`, `from_dict`
 
+Example:
+
+```python
+from ometeotl_core.model.spaces import SpaceObjectGraph, SpaceObjectMembership
+
+graph = SpaceObjectGraph()
+graph.add_space(space)
+graph.add_object_membership(SpaceObjectMembership(
+    object_id="actor-1", space_id="zone-1", role="occupies"
+))
+graph.add_object_membership(SpaceObjectMembership(
+    object_id="resource-1", space_id="zone-1", role="stored_in"
+))
+
+objects = graph.list_objects_in_space("zone-1")
+actor_spaces = graph.spaces_where_object_exists("actor-1")
+shared = graph.shared_spaces_ids_for_objects(["actor-1", "resource-1"])
+```
+
 See also:
 - [SpaceRelationGraph](/ometeotl/documentation/class-reference/model/space-relations/space-relation-graph/)

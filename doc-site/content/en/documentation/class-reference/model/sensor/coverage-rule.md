@@ -19,6 +19,25 @@ Methods:
 - `covers_membership(membership, actor_id, world) -> bool`
 - `covers_relation(relation, actor_id, world) -> bool`
 
+Example:
+
+```python
+from ometeotl_core.model.sensor import CoverageRule
+
+class PhysicalOnlyCoverageRule(CoverageRule):
+    """Only include physical spaces and their memberships/relations."""
+
+    def covers_space(self, space, actor_id, world):
+        return space.kind == "physical"
+
+    def covers_membership(self, membership, actor_id, world):
+        space = world.get_space(membership.space_id)
+        return space is not None and space.kind == "physical"
+
+    def covers_relation(self, relation, actor_id, world):
+        return True
+```
+
 See also:
 - [TotalCoverageRule](/ometeotl/documentation/class-reference/model/sensor/total-coverage-rule/)
 - [NoiseRule](/ometeotl/documentation/class-reference/model/sensor/noise-rule/)

@@ -26,6 +26,19 @@ Important behavior:
 - player evaluation is completely independent; opponent strategies do not influence a player's terminal perception
 - each call creates a new `StrategyRanker` per player (lightweight: holds only a reference)
 
+Example:
+
+```python
+from ometeotl_core.game.normal_form import NormalFormGame, IndependentPayoffFunction
+
+# Non-interference assumption: each player's outcome depends only on their own strategy
+payoff_fn = IndependentPayoffFunction()
+game = NormalFormGame.from_game_state(game_state, payoff_fn)
+
+# The matrix now contains one PayoffVector per strategy profile combination
+print(len(game.payoff_vectors))
+```
+
 See also:
 - [PayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/payoff-function/)
 - [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/)

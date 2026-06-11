@@ -24,5 +24,20 @@ Methods:
 - generated relation methods: `add_user/remove_user`, `add_owner/remove_owner`, `add_dependency/remove_dependency`, and related pairs
 - `from_dict(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.resources import Resource
+
+resource = Resource(id="fuel-1", kind="fuel")
+resource.rivalry = "rival"
+resource.transferability = "transferable"
+resource.divisibility = "divisible"
+resource.add_owner("actor-1")
+resource.set_attribute("label", "Fuel Tank A")
+
+data = resource.to_dict()
+```
+
 See also:
 - [ResourceEffect](/ometeotl/documentation/class-reference/model/actions/resource-effect/)

@@ -33,5 +33,25 @@ Methods:
 Notes:
 - `is_space_abstract(space_id)` is a convenience query over registered spaces and returns `False` for unknown space ids.
 
+Example:
+
+```python
+from ometeotl_core.model.world import World
+from ometeotl_core.model.spaces import Space
+from ometeotl_core.model.actors import Actor
+
+world = World(id="world-1", is_root_world=True)
+
+space = Space(id="zone-1", kind="physical")
+world.add_space(space)
+
+actor = Actor(id="actor-1")
+world.place_object(actor.id, space.id)
+world.register_object(actor)
+
+data = world.to_dict()
+world2 = World.from_dict(data)
+```
+
 See also:
 - [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/)

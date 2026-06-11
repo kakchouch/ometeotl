@@ -25,6 +25,24 @@ Methods:
 - policy aggregators: `_covers_space`, `_covers_membership`, `_covers_relation`
 - noise pipeline: `_apply_noise_to_space`, `_apply_noise_to_membership`, `_apply_noise_to_relation`, `_apply_noise`
 
+Example:
+
+```python
+from ometeotl_core.model.sensor import Sensor, TotalCoverageRule, IdentityNoiseRule
+
+# Omniscient sensor with no distortion
+sensor = Sensor(
+    coverage_rules=[TotalCoverageRule()],
+    noise_rules=[IdentityNoiseRule()],
+    default_epistemic_status="certain",
+)
+perception = sensor.sense(world, actor_id="actor-1", timestamp=0)
+
+# Access the resulting perception
+pspace = perception.get_perceived_space("zone-1")
+print(pspace.epistemic_status)   # "certain"
+```
+
 See also:
 - [PerceivedSpace](/ometeotl/documentation/class-reference/model/perception/perceived-space/)
 - [PerceivedMembership](/ometeotl/documentation/class-reference/model/perception/perceived-membership/)

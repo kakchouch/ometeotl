@@ -38,6 +38,21 @@ Methods:
 Notes:
 - `component_added` and `component_removed` describe projected changes to perceived actor composition, not mutations of the ontological world model.
 
+Example:
+
+```python
+tool = DefaultProjectionTool()
+proj = tool.project_action(action, perception, resources=[resource])
+
+if proj.projected_state:
+    for change in proj.projected_state.changes:
+        # change_type: "resource_consume", "resource_produce", "object_removed", ...
+        print(change.change_type)
+        print(change.subject_id)   # resource or object id
+        print(change.space_id)     # affected space, if applicable
+        print(change.applied)      # True | False | None
+```
+
 See also:
 - [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)

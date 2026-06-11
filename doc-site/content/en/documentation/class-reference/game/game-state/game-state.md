@@ -33,6 +33,25 @@ Important behavior:
 - raises `ValueError` if `players` is empty
 - raises `ValueError` if any two players share the same `actor_id`
 
+Example:
+
+```python
+from ometeotl_core.game.game_state import GameState
+
+game_state = GameState(
+    id="game-1",
+    world_id="world-1",
+    players=[player_a, player_b],
+    context={"round": 1},
+    metadata={"scenario": "resource-competition"},
+)
+
+player = game_state.player_for("actor-1")
+print(player.actor.id if player else "not found")
+
+data = game_state.to_dict()
+```
+
 See also:
 - [PlayerProfile](/ometeotl/documentation/class-reference/game/game-state/player-profile/)
 - [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/)
