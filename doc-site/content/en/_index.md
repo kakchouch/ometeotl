@@ -32,26 +32,44 @@ The name **Ometeotl** draws from Aztec mythology, where *Ōme* means "two" or "d
 
 ## Work in Progress
 
-This project is **actively under development**. The current repository already implements a functional core for modeling, perception, projection, composite and abstract actors, strategy building, server-authoritative runtime control, and a dedicated validation layer. Generation, IO workflows, and end-to-end examples remain in progress.
+This project is **actively under development**. The current codebase implements a functional core covering modeling, perception, projection, strategy, teleology, game-layer utility ranking, composite actors, server-authoritative runtime boundaries, a dedicated validation layer, canonical IO (JSON/YAML), LLM-oriented export, and a complete contextual generation pipeline with pluggable rule engine and optional LLM-assisted refinement.
+
+## Architectural Note (April 2026)
+
+Local tests revealed that the current architecture is too abstract for direct practical implementation. It has been decided to:
+
+- Keep the current code in the abstract core module `ometeotl_core`.
+- Add a primary specialization layer `ometeotl_foundations`, covering:
+  - **spatial** — primary spatial implementation of `ometeotl_core`
+  - **networks** — primary graph-theory implementation of `ometeotl_core`
+  - … (further domains planned)
+- Add an adapter layer `ometeotl_adapters` that implements each specialization with a reputable third-party library.
 
 ## Current Status
 
-- Functional model core with actors, resources, spaces, world, registry, and spatial graphs.
-- Composite actor hierarchies with explicit `component` links, traversal helpers, and abstract-space support.
-- Perception and sensor layers with epistemic statuses and perceived component links.
-- Projection and strategy layers with projected successor perceptions and perception-driven strategy chaining.
-- Teleology and utility layers with first-class goals, admissibility/feasibility tools, and game utility/ranking primitives.
-- Dedicated validation layer with staged validation pipeline, policy profiles (`observe_only`, `enforce_structure`, `enforce_domain`), and diagnostics.
-- Authority/runtime boundary in `src/ometeotl_core/generic/` for server-owned world mutation flows.
-- Current automated baseline: `317` collected tests.
+As of June 2026, the repository includes:
+
+- Full model core in `src/ometeotl_core/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
+- Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
+- Composite and abstract actor support with explicit `component` links, composition modes, cycle detection, hierarchy traversal, and abstract-space helpers.
+- Sensor pipeline with `CoverageRule`, `NoiseRule`, `TotalCoverageRule`, `IdentityNoiseRule`, snapshot timestamp support, and deterministic perception IDs.
+- Perception layer with `Perception`, `PerceivedSpace`, `PerceivedMembership`, `PerceivedRelation`, and `PerceivedComponentLink` with epistemic status validation.
+- Projection layer with `ProjectionAssumption`, `ProjectedPerceptionChange`, `ProjectedPerceptionState`, `ActionProjection`, `ProjectionBatch`, and `DefaultProjectionTool`.
+- Strategy layer with `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`, `build_linear_strategy`, and `build_branching_strategy` — each outcome branch carries its own projected successor perceived state, enabling one action to emit distinct outcomes per branch.
+- Teleology and utility layers with first-class `Goal` objects, decomposition trees, feasibility/admissibility tools (`GoalFeasibilityTool`, `GoalAdmissibilityChecker`), and `UtilityFunction`/`UtilityFrame`.
+- Game layer in `src/ometeotl_core/game/` with `PlayerProfile`, `GameState`, `NormalFormGame`, `IndependentPayoffFunction`, `PayoffVector`, `BestResponseCalculator`, `WeightedSumUtility`, `LexicographicUtility`, and `StrategyRanker` — enabling payoff matrix construction and best-response reasoning over strategy profiles.
+- Core runtime infrastructure in `src/ometeotl_core/generic/` with `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`, `RuntimeContext`, and `build_runtime`.
+- Validation layer with staged `ValidationPipeline`, validator families (syntactic, structural, temporal, spatial, admissibility, epistemic, completeness), policy hardening profiles (`observe_only`, `enforce_structure`, `enforce_domain`), and `DiagnosticBuilder`.
+- Minimum interfaces in `src/ometeotl_core/model/interfaces.py`: `Serializable`, `Validatable`, `LLMExportable`, `ContextualBuildable`.
+- Canonical IO layer in `src/ometeotl_core/io/` with JSON/YAML world export and import plus a dedicated LLM/SLM view exporter (`world_to_llm_view`, `actor_to_llm_view`, `perception_to_llm_view`, `ModelObject.to_llm_view()`) that explicitly separates reality, perception, belief, hypothesis, and projection.
+- Contextual generation pipeline in `src/ometeotl_core/generation/` with `GenerationContext`, class-based `ContextualBuilder` abstractions for all core kinds, pluggable `GenerationRule`/`GenerationRuleSet`/`RuleRegistry` rule engine with built-in constraint propagation (temporal, spatial, admissibility), `LLMGenerationAdapter`, and `ContextualGenerationPipeline` orchestrating rules → build → registration → validation → `GenerationResult`.
+- `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`; four runnable demo scenarios in `generation/examples.py`.
+- Complete class-reference documentation with code examples for all 78 public classes.
+- Current automated baseline: `455` collected tests.
 
 ## Near-Term TODOs
 
-- Implement dedicated IO workflows.
-- Implement contextual generation and repair.
-- Extend the game layer beyond current utility/ranking primitives with richer solver-facing abstractions.
-- Extend the strategy layer to support one action emitting several alternative projected outcomes, with branch-specific successor perceived states on `StrategyOutcomeBranch`.
-- Add reference examples and end-to-end demo worlds.
+- Extend reference examples in `examples/` with additional end-to-end demo worlds.
 
 ## Join the Journey
 
