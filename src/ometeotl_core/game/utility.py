@@ -49,7 +49,7 @@ def _extract_comparison_vector(
         return [float(value) for value in raw_values]
     if raw_values is not None:
         return [float(raw_values)]
-    if frame.is_multi_criteria:
+    if isinstance(frame.value, list):
         return [float(value) for value in frame.value]
     return [float(frame.scalar_value)]
 
@@ -318,6 +318,10 @@ class StrategyRanker:
                     "terminal_probability": probability,
                 }
             )
+            if branch.projected_state is None:
+                raise ValueError(
+                    f"Terminal branch '{branch.branch_id}' has no projected_state"
+                )
             frames.append(
                 self.utility_function.evaluate(
                     branch.projected_state.perception,
@@ -354,7 +358,7 @@ class StrategyRanker:
             for frame, probability in zip(
                 frames, normalized_probabilities, strict=False
             ):
-                if not frame.is_multi_criteria:
+                if not isinstance(frame.value, list):
                     raise ValueError(
                         "Cannot aggregate mixed scalar and multi-criteria utility frames"
                     )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Mapping
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .base import (
     SEVERITY_ERROR,

@@ -309,6 +309,7 @@ class Strategy(ModelObject):
             ContextualGenerationPipeline,
             GenerationContext,
         )
+        from ometeotl_core.generation.context import _base_context_kwargs
         from ometeotl_core.validation import (
             StructuralValidator,
             ValidationException,
@@ -334,19 +335,8 @@ class Strategy(ModelObject):
         generation_context = GenerationContext(
             kind="strategy",
             id=strategy_id,
-            label=str(payload.get("label") or ""),
-            attributes=dict(payload.get("attributes") or {}),
-            relations={
-                str(name): [str(item) for item in values or []]
-                for name, values in dict(payload.get("relations") or {}).items()
-            },
-            state=dict(payload.get("state") or {}),
-            context=dict(payload.get("context") or {}),
-            provenance=dict(payload.get("provenance") or {}),
+            **_base_context_kwargs(payload),
             metadata=metadata,
-            validate=bool(payload.get("validate", True)),
-            validation_mode=str(payload.get("validation_mode") or "strict"),
-            stage_modes=dict(payload.get("stage_modes") or {}),
         )
 
         pipeline = ContextualGenerationPipeline(

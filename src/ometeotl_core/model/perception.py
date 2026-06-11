@@ -190,6 +190,29 @@ class PerceivedComponentLink:
 
 
 # ---------------------------------------------------------------------------
+# Stable sort keys for perceived-element collections
+# ---------------------------------------------------------------------------
+
+
+def _sort_key_perceived_membership(pm: "PerceivedMembership") -> tuple[str, str, str]:
+    return (pm.membership.space_id, pm.membership.object_id, pm.membership.role)
+
+
+def _sort_key_perceived_relation(pr: "PerceivedRelation") -> tuple[str, str, str]:
+    return (
+        pr.relation.source_space_id,
+        pr.relation.target_space_id,
+        pr.relation.relation_type,
+    )
+
+
+def _sort_key_perceived_component_link(
+    pcl: "PerceivedComponentLink",
+) -> tuple[str, str, str]:
+    return (pcl.composite_id, pcl.component_id, pcl.link_id)
+
+
+# ---------------------------------------------------------------------------
 # Perception
 # ---------------------------------------------------------------------------
 
@@ -301,34 +324,20 @@ class Perception:
             "perceived_memberships": [
                 pm.to_dict()
                 for pm in sorted(
-                    self.perceived_memberships,
-                    key=lambda x: (
-                        x.membership.space_id,
-                        x.membership.object_id,
-                        x.membership.role,
-                    ),
+                    self.perceived_memberships, key=_sort_key_perceived_membership
                 )
             ],
             "perceived_relations": [
                 pr.to_dict()
                 for pr in sorted(
-                    self.perceived_relations,
-                    key=lambda x: (
-                        x.relation.source_space_id,
-                        x.relation.target_space_id,
-                        x.relation.relation_type,
-                    ),
+                    self.perceived_relations, key=_sort_key_perceived_relation
                 )
             ],
             "perceived_component_links": [
                 pcl.to_dict()
                 for pcl in sorted(
                     self.perceived_component_links,
-                    key=lambda x: (
-                        x.composite_id,
-                        x.component_id,
-                        x.link_id,
-                    ),
+                    key=_sort_key_perceived_component_link,
                 )
             ],
             "context": _canonical_json_map(self.context),

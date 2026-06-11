@@ -229,7 +229,7 @@ class GuardedJsonList(list[Any]):
         self._assert_mutation_allowed()
         super().sort(*args, **kwargs)
 
-    def __iadd__(self, values: Iterable[Any]) -> "GuardedJsonList":
+    def __iadd__(self, values: Iterable[Any]) -> "GuardedJsonList":  # type: ignore[misc]
         self._assert_mutation_allowed()
         super().extend(
             _wrap_mutable_value(value, self._mutation_guard) for value in values
@@ -553,7 +553,7 @@ class ModelObject:
         if object_type == "perception":
             return builder.perception_view(self, context=context)
 
-        view = {
+        view: JsonMap = {
             "id": self.id,
             "type": object_type,
         }
