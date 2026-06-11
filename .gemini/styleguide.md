@@ -167,3 +167,6 @@ Then:
 - do NOT request a different structure without strong justification
 
 Avoid "moving the goalposts" between review passes.
+
+## Exceptions
+Do not review examples/ unless explicitely for.
