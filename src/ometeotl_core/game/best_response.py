@@ -78,6 +78,14 @@ class BestResponseCalculator:
             if opp_id not in player_ids:
                 raise ValueError(f"Opponent '{opp_id}' is not a player in this game")
 
+        expected_opponents = player_ids - {actor_id}
+        provided_opponents = set(opponent_profile.keys())
+        missing_opponents = expected_opponents - provided_opponents
+        if missing_opponents:
+            raise ValueError(
+                f"opponent_profile is missing strategies for opponents: {sorted(missing_opponents)}"
+            )
+
         opponent_strategy_ids = {opp_id: s.id for opp_id, s in opponent_profile.items()}
 
         responses: list[tuple[Strategy, UtilityFrame]] = []

@@ -148,6 +148,13 @@ class TestBestResponseCalculator:
         with pytest.raises(ValueError, match="not a player in this game"):
             calc.compute("actor-1", {"ghost": ghost_strategy}, game)
 
+    def test_raises_when_opponent_missing(self):
+        game, gs = _build_prisoner_dilemma_game()
+        calc = BestResponseCalculator()
+
+        with pytest.raises(ValueError, match="missing strategies for opponents"):
+            calc.compute("actor-1", {}, game)
+
     def test_to_dict_structure(self):
         game, gs = _build_prisoner_dilemma_game()
         calc = BestResponseCalculator()
