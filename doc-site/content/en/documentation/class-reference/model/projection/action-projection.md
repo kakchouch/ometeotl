@@ -29,6 +29,25 @@ Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> ActionProjection`
 
+Example:
+
+```python
+from ometeotl_core.model.projection import DefaultProjectionTool
+
+tool = DefaultProjectionTool()
+projection = tool.project_action(action, perception, resources=[resource])
+
+print(projection.status)           # "projected" | "partial" | "blocked"
+print(projection.action_id)
+print(projection.actor_id)
+
+if projection.projected_state:
+    pps = projection.projected_state
+    print(len(pps.changes))        # number of state changes applied
+
+data = projection.to_dict()
+```
+
 See also:
 - [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/)
 - [ProjectionBatch](/ometeotl/documentation/class-reference/model/projection/projection-batch/)

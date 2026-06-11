@@ -32,6 +32,24 @@ Important behavior:
 - raises `ValueError` if any opponent in the profile is not a player in the game
 - raises `ValueError` if no matching payoff vectors are found
 
+Example:
+
+```python
+from ometeotl_core.game.best_response import BestResponseCalculator
+from ometeotl_core.game.normal_form import NormalFormGame, IndependentPayoffFunction
+
+game = NormalFormGame.from_game_state(game_state, IndependentPayoffFunction())
+
+calc = BestResponseCalculator()
+result = calc.compute(
+    actor_id="actor-1",
+    opponent_profile={"actor-2": actor2_strategy},
+    game=game,
+)
+print(result.best_strategy.id)
+print(result.best_utility.scalar_value)
+```
+
 See also:
 - [BestResponseResult](/ometeotl/documentation/class-reference/game/best-response/best-response-result/)
 - [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/)

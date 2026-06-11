@@ -19,5 +19,20 @@ Methods:
 - `covers_membership(...) -> bool`
 - `covers_relation(...) -> bool`
 
+Example:
+
+```python
+from ometeotl_core.model.sensor import Sensor, TotalCoverageRule, IdentityNoiseRule
+
+# Fully transparent sensor — every space, membership, and relation is visible
+sensor = Sensor(
+    coverage_rules=[TotalCoverageRule()],
+    noise_rules=[IdentityNoiseRule()],
+    default_epistemic_status="certain",
+)
+perception = sensor.sense(world, actor_id="actor-1")
+# perception includes all spaces and all memberships without filtering
+```
+
 See also:
 - [IdentityNoiseRule](/ometeotl/documentation/class-reference/model/sensor/identity-noise-rule/)

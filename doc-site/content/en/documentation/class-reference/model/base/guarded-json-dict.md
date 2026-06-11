@@ -23,5 +23,18 @@ Methods:
 - guarded mutators: `__setitem__`, `__delitem__`, `clear`, `pop`, `popitem`, `setdefault`, `update`
 - `__deepcopy__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.base import GuardedJsonDict
+
+d = GuardedJsonDict({"status": "active"})
+d["status"] = "inactive"   # allowed — no guard active
+d["new_key"] = 42
+
+# When a World enables authority mode, the mutation guard fires
+# and d["key"] = value raises RuntimeError until authority mode is disabled.
+```
+
 See also:
 - [GuardedJsonList](/ometeotl/documentation/class-reference/model/base/guarded-json-list/)

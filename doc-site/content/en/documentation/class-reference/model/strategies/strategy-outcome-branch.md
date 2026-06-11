@@ -32,6 +32,31 @@ Important behavior:
 - terminal branches (no `child_node_id`) may still carry a `projected_state` to expose the final successor perception to utility evaluation
 - `probability` must be in `[0, 1]` when set
 
+Example:
+
+```python
+from ometeotl_core.model.strategies import StrategyOutcomeBranch
+
+# Terminal branch (no child): carries the projected final state
+success_branch = StrategyOutcomeBranch(
+    branch_id="branch-success",
+    label="success",
+    probability=0.8,
+    condition={"resource_available": True},
+    projected_state=projected_perception_state,
+)
+
+# Non-terminal branch: links to the next node
+continue_branch = StrategyOutcomeBranch(
+    branch_id="branch-continue",
+    label="partial",
+    child_node_id="node-2",
+    probability=0.2,
+)
+
+data = success_branch.to_dict()
+```
+
 See also:
 - [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/)

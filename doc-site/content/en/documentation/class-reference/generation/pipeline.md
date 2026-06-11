@@ -42,6 +42,31 @@ See also:
 - [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/)
 - [Generation examples](/ometeotl/documentation/class-reference/generation/examples/)
 
+Example:
+
+```python
+from ometeotl_core.generation.pipeline import ContextualGenerationPipeline
+from ometeotl_core.generation.context import GenerationContext
+
+ctx = GenerationContext(
+    kind="actor",
+    id="actor-1",
+    label="Scout",
+    attributes={"mobility": True},
+    validate=True,
+    validation_mode="lenient",
+)
+
+pipeline = ContextualGenerationPipeline()
+result = pipeline.generate(ctx, world=world)
+
+actor = result.generated
+print(type(actor).__name__)           # "Actor"
+print(result.applied_rule_names)      # rules that ran in the rule set
+if result.validation:
+    print(result.validation.valid)
+```
+
 ## Generation flow
 
 ```

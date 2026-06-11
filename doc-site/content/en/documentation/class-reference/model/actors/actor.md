@@ -41,6 +41,25 @@ Notes:
 - `collective` actors model a coherent whole without explicit component relations.
 - Composite actors support hierarchical nesting, while cycle creation is intentionally guarded by helper logic rather than being applied implicitly by `add_component(...)`.
 
+Example:
+
+```python
+from ometeotl_core.model.actors import Actor, detect_composition_cycle
+
+# Standalone actor with a role
+actor = Actor(id="actor-1")
+actor.add_role("scout")
+actor.set_attribute("label", "Scout Alpha")
+
+# Composite actor that groups components
+composite = Actor(id="team-1", composition_mode="composite")
+if not detect_composition_cycle(composite, "actor-1", registry):
+    composite.add_component("actor-1")
+
+print(composite.is_composite)   # True
+print(composite.get_components())
+```
+
 See also:
 - [Resource](/ometeotl/documentation/class-reference/model/resources/resource/)
 - [Perception](/ometeotl/documentation/class-reference/model/perception/perception/)

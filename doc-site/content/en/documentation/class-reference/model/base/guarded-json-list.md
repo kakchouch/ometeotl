@@ -23,5 +23,18 @@ Methods:
 - guarded mutators: `append`, `extend`, `insert`, `pop`, `remove`, `reverse`, `sort`, `__setitem__`, `__delitem__`, `__iadd__`
 - `__deepcopy__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.base import GuardedJsonList
+
+lst = GuardedJsonList(["tag-a", "tag-b"])
+lst.append("tag-c")        # allowed — no guard active
+lst.remove("tag-a")
+
+# When a World enables authority mode, the mutation guard fires
+# and lst.append(value) raises RuntimeError until authority mode is disabled.
+```
+
 See also:
 - [GuardedJsonDict](/ometeotl/documentation/class-reference/model/base/guarded-json-dict/)

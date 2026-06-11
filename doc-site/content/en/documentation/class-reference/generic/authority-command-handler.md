@@ -41,6 +41,35 @@ Validation behavior:
 - Exposes structured validation summaries in [CommandResult](/ometeotl/documentation/class-reference/core/command-result/) and [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/).
 - Can reject commands based on validation errors when `validation_block_on_error=True`.
 
+Example:
+
+```python
+from ometeotl_core.generic.authority import AuthorityCommandHandler, CommandEnvelope
+import datetime
+
+handler = AuthorityCommandHandler(
+    world=world,
+    allowed_command_types=["add_space", "place_object"],
+    validation_policy_profile="enforce_structure",
+    validation_soft_gate=True,
+)
+envelope = CommandEnvelope(
+    command_id="cmd-001",
+    actor_id="actor-1",
+    command_type="add_space",
+    payload={"space": space.to_dict()},
+    sequence=1,
+    issued_at=datetime.datetime.utcnow().isoformat(),
+)
+result = handler.submit(envelope)
+print(result.accepted, result.reason)
+
+for entry in handler.audit_log:
+    print(entry.command_id, entry.accepted)
+
+handler.close()
+```
+
 See also:
 - [RuntimeContext](/ometeotl/documentation/class-reference/core/runtime-context/)
 - [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/)

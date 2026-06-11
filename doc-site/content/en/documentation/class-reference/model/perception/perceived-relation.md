@@ -24,5 +24,21 @@ Methods:
 - `from_dict(...)`
 - `__post_init__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.perception import PerceivedRelation
+
+pr = PerceivedRelation(
+    relation=relation,
+    epistemic_status="hypothesis",
+    noise_metadata={},
+)
+print(pr.relation.relation_type)   # e.g. "adjacent"
+print(pr.epistemic_status)         # "hypothesis"
+
+data = pr.to_dict()
+```
+
 See also:
 - [SpaceRelationGraph](/ometeotl/documentation/class-reference/model/space-relations/space-relation-graph/)

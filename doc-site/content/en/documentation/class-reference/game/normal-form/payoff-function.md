@@ -21,6 +21,26 @@ Abstract methods:
   - `context: JsonMap` — forwarded from `GameState.context`
   - returns a `UtilityFrame` per player
 
+Example:
+
+```python
+from ometeotl_core.game.normal_form import PayoffFunction
+from ometeotl_core.game.utility import StrategyRanker
+
+class MyPayoffFunction(PayoffFunction):
+    """Evaluate each player independently using their own utility function."""
+
+    def evaluate(self, profile, players, context):
+        results = {}
+        for pp in players:
+            ranker = StrategyRanker(pp.utility_function)
+            ranked = ranker.evaluate_strategy(profile[pp.actor.id], pp.actor, context)
+            results[pp.actor.id] = ranked.utility_frame
+        return results
+
+game = NormalFormGame.from_game_state(game_state, MyPayoffFunction())
+```
+
 See also:
 - [IndependentPayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/independent-payoff-function/)
 - [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/)

@@ -29,6 +29,23 @@ Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> ProjectedPerceptionState`
 
+Example:
+
+```python
+tool = DefaultProjectionTool()
+proj = tool.project_action(action, perception, resources=[resource])
+
+if proj.projected_state:
+    pps = proj.projected_state
+    successor_perception = pps.perception   # deep-copied, epistemic_status="projected"
+
+    for change in pps.changes:
+        print(change.change_type, change.subject_id, change.applied)
+
+    # Stock resource deltas written into context
+    deltas = pps.perception.context.get("projected_stock_deltas", {})
+```
+
 See also:
 - [ProjectedPerceptionChange](/ometeotl/documentation/class-reference/model/projection/projected-perception-change/)
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)

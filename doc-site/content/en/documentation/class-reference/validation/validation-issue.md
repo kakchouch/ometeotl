@@ -22,3 +22,21 @@ Parameters and fields:
 - `path: str`
 - `suggestion: str`
 - `context: JsonMap`
+
+Example:
+
+```python
+from ometeotl_core.validation.base import ValidationIssue
+
+issue = ValidationIssue(
+    code="MISSING_FIELD",
+    severity="error",
+    message="Required field 'actor_id' is missing on action-1",
+    object_id="action-1",
+    path="action.actor_id",
+    suggestion="Set actor_id to a valid registered actor identifier",
+    context={"object_type": "action"},
+)
+print(issue.severity)   # "error"
+print(issue.code)       # "MISSING_FIELD"
+```

@@ -21,6 +21,22 @@ Fields:
 Methods:
 - `to_dict() -> JsonMap`
 
+Example:
+
+```python
+# Iterate over all strategy profiles and their outcomes
+game = NormalFormGame.from_game_state(game_state, payoff_fn)
+
+for vector in game.payoff_vectors:
+    for actor_id, frame in vector.payoffs.items():
+        print(actor_id, "->", frame.scalar_value)
+
+# Direct lookup for a specific profile
+profile = {pp.actor.id: pp.strategies[0] for pp in game_state.players}
+vector = game.payoffs_for_profile(profile)
+data = vector.to_dict() if vector else None
+```
+
 See also:
 - [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/)
 - [PayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/payoff-function/)

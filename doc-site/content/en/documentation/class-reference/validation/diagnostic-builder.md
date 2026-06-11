@@ -14,3 +14,17 @@ Implements motivated rejection support and repair-ready issue suggestions.
 Outputs:
 - `DiagnosticEntry`
 - `DiagnosticReport`
+
+Example:
+
+```python
+from ometeotl_core.validation.diagnostic import DiagnosticBuilder
+
+builder = DiagnosticBuilder()
+report = builder.build(validation_result)
+
+for entry in report.entries:
+    print(f"[{entry.severity}] {entry.code}: {entry.message}")
+    if entry.suggestion:
+        print(f"  → {entry.suggestion}")
+```

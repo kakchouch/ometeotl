@@ -26,3 +26,24 @@ Helper behavior:
 Concrete game-layer implementations:
 - [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/)
 - [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/)
+
+Example:
+
+```python
+from ometeotl_core.model.utility import UtilityFunction, UtilityFrame
+
+class ResourceScoreUtility(UtilityFunction):
+    """Score an actor by the number of resources they hold."""
+
+    @property
+    def framework_id(self):
+        return "resource_score"
+
+    @property
+    def is_multi_criteria(self):
+        return False
+
+    def evaluate(self, perception, actor, context):
+        count = len(perception.memberships_for_object(actor.id))
+        return UtilityFrame(value=float(count), framework_id=self.framework_id)
+```

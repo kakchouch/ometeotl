@@ -29,6 +29,22 @@ Notes:
 - `is_abstract` marks non-canonical spaces such as conceptual, analytical, or strategic grouping spaces.
 - Abstract spaces support the multi-space model described in the spec and can host abstraction-layer actors without changing the canonical world object model.
 
+Example:
+
+```python
+from ometeotl_core.model.spaces import Space
+
+# Canonical physical space
+space = Space(id="zone-1", kind="physical")
+space.set_dimension("extent", 100)
+space.set_validity({"status": "active"})
+
+# Abstract conceptual grouping space
+abstract_space = Space(id="concept-space", kind="conceptual", is_abstract=True)
+
+data = space.to_dict()
+```
+
 See also:
 - [SpaceRelation](/ometeotl/documentation/class-reference/model/space-relations/space-relation/)
 - [SpaceObjectMembership](/ometeotl/documentation/class-reference/model/spaces/space-object-membership/)

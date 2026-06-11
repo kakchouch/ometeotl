@@ -42,3 +42,24 @@ Writes YAML to a file. Returns the resolved `Path` object.
 - YAML is always derived from the same mapping as JSON; the two formats must encode the same payload.
 - Exports are deterministic: same world always produces the same byte sequence (F-6).
 - The exporter does not validate: call the import pipeline if validation is needed on re-import.
+
+Example:
+
+```python
+from ometeotl_core.io.exporters import (
+    world_to_json, world_to_yaml,
+    write_world_json, write_world_yaml,
+    world_to_mapping,
+)
+
+# To string
+json_str = world_to_json(world, indent=2)
+yaml_str = world_to_yaml(world)
+
+# To file
+json_path = write_world_json(world, "output/world.json")
+yaml_path = write_world_yaml(world, "output/world.yaml")
+
+# Plain dict (safe to pass to any serializer)
+mapping = world_to_mapping(world)
+```

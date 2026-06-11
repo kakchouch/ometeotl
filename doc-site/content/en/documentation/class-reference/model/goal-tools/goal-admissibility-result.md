@@ -16,5 +16,18 @@ Fields:
 Methods:
 - `to_dict() -> dict`
 
+Example:
+
+```python
+checker = GoalAdmissibilityChecker()
+result = checker.check(goal, actor, perception)
+
+print(result.admissible)            # True | False
+print(result.reason)                # human-readable explanation
+print(result.blocking_constraints)  # e.g. ["horizon_exceeded", "goal_not_linked"]
+
+data = result.to_dict()
+```
+
 See also:
 - [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/)

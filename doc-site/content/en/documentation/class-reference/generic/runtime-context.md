@@ -34,5 +34,25 @@ Runtime policy options passed through `build_runtime(...)`:
 - `validation_block_on_error`
 - `validation_completeness_level`
 
+Example:
+
+```python
+from ometeotl_core.generic.runtime import build_runtime
+
+# Local mode: direct mutations allowed
+with build_runtime(world=world) as ctx:
+    print(ctx.authoritative)   # False — no AuthorityCommandHandler attached
+    world.add_space(space)
+
+# Authoritative mode: all mutations go through the handler
+with build_runtime(
+    world=world,
+    validation_policy_profile="enforce_structure",
+    validation_soft_gate=True,
+) as ctx:
+    result = ctx.authority_handler.submit(envelope)
+    print(result.accepted)
+```
+
 See also:
 - [CommandEnvelope](/ometeotl/documentation/class-reference/core/command-envelope/)

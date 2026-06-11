@@ -25,5 +25,21 @@ Methods:
 - `to_dict() -> dict`
 - `from_dict(data) -> ProjectionBatch`
 
+Example:
+
+```python
+from ometeotl_core.model.projection import DefaultProjectionTool
+
+tool = DefaultProjectionTool()
+batch = tool.project_actions([action1, action2], perception, resources=[resource])
+
+print(batch.actor_id)
+for proj in batch.projections:
+    print(proj.action_id, proj.status)
+
+data = batch.to_dict()
+batch2 = batch.__class__.from_dict(data)
+```
+
 See also:
 - [ProjectionTool](/ometeotl/documentation/class-reference/model/projection/projection-tool/)

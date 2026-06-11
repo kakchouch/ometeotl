@@ -28,6 +28,26 @@ Methods:
 Important behavior:
 - raises `ValueError` if `strategies` is empty
 
+Example:
+
+```python
+from ometeotl_core.game.game_state import GameState, PlayerProfile
+from ometeotl_core.game.utility import WeightedSumUtility
+
+utility = WeightedSumUtility("resource_efficiency", {"resources": 1.0})
+profile = PlayerProfile(
+    actor=actor,
+    strategies=[strategy_a, strategy_b],
+    utility_function=utility,
+)
+
+game_state = GameState(
+    id="game-1",
+    world_id="world-1",
+    players=[profile],
+)
+```
+
 See also:
 - [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/)
 - [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/)

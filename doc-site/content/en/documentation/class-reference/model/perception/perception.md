@@ -35,6 +35,27 @@ Notes:
 - A perception can now carry perceived composition edges independently from space memberships and space-to-space relations.
 - Each perceived component link has its own epistemic status, allowing composition knowledge to remain uncertain, believed, projected, or erroneous without mutating ontological actor relations.
 
+Example:
+
+```python
+from ometeotl_core.model.sensor import Sensor, TotalCoverageRule, IdentityNoiseRule
+
+sensor = Sensor(
+    coverage_rules=[TotalCoverageRule()],
+    noise_rules=[IdentityNoiseRule()],
+    default_epistemic_status="certain",
+)
+perception = sensor.sense(world, actor_id="actor-1", timestamp=0)
+
+# Query helpers
+pspace = perception.get_perceived_space("zone-1")
+memberships = perception.memberships_for_object("actor-1")
+in_zone = perception.memberships_in_space("zone-1")
+topology = perception.relations_for_space("zone-1")
+
+data = perception.to_dict()
+```
+
 See also:
 - [Actor](/ometeotl/documentation/class-reference/model/actors/actor/)
 - [World](/ometeotl/documentation/class-reference/model/world/world/)

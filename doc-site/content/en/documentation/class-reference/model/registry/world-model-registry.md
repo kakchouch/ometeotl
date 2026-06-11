@@ -29,5 +29,23 @@ Notes:
   Re-registering the exact same object instance is a no-op.
   Duplicate IDs from different object instances raise `ValueError`.
 
+Example:
+
+```python
+from ometeotl_core.model.registry import WorldModelRegistry
+
+registry = WorldModelRegistry()
+registry.register(actor)
+registry.register(resource)
+
+assert registry.exists("actor-1")
+obj = registry.get("actor-1")
+all_ids = registry.all_ids()
+
+# Serialize and restore the full registry
+data = registry.to_dict()
+registry2 = WorldModelRegistry.from_dict(data)
+```
+
 See also:
 - [MinimalModelRegistry](/ometeotl/documentation/class-reference/model/registry/minimal-model-registry/)

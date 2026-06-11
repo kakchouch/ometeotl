@@ -24,6 +24,31 @@ Fields:
 - children: list[[GoalBuildStep](/ometeotl/documentation/class-reference/model/goals/goal-build-step/)]
 - metadata: dict
 
+Example:
+
+```python
+from ometeotl_core.model.goals import GoalBuildStep
+
+# Describe a two-level goal hierarchy declaratively before materializing it
+root_step = GoalBuildStep(
+    kind="final",
+    actor_id="actor-1",
+    target_condition={"arrived": True},
+    horizon={"window": 10},
+    priority=1.0,
+    status="active",
+    children=[
+        GoalBuildStep(
+            kind="intermediate",
+            actor_id="actor-1",
+            target_condition={"en_route": True},
+            priority=0.8,
+            status="active",
+        ),
+    ],
+)
+```
+
 See also:
 - [Goal](/ometeotl/documentation/class-reference/model/goals/goal/)
 - [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/)

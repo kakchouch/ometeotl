@@ -29,6 +29,24 @@ Resource projection modes:
 Related module-level function:
 - [`reconstruct_model_object`](/ometeotl/documentation/class-reference/model/registry/reconstruct-model-object/) in [src/ometeotl_core/model/registry.py](https://github.com/kakchouch/ometeotl/blob/main/src/ometeotl_core/model/registry.py)
 
+Example:
+
+```python
+from ometeotl_core.model.projection import DefaultProjectionTool
+
+tool = DefaultProjectionTool()
+projection = tool.project_action(action, perception, resources=[fuel_resource])
+
+# Inspect assumption satisfaction
+for assumption in projection.assumptions:
+    print(assumption.assumption_type, "->", assumption.satisfied)
+
+# Inspect the projected successor state
+if projection.projected_state:
+    for change in projection.projected_state.changes:
+        print(change.change_type, change.subject_id)
+```
+
 See also:
 - [ProjectionAssumption](/ometeotl/documentation/class-reference/model/projection/projection-assumption/)
 - [ActionProjection](/ometeotl/documentation/class-reference/model/projection/action-projection/)
