@@ -169,4 +169,4 @@ Then:
 Avoid "moving the goalposts" between review passes.
 
 ## Exceptions
-Do not review examples/ unless explicitely for.
+Do not review examples/ unless explicitely prompted for.
