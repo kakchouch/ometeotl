@@ -22,5 +22,21 @@ Methods:
 - metadata mutators: `add_tag`, `remove_tag`, `set_profile_item`
 - space binding helpers: `add_space_membership`, `remove_space_membership` via [SpaceObjectGraph](/ometeotl/documentation/class-reference/model/spaces/space-object-graph/)
 
+Example:
+
+```python
+from ometeotl_core.model.objects import GenericObject
+
+obj = GenericObject(id="landmark-1", object_type="generic")
+obj.set_attribute("label", "City Center")
+obj.set_attribute("description", "Main urban hub")
+obj.add_tag("urban")
+obj.add_tag("landmark")
+obj.set_profile_item("population", 50_000)
+
+print(obj.label)   # "City Center"
+print(obj.tags)    # ["urban", "landmark"]
+```
+
 See also:
 - [SpaceObjectMembership](/ometeotl/documentation/class-reference/model/spaces/space-object-membership/)

@@ -27,6 +27,21 @@ Parameters and fields:
 Methods:
 - no custom methods
 
+Example:
+
+```python
+# AuditEntry instances are produced by AuthorityCommandHandler and are read-only
+handler = AuthorityCommandHandler(world=world)
+handler.submit(envelope)
+
+for entry in handler.audit_log:
+    print(entry.command_id)
+    print(entry.accepted)            # True | False
+    print(entry.reason)              # human-readable decision reason
+    print(entry.logged_at)           # ISO timestamp
+    print(entry.validation_summary)  # staged validation metadata
+```
+
 See also:
 - [CommandEnvelope](/ometeotl/documentation/class-reference/generic/command-envelope/)
 - [CommandResult](/ometeotl/documentation/class-reference/generic/command-result/)

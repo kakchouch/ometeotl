@@ -59,3 +59,27 @@ You can supply a custom `ValidationPipeline` to override this default. Additiona
 - Validation failures with `raise_on_error=True` (the default) raise `ValidationException` carrying the full `ValidationResult`.
 - Automatic repair is not performed; diagnostics must be acted on by the caller.
 - Deferred phases: LLM-view export, schema-backed validation, and automated repair are excluded from V1.
+
+Example:
+
+```python
+from ometeotl_core.io.importers import world_from_json, world_from_yaml, read_world_json
+from ometeotl_core.io.exporters import world_to_json
+
+# Round-trip: export then reimport
+json_str = world_to_json(world)
+result = world_from_json(json_str)
+
+restored_world = result.world
+print(result.validation.valid)       # True if no issues
+print(result.parsed_format)          # "json"
+
+# From file
+file_result = read_world_json("output/world.json")
+world2 = file_result.world
+
+# Lenient import: collect issues without raising
+result2 = world_from_json(json_str, raise_on_error=False)
+for issue in result2.validation.errors:
+    print(issue.code, issue.message)
+```

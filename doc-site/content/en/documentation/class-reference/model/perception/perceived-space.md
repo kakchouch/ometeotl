@@ -24,5 +24,23 @@ Methods:
 - `from_dict(...)`
 - `__post_init__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.perception import PerceivedSpace
+
+# Produced automatically by Sensor.sense(); construct manually for tests
+pspace = PerceivedSpace(
+    space=space,
+    epistemic_status="certain",
+    noise_metadata={},
+)
+print(pspace.epistemic_status)   # "certain"
+print(pspace.space.kind)         # e.g. "physical"
+
+data = pspace.to_dict()
+pspace2 = PerceivedSpace.from_dict(data)
+```
+
 See also:
 - [Sensor](/ometeotl/documentation/class-reference/model/sensor/sensor/)

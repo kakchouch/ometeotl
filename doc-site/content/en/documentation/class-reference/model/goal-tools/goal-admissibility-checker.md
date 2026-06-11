@@ -23,6 +23,22 @@ Checks include:
 - blocking constraints from perception context
 - optional horizon capacity constraints
 
+Example:
+
+```python
+from ometeotl_core.model.goal_tools import GoalAdmissibilityChecker
+
+checker = GoalAdmissibilityChecker()
+result = checker.check(goal, actor, perception)
+
+if result.admissible:
+    print("Goal is admissible — proceed to strategy evaluation")
+else:
+    print("Blocked:", result.reason)
+    for constraint in result.blocking_constraints:
+        print(" -", constraint)
+```
+
 See also:
 - [Goal](/ometeotl/documentation/class-reference/model/goals/goal/)
 - [Perception](/ometeotl/documentation/class-reference/model/perception/perception/)

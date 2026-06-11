@@ -48,15 +48,18 @@ Candidate actions can then be projected from that perceived state into explicit 
 
 - [DefaultProjectionTool](/ometeotl/documentation/class-reference/model/projection/default-projection-tool/) derives projection assumptions and successor perceived states
 - [ProjectedPerceptionState](/ometeotl/documentation/class-reference/model/projection/projected-perception-state/) stores the projected successor perception for one action
-- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action to one input perception and one projected successor perceived state
+- [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/) anchors one action and its input perceived state to an ordered set of [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/) links; each branch carries its own projected successor perceived state
 - [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) groups nodes into a linear or branching perception-driven tree
 
-Teleology and utility/ranking are now implemented as model and game extensions:
+Teleology, utility/ranking, and multi-actor game structures are now implemented as model and game extensions:
 
 - [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/) represent final or intermediate objectives and hierarchical decomposition.
 - [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/) and [DefaultGoalFeasibilityTool](/ometeotl/documentation/class-reference/model/goal-tools/default-goal-feasibility-tool/) provide model-level feasibility and admissibility checks.
 - [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) defines the abstract utility contract.
 - [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/), [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/), and [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) provide game-layer utility derivation and strategy ranking over projected terminal states.
+- [PlayerProfile](/ometeotl/documentation/class-reference/game/game-state/player-profile/) and [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/) bind actors to their admissible strategies and capture the multi-actor game snapshot.
+- [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/) builds the full payoff matrix from a [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/) by enumerating all strategy profile combinations through a [PayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/payoff-function/).
+- [BestResponseCalculator](/ometeotl/documentation/class-reference/game/best-response/best-response-calculator/) finds the utility-maximising strategy for a focal actor against fixed opponent strategies.
 
 Model objects can also be generated programmatically from declarative inputs:
 
@@ -94,7 +97,9 @@ The implemented pipeline follows this flow:
 15. Represent actor objectives with [Goal](/ometeotl/documentation/class-reference/model/goals/goal/) and optionally decompose them with [GoalDecompositionTree](/ometeotl/documentation/class-reference/model/goals/goal-decomposition-tree/).
 16. Link [Strategy](/ometeotl/documentation/class-reference/model/strategies/strategy/) to a goal and evaluate admissibility with [GoalAdmissibilityChecker](/ometeotl/documentation/class-reference/model/goal-tools/goal-admissibility-checker/).
 17. Evaluate strategy outcomes with a [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) implementation and rank with [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/).
-18. Generate model objects programmatically from declarative [GenerationContext](/ometeotl/documentation/class-reference/generation/generation-context/) inputs using [ContextualGenerationPipeline](/ometeotl/documentation/class-reference/generation/pipeline/), with optional constraint propagation via the [rule engine](/ometeotl/documentation/class-reference/generation/rule-engine/) and optional LLM-assisted context refinement via [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/).
+18. Build a multi-actor game by wrapping players in [PlayerProfile](/ometeotl/documentation/class-reference/game/game-state/player-profile/) objects and grouping them into a [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/), then calling [NormalFormGame.from_game_state(...)](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/) with an [IndependentPayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/independent-payoff-function/) to compute the full payoff matrix.
+19. Find best responses with [BestResponseCalculator.compute(...)](/ometeotl/documentation/class-reference/game/best-response/best-response-calculator/) given fixed opponent strategies.
+20. Generate model objects programmatically from declarative [GenerationContext](/ometeotl/documentation/class-reference/generation/generation-context/) inputs using [ContextualGenerationPipeline](/ometeotl/documentation/class-reference/generation/pipeline/), with optional constraint propagation via the [rule engine](/ometeotl/documentation/class-reference/generation/rule-engine/) and optional LLM-assisted context refinement via [LLMGenerationAdapter](/ometeotl/documentation/class-reference/generation/llm-integration/).
 
 Operationally, [World](/ometeotl/documentation/class-reference/model/world/world/) composes three independent graphs/registries:
 
@@ -221,12 +226,15 @@ The strategy layer is implemented in [Strategy](/ometeotl/documentation/class-re
 The important rule is that a strategy node is anchored to:
 
 - one action id
-- one source perception id
-- one projected successor perceived state
+- one source perception id (the perceived state the action is applied from)
+- an ordered list of [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/) links, each carrying its own projected successor perceived state
 
-`validate_tree()` enforces that a child node must consume the parent node's projected successor perception when a branch links the two nodes.
+`validate_tree()` enforces two invariants per branch:
 
-This makes strategy hops explicitly perception-driven rather than action-list driven.
+1. if a branch's `projected_state` is present, its `generating_action_id` must match the parent node's `action_id`
+2. if a branch links to a child node and carries a `projected_state`, the child node's `source_perception_id` must equal the branch's projected perception id
+
+This makes strategy hops explicitly perception-driven and allows one action to produce several distinct outcomes across sibling branches.
 
 ### 8. Builder seam
 
@@ -235,10 +243,9 @@ Two minimal builders exist today in `src/ometeotl_core/model/strategies.py`:
 - `build_linear_strategy(...)` for ordered action sequences
 - `build_branching_strategy(...)` for recursive action trees built from [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)
 
-Both builders project each action from the currently active perceived state and pass the resulting successor perceived state to the next node or subtree.
+Both builders project each action from the currently active perceived state and attach the resulting successor perceived state to the outgoing branches of each node.
 
-The current implementation intentionally keeps one projected successor perceived state per node.
-Future support for one-action-to-many-outcomes branching is tracked as a TODO in the strategy layer, with the preferred direction being branch-specific projected outcomes on [StrategyOutcomeBranch](/ometeotl/documentation/class-reference/model/strategies/strategy-outcome-branch/).
+`build_branching_strategy(...)` allows one action to branch into several sibling child steps: all sibling branches from a node share the same parent action's projected state, while each child subtree is projected from that shared successor perception onward.
 
 ### 9. Teleology and game utility seam
 
@@ -247,3 +254,11 @@ The teleology seam is now explicit in the model layer through [Goal](/ometeotl/d
 The game utility seam is explicit in [UtilityFunction](/ometeotl/documentation/class-reference/model/utility/utility-function/) plus concrete game-layer combinators [WeightedSumUtility](/ometeotl/documentation/class-reference/game/utility/weighted-sum-utility/) and [LexicographicUtility](/ometeotl/documentation/class-reference/game/utility/lexicographic-utility/).
 
 [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) evaluates terminal projected states and aggregates branch probabilities in a deterministic way, including directed acyclic strategy graphs with merged terminal paths.
+
+The multi-actor game seam is implemented as three composable layers:
+
+1. **Game state** — [PlayerProfile](/ometeotl/documentation/class-reference/game/game-state/player-profile/) binds an actor to its admissible strategies and utility function. [GameState](/ometeotl/documentation/class-reference/game/game-state/game-state/) groups players into a snapshot with a `world_id` reference, realizing G-1 (actors → players) and G-3 (world state → game state).
+
+2. **Normal form** — [NormalFormGame.from_game_state(...)](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/) enumerates the Cartesian product of all players' strategy lists and evaluates each profile through a [PayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/payoff-function/). The V1 concrete implementation, [IndependentPayoffFunction](/ometeotl/documentation/class-reference/game/normal-form/independent-payoff-function/), delegates per-player evaluation to [StrategyRanker](/ometeotl/documentation/class-reference/game/utility/strategy-ranker/) — no logic is duplicated. The abstraction keeps the door open for joint-projection payoff functions without breaking callers.
+
+3. **Best response** — [BestResponseCalculator.compute(...)](/ometeotl/documentation/class-reference/game/best-response/best-response-calculator/) operates on a prebuilt [NormalFormGame](/ometeotl/documentation/class-reference/game/normal-form/normal-form-game/), filters payoff vectors to rows where opponent strategies match, and returns the [BestResponseResult](/ometeotl/documentation/class-reference/game/best-response/best-response-result/) with the dominant strategy and a ranked list of all options. Tie-breaking is deterministic (descending utility, then ascending strategy id), consistent with the `rank_key` convention in [RankedStrategy](/ometeotl/documentation/class-reference/game/utility/ranked-strategy/).

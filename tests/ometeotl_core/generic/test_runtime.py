@@ -38,9 +38,7 @@ def test_runtime_context_manager_releases_lock_on_normal_exit():
     """Using RuntimeContext with 'with' releases authority lock on exit."""
     world = World(id="world-runtime-cm-1")
 
-    with build_runtime(
-        world, server_authoritative=True
-    ) as runtime:
+    with build_runtime(world, server_authoritative=True) as runtime:
         assert runtime.authoritative is True
         with pytest.raises(PermissionError):
             world.add_space(Space(id="zone-cm-blocked"))
@@ -58,10 +56,7 @@ def test_runtime_context_manager_releases_lock_on_exception_exit():
             raise RuntimeError("boom")
 
     world.add_space(Space(id="zone-cm-open-after-exception"))
-    assert (
-        world.get_space("zone-cm-open-after-exception")
-        is not None
-    )
+    assert world.get_space("zone-cm-open-after-exception") is not None
 
 
 def test_build_runtime_passes_extensibility_hooks():
@@ -153,9 +148,7 @@ def test_build_runtime_passes_validation_hardening_options():
     assert result.accepted is False
     assert result.reason == "Validation policy rejected command"
     assert result.validation["summary"]["error"] >= 1
-    assert (
-        world.model_registry.get("actor-runtime-hard-1") is None
-    )
+    assert world.model_registry.get("actor-runtime-hard-1") is None
 
 
 def test_build_runtime_soft_gate_off_skips_validation_blocking():
@@ -188,7 +181,4 @@ def test_build_runtime_soft_gate_off_skips_validation_blocking():
 
     assert result.accepted is True
     assert result.validation["summary"]["total"] == 0
-    assert (
-        world.model_registry.get("actor-runtime-soft-off-1")
-        is not None
-    )
+    assert world.model_registry.get("actor-runtime-soft-off-1") is not None

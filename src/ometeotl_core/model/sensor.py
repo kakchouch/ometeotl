@@ -58,9 +58,7 @@ class CoverageRule(ABC):
     """
 
     @abstractmethod
-    def covers_space(
-        self, space: Space, actor_id: ObjectId, world: World
-    ) -> bool:
+    def covers_space(self, space: Space, actor_id: ObjectId, world: World) -> bool:
         """Return True if the space should appear in the actor's perception."""
         ...
 
@@ -91,9 +89,7 @@ class TotalCoverageRule(CoverageRule):
     This is the transparent / omniscient sensor baseline.
     """
 
-    def covers_space(
-        self, space: Space, actor_id: ObjectId, world: World
-    ) -> bool:
+    def covers_space(self, space: Space, actor_id: ObjectId, world: World) -> bool:
         return True
 
     def covers_membership(
@@ -131,9 +127,7 @@ class NoiseRule(ABC):
     """
 
     @abstractmethod
-    def apply_to_space(
-        self, space: Space, actor_id: ObjectId
-    ) -> Tuple[Space, JsonMap]:
+    def apply_to_space(self, space: Space, actor_id: ObjectId) -> Tuple[Space, JsonMap]:
         """Return a (potentially distorted) space copy and noise metadata."""
         ...
 
@@ -157,9 +151,7 @@ class NoiseRule(ABC):
 class IdentityNoiseRule(NoiseRule):
     """Default rule: no noise is applied; all values are passed through unchanged."""
 
-    def apply_to_space(
-        self, space: Space, actor_id: ObjectId
-    ) -> Tuple[Space, JsonMap]:
+    def apply_to_space(self, space: Space, actor_id: ObjectId) -> Tuple[Space, JsonMap]:
         return space, {}
 
     def apply_to_membership(
@@ -201,9 +193,7 @@ class Sensor:
     coverage_rules: List[CoverageRule] = field(
         default_factory=lambda: [TotalCoverageRule()]
     )
-    noise_rules: List[NoiseRule] = field(
-        default_factory=lambda: [IdentityNoiseRule()]
-    )
+    noise_rules: List[NoiseRule] = field(default_factory=lambda: [IdentityNoiseRule()])
     default_epistemic_status: str = "certain"
 
     def __post_init__(self) -> None:
@@ -238,9 +228,7 @@ class Sensor:
                 raise TypeError(
                     f"timestamp must be int, float, or str, got {type(timestamp).__name__}"
                 )
-            perception_id = (
-                f"perception-{actor_id}-{world.id}-{timestamp!s}"
-            )
+            perception_id = f"perception-{actor_id}-{world.id}-{timestamp!s}"
         else:
             perception_id = f"perception-{actor_id}-{world.id}-{uuid.uuid4().hex}"
         perception = Perception(
@@ -270,15 +258,11 @@ class Sensor:
                 continue
             # Deep copy before noise so the world is never mutated.
             space_copy = copy.deepcopy(space)
-            space_copy, noise_meta = self._apply_noise_to_space(
-                space_copy, actor_id
-            )
-            perception.perceived_spaces[space_id] = (
-                PerceivedSpace(
-                    space=space_copy,
-                    epistemic_status=self.default_epistemic_status,
-                    noise_metadata=noise_meta,
-                )
+            space_copy, noise_meta = self._apply_noise_to_space(space_copy, actor_id)
+            perception.perceived_spaces[space_id] = PerceivedSpace(
+                space=space_copy,
+                epistemic_status=self.default_epistemic_status,
+                noise_metadata=noise_meta,
             )
 
     def _sense_memberships(
@@ -287,18 +271,12 @@ class Sensor:
         actor_id: ObjectId,
         perception: Perception,
     ) -> None:
-        for (
-            membership
-        ) in world.space_object_graph.object_memberships:
-            if not self._covers_membership(
-                membership, actor_id, world
-            ):
+        for membership in world.space_object_graph.object_memberships:
+            if not self._covers_membership(membership, actor_id, world):
                 continue
             membership_copy = copy.deepcopy(membership)
-            membership_copy, noise_meta = (
-                self._apply_noise_to_membership(
-                    membership_copy, actor_id
-                )
+            membership_copy, noise_meta = self._apply_noise_to_membership(
+                membership_copy, actor_id
             )
             perception.perceived_memberships.append(
                 PerceivedMembership(
@@ -315,15 +293,11 @@ class Sensor:
         perception: Perception,
     ) -> None:
         for relation in world.space_relation_graph.relations:
-            if not self._covers_relation(
-                relation, actor_id, world
-            ):
+            if not self._covers_relation(relation, actor_id, world):
                 continue
             relation_copy = copy.deepcopy(relation)
-            relation_copy, noise_meta = (
-                self._apply_noise_to_relation(
-                    relation_copy, actor_id
-                )
+            relation_copy, noise_meta = self._apply_noise_to_relation(
+                relation_copy, actor_id
             )
             perception.perceived_relations.append(
                 PerceivedRelation(
@@ -335,13 +309,8 @@ class Sensor:
 
     # --- Rule aggregators ---------------------------------------------------
 
-    def _covers_space(
-        self, space: Space, actor_id: ObjectId, world: World
-    ) -> bool:
-        return all(
-            r.covers_space(space, actor_id, world)
-            for r in self.coverage_rules
-        )
+    def _covers_space(self, space: Space, actor_id: ObjectId, world: World) -> bool:
+        return all(r.covers_space(space, actor_id, world) for r in self.coverage_rules)
 
     def _covers_membership(
         self,
@@ -361,32 +330,25 @@ class Sensor:
         world: World,
     ) -> bool:
         return all(
-            r.covers_relation(relation, actor_id, world)
-            for r in self.coverage_rules
+            r.covers_relation(relation, actor_id, world) for r in self.coverage_rules
         )
 
     def _apply_noise_to_space(
         self, space: Space, actor_id: ObjectId
     ) -> Tuple[Space, JsonMap]:
-        return self._apply_noise(
-            space, actor_id, "apply_to_space"
-        )
+        return self._apply_noise(space, actor_id, "apply_to_space")
 
     def _apply_noise_to_membership(
         self,
         membership: SpaceObjectMembership,
         actor_id: ObjectId,
     ) -> Tuple[SpaceObjectMembership, JsonMap]:
-        return self._apply_noise(
-            membership, actor_id, "apply_to_membership"
-        )
+        return self._apply_noise(membership, actor_id, "apply_to_membership")
 
     def _apply_noise_to_relation(
         self, relation: SpaceRelation, actor_id: ObjectId
     ) -> Tuple[SpaceRelation, JsonMap]:
-        return self._apply_noise(
-            relation, actor_id, "apply_to_relation"
-        )
+        return self._apply_noise(relation, actor_id, "apply_to_relation")
 
     def _apply_noise(
         self,

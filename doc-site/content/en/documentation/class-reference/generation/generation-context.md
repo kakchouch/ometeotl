@@ -53,6 +53,38 @@ Notes:
 - `copy_with` is the only intended mutation path inside the rule engine — direct field mutation should be avoided.
 - `constraints` keys `"temporal"`, `"spatial"`, `"admissibility"` are the conventionally recognized namespaces.
 
+Example:
+
+```python
+from ometeotl_core.generation.context import GenerationContext, GenerationPlacement
+
+# Minimal actor context
+ctx = GenerationContext(
+    kind="actor",
+    id="actor-1",
+    label="Scout",
+    attributes={"mobility": True},
+)
+
+# With constraints and validation
+full_ctx = GenerationContext(
+    kind="goal",
+    id="goal-1",
+    label="Reach northern outpost",
+    attributes={"actor_id": "actor-1"},
+    constraints={
+        "temporal": {"window": 10, "start_step": 0},
+        "spatial": {"required_space": "north-zone"},
+    },
+    validate=True,
+    validation_mode="lenient",
+)
+
+# Explicit placement instruction
+placement = GenerationPlacement(object_id="actor-1", space_id="north-zone")
+ctx.placements.append(placement)
+```
+
 See also:
 - [Rule engine](/ometeotl/documentation/class-reference/generation/rule-engine/)
 - [ContextualBuilder](/ometeotl/documentation/class-reference/generation/context-builder/)

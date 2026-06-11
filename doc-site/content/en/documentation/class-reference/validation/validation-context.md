@@ -20,3 +20,18 @@ Parameters and fields:
 - `actor_id: str`
 - `world_id: str`
 - `metadata: JsonMap`
+
+Example:
+
+```python
+from ometeotl_core.validation.base import ValidationContext
+
+ctx = ValidationContext(
+    stage="structure",
+    policy_mode="strict",
+    actor_id="actor-1",
+    world_id="world-1",
+    metadata={"source": "import", "schema_version": "1.0"},
+)
+# Passed as-is to each validator stage in the pipeline
+```

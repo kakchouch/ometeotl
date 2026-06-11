@@ -19,5 +19,20 @@ Methods:
 - `apply_to_membership(...)`
 - `apply_to_relation(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.sensor import Sensor, TotalCoverageRule, IdentityNoiseRule
+
+# Zero-noise baseline: copies are returned unmodified
+# Useful to isolate coverage behavior without distortion side-effects
+sensor = Sensor(
+    coverage_rules=[TotalCoverageRule()],
+    noise_rules=[IdentityNoiseRule()],
+    default_epistemic_status="certain",
+)
+perception = sensor.sense(world, actor_id="actor-1")
+```
+
 See also:
 - [TotalCoverageRule](/ometeotl/documentation/class-reference/model/sensor/total-coverage-rule/)

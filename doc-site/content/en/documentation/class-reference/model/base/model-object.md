@@ -29,6 +29,22 @@ Methods:
 - map/list helpers: `set_attribute`, `set_state`, `set_provenance`, `add_to_attribute_list`, `remove_from_attribute_list`
 - serialization: `to_dict`, `from_dict`, `_base_kwargs`
 
+Example:
+
+```python
+from ometeotl_core.model.base import ModelObject
+
+obj = ModelObject(id="obj-1", object_type="generic")
+obj.set_attribute("label", "Demo Object")
+obj.add_relation("owns", "resource-1")
+obj.set_state("active", True)
+obj.set_provenance("created_by", "system")
+
+data = obj.to_dict()
+obj2 = ModelObject.from_dict(data)
+assert obj2.id == obj.id
+```
+
 See also:
 - [GenericObject](/ometeotl/documentation/class-reference/model/objects/generic-object/)
 - [WorldModelRegistry](/ometeotl/documentation/class-reference/model/registry/world-model-registry/)

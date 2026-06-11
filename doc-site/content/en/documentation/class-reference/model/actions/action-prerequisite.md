@@ -24,5 +24,20 @@ Methods:
 - `to_dict(...)`
 - `from_dict(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.actions import ActionPrerequisite
+
+prereq = ActionPrerequisite(
+    prerequisite_type="capability",
+    field_name="mobility",
+    required_value=True,
+    metadata={"source": "spec-v1"},
+)
+data = prereq.to_dict()
+prereq2 = ActionPrerequisite.from_dict(data)
+```
+
 See also:
 - [ResourceEffect](/ometeotl/documentation/class-reference/model/actions/resource-effect/)

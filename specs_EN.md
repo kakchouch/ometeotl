@@ -107,7 +107,7 @@ V1 must first demonstrate the system core with a reduced but complete scope: abs
 5. Minimal game-theory interface.
 6. Two examples: a simple world and a hierarchical multi-actor case.
 
-## Current repository state (May 2026)
+## Current repository state (June 2026)
 
 The project delivers a broad functional V1 core. All layers from model through validation, IO, LLM export, and contextual generation are implemented and tested.
 
@@ -150,14 +150,18 @@ The project delivers a broad functional V1 core. All layers from model through v
     - Projection support for perceived component links and projected composition changes.
 7. Strategy layer:
     - `Strategy`, `StrategyNode`, `StrategyOutcomeBranch`, `StrategyBuildStep`.
-    - Linear and branching builders driven by projected successor perceptions.
+    - `build_linear_strategy(...)` and `build_branching_strategy(...)` builders driven by projected successor perceptions.
+    - Projected successor perceived states carried by `StrategyOutcomeBranch`, enabling one action to emit distinct outcomes per branch.
 8. Teleology and utility layers:
     - `Goal`, `GoalBuildStep`, `GoalDecompositionTree`.
     - `GoalFeasibilityResult`, `GoalFeasibilityTool`, `DefaultGoalFeasibilityTool`.
     - `GoalAdmissibilityResult`, `GoalAdmissibilityChecker`.
     - `UtilityFunction`, `UtilityFrame`.
-9. Game utility/ranking layer in `src/ometeotl_core/game/`:
+9. Game layer in `src/ometeotl_core/game/`:
     - `WeightedSumUtility`, `LexicographicUtility`, `RankedStrategy`, `StrategyRanker`.
+    - `PlayerProfile`, `GameState` — multi-actor game snapshot (G-1, G-2, G-3).
+    - `PayoffFunction` (abstract), `IndependentPayoffFunction`, `PayoffVector`, `NormalFormGame` — payoff matrix over strategy profiles (G-7, G-8, G-9).
+    - `BestResponseResult`, `BestResponseCalculator` — best-response computation over a prebuilt `NormalFormGame`.
 10. Core runtime infrastructure in `src/ometeotl_core/generic/`:
     - `AuthorityCommandHandler`, `CommandEnvelope`, `CommandResult`, `AuditEntry`.
     - `RuntimeContext` and `build_runtime(...)`.
@@ -186,15 +190,13 @@ The project delivers a broad functional V1 core. All layers from model through v
     - Four runnable demo scenarios in `generation/examples.py`.
 15. Quality gate:
     - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
-    - Current baseline: `396` collected tests.
+    - Current baseline: `453` collected tests.
 
 ### Present but still incomplete or scaffolded
 
 The following layers remain incomplete relative to the target architecture and roadmap:
 
-- `src/ometeotl_core/game/` for deeper game-theory projection and solver-facing structures beyond the current utility/ranking primitives.
-- `src/ometeotl_core/examples/` for reference worlds and end-to-end demonstrations.
-- Generation integration testing: a full roundtrip test exercising the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
+- `examples/` further extended with additional end-to-end demo worlds (labs 2–15 and the strategy game demo are present; more are planned).
 
 ### Current source layout
 
@@ -221,7 +223,10 @@ ometeotl/
 │       │   ├── rule_engine.py
 │       │   └── rules.py        # backward-compat re-export
 │       ├── game/
-│       │   └── utility.py
+│       │   ├── utility.py
+│       │   ├── game_state.py
+│       │   ├── normal_form.py
+│       │   └── best_response.py
 │       ├── validation/
 │       │   ├── base.py
 │       │   ├── pipeline.py
@@ -234,7 +239,6 @@ ometeotl/
 │       │   ├── epistemic.py
 │       │   ├── completeness.py
 │       │   └── diagnostic.py
-│       ├── examples/           # planned
 │       └── model/
 │           ├── actions.py
 │           ├── actors.py
@@ -253,6 +257,17 @@ ometeotl/
 │           ├── strategies.py
 │           ├── utility.py
 │           └── world.py
+├── examples/
+│   ├── multi_agent_sim/
+│   ├── lab3_perception_sim/
+│   ├── lab4_logistics_sim/
+│   ├── lab5_behavior_sim/
+│   ├── lab6_vassal_sim/
+│   ├── lab7_centralization_sim/
+│   ├── lab8_relations_sim/
+│   ├── lab9_globalization_sim/
+│   ├── lab10_complex_behavior_sim/
+│   └── strategy_game/
 └── tests/ometeotl_core/
     ├── generic/
     ├── game/
@@ -264,14 +279,11 @@ ometeotl/
 
 ### Practical V1 interpretation
 
-V1 is validated on the full chain: ontology, perception, projection, strategy, teleology/utility, game ranking, authority/runtime, validation, IO (JSON/YAML + LLM export), and contextual generation with pluggable rule engine and LLM adapter. The remaining roadmap items are generation integration scenarios (a roundtrip test of the full context-to-validated-output chain, and a concrete 2-actor game world wiring goals, strategies, and utility ranking end to end) and game-layer solver extensions.
+V1 is validated on the full chain: ontology, perception, projection, strategy, teleology/utility, game ranking, multi-actor game structures (normal-form payoff matrix, best-response), authority/runtime, validation, IO (JSON/YAML + LLM export), and contextual generation with pluggable rule engine and LLM adapter.
 
 ### Current TODO priorities
 
-1. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
-2. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
-3. Extend the strategy layer to support one-action-to-many-outcomes branching, with branch-specific projected successor perceived states carried by `StrategyOutcomeBranch` rather than by `StrategyNode`.
-4. Add reference examples and complete end-to-end demos.
+1. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.
 
 
 ## Status

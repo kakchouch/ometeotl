@@ -39,6 +39,27 @@ Builder functions in the same source module:
 - `build_linear_strategy(...)`
 - `build_branching_strategy(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.strategies import build_linear_strategy, StrategyBuildStep
+
+# Build a two-step linear strategy
+step1 = StrategyBuildStep(action=action1, branch_label="step-1")
+step2 = StrategyBuildStep(action=action2, branch_label="step-2")
+strategy = build_linear_strategy(
+    id="strategy-1",
+    actor_id="actor-1",
+    steps=[step1, step2],
+    goal_id="goal-1",
+)
+strategy.validate_tree()
+
+# Navigate the tree
+node = strategy.get_node(strategy.root_node_id)
+print(node.action_id)
+```
+
 See also:
 - [StrategyBuildStep](/ometeotl/documentation/class-reference/model/strategies/strategy-build-step/)
 - [StrategyNode](/ometeotl/documentation/class-reference/model/strategies/strategy-node/)

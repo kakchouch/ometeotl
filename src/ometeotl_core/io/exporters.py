@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from ometeotl_core.model.base import JsonMap, _deep_plain_copy
 from ometeotl_core.model.world import World
@@ -14,7 +14,7 @@ from ometeotl_core.model.world import World
 
 def world_to_mapping(world: World) -> JsonMap:
     """Return the canonical mapping payload for a world."""
-    return _deep_plain_copy(world.to_dict())
+    return cast(JsonMap, _deep_plain_copy(world.to_dict()))
 
 
 def world_to_json(world: World, *, indent: int = 2) -> str:
@@ -28,28 +28,22 @@ def world_to_json(world: World, *, indent: int = 2) -> str:
 
 def world_to_yaml(world: World) -> str:
     """Serialize a world to deterministic YAML text."""
-    return yaml.safe_dump(
+    return str(yaml.safe_dump(
         world_to_mapping(world),
         allow_unicode=False,
         sort_keys=True,
-    )
+    ))
 
 
-def write_world_json(
-    world: World, path: str | Path, *, indent: int = 2
-) -> Path:
+def write_world_json(world: World, path: str | Path, *, indent: int = 2) -> Path:
     """Write a deterministic JSON export for a world."""
     output_path = Path(path)
-    output_path.write_text(
-        world_to_json(world, indent=indent), encoding="utf-8"
-    )
+    output_path.write_text(world_to_json(world, indent=indent), encoding="utf-8")
     return output_path
 
 
 def write_world_yaml(world: World, path: str | Path) -> Path:
     """Write a deterministic YAML export for a world."""
     output_path = Path(path)
-    output_path.write_text(
-        world_to_yaml(world), encoding="utf-8"
-    )
+    output_path.write_text(world_to_yaml(world), encoding="utf-8")
     return output_path

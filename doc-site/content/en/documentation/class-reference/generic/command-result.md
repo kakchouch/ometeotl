@@ -23,5 +23,19 @@ Parameters and fields:
 Methods:
 - no custom methods
 
+Example:
+
+```python
+result = handler.submit(envelope)
+
+if result.accepted:
+    print("Applied:", result.applied)
+else:
+    print("Rejected:", result.reason)
+    # Inspect staged validation summary
+    for stage, summary in result.validation.items():
+        print(stage, summary)
+```
+
 See also:
 - [AuditEntry](/ometeotl/documentation/class-reference/core/audit-entry/)

@@ -45,12 +45,10 @@ def _condition_value_matches(expected: Any, actual: Any) -> bool:
         for key, expected_value in expected.items():
             if key not in actual:
                 return False
-            if not _condition_value_matches(
-                expected_value, actual[key]
-            ):
+            if not _condition_value_matches(expected_value, actual[key]):
                 return False
         return True
-    return expected == actual
+    return bool(expected == actual)
 
 
 def _projected_condition_view(
@@ -61,12 +59,8 @@ def _projected_condition_view(
     view.setdefault("perception_id", projected.perception.id)
     view.setdefault("actor_id", projected.perception.actor_id)
     view.setdefault("source_id", projected.perception.source_id)
-    view.setdefault(
-        "source_perception_id", projected.source_perception_id
-    )
-    view.setdefault(
-        "generating_action_id", projected.generating_action_id
-    )
+    view.setdefault("source_perception_id", projected.source_perception_id)
+    view.setdefault("generating_action_id", projected.generating_action_id)
     return _canonical_json_map(view)
 
 
@@ -82,9 +76,7 @@ class GoalFeasibilityResult:
     def __post_init__(self) -> None:
         self.confidence = float(self.confidence)
         if not 0.0 <= self.confidence <= 1.0:
-            raise ValueError(
-                "GoalFeasibilityResult confidence must be in [0, 1]"
-            )
+            raise ValueError("GoalFeasibilityResult confidence must be in [0, 1]")
 
     def to_dict(self) -> JsonMap:
         return {
@@ -129,8 +121,7 @@ class DefaultGoalFeasibilityTool(GoalFeasibilityTool):
 
         if (
             goal.target_perception_id is not None
-            and goal.target_perception_id
-            != projected.perception.id
+            and goal.target_perception_id != projected.perception.id
         ):
             return GoalFeasibilityResult(
                 reachable=False,
@@ -148,9 +139,7 @@ class DefaultGoalFeasibilityTool(GoalFeasibilityTool):
         for key, expected_value in target_condition.items():
             if key not in projected_view:
                 continue
-            if _condition_value_matches(
-                expected_value, projected_view[key]
-            ):
+            if _condition_value_matches(expected_value, projected_view[key]):
                 matched_keys.append(str(key))
 
         total = len(target_condition)
@@ -161,9 +150,7 @@ class DefaultGoalFeasibilityTool(GoalFeasibilityTool):
             confidence=confidence,
             matching_keys=sorted(matched_keys),
             metadata={
-                "condition_keys": sorted(
-                    str(key) for key in target_condition.keys()
-                ),
+                "condition_keys": sorted(str(key) for key in target_condition.keys()),
                 "matched_count": matched,
                 "total_count": total,
             },
@@ -176,9 +163,7 @@ class GoalAdmissibilityResult:
 
     admissible: bool
     reason: str = ""
-    blocking_constraints: list[ObjectId] = field(
-        default_factory=list
-    )
+    blocking_constraints: list[ObjectId] = field(default_factory=list)
 
     def to_dict(self) -> JsonMap:
         return {
@@ -212,9 +197,7 @@ class GoalAdmissibilityChecker:
                 reason="goal_actor_mismatch",
             )
 
-        actor_goal_ids = set(
-            str(gid) for gid in actor.relations.get("goal", [])
-        )
+        actor_goal_ids = set(str(gid) for gid in actor.relations.get("goal", []))
         if goal.id not in actor_goal_ids:
             return GoalAdmissibilityResult(
                 admissible=False,
@@ -223,20 +206,12 @@ class GoalAdmissibilityChecker:
 
         actor_constraint_ids = set(
             str(constraint_id)
-            for constraint_id in actor.relations.get(
-                "constraint", []
-            )
+            for constraint_id in actor.relations.get("constraint", [])
         )
         blocked_constraints = set(
-            _as_string_list(
-                perception.context.get("blocked_constraints")
-            )
+            _as_string_list(perception.context.get("blocked_constraints"))
         )
-        blocking = sorted(
-            actor_constraint_ids.intersection(
-                blocked_constraints
-            )
-        )
+        blocking = sorted(actor_constraint_ids.intersection(blocked_constraints))
         if blocking:
             return GoalAdmissibilityResult(
                 admissible=False,
@@ -253,9 +228,7 @@ class GoalAdmissibilityChecker:
                     admissible=False,
                     reason="invalid_goal_horizon_max_steps",
                 )
-            available = perception.context.get(
-                "available_projection_steps"
-            )
+            available = perception.context.get("available_projection_steps")
             if available is not None:
                 try:
                     available_steps = int(available)

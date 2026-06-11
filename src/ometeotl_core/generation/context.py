@@ -99,7 +99,7 @@ class GenerationContext:
 
     def copy_with(self, **changes: Any) -> "GenerationContext":
         """Return a modified copy of this generation context."""
-        data = {
+        data: dict[str, Any] = {
             "kind": self.kind,
             "id": self.id,
             "label": self.label,
@@ -127,3 +127,21 @@ class GenerationContext:
         }
         data.update(changes)
         return GenerationContext(**data)
+
+
+def _base_context_kwargs(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the nine GenerationContext kwargs shared by all from_context methods."""
+    return {
+        "label": str(payload.get("label") or ""),
+        "attributes": dict(payload.get("attributes") or {}),
+        "relations": {
+            str(name): [str(item) for item in values or []]
+            for name, values in dict(payload.get("relations") or {}).items()
+        },
+        "state": dict(payload.get("state") or {}),
+        "context": dict(payload.get("context") or {}),
+        "provenance": dict(payload.get("provenance") or {}),
+        "validate": bool(payload.get("validate", True)),
+        "validation_mode": str(payload.get("validation_mode") or "strict"),
+        "stage_modes": dict(payload.get("stage_modes") or {}),
+    }

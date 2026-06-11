@@ -64,8 +64,7 @@ class Space(GenericObject):
         """Get the kind of the space. The kind can be used to specify the nature
         or category of the space, such as 'physical', 'virtual', 'conceptual',
         etc."""
-        value = self.attributes.get("kind", "abstract")
-        return value
+        return str(self.attributes.get("kind", "abstract"))
 
     @kind.setter
     def kind(self, value: str) -> None:

@@ -13,9 +13,7 @@ def test_epistemic_validator_accepts_valid_statuses():
         ]
     }
 
-    result = EpistemicValidator().validate(
-        payload, ValidationContext()
-    )
+    result = EpistemicValidator().validate(payload, ValidationContext())
 
     assert result.valid is True
 
@@ -24,9 +22,7 @@ def test_epistemic_validator_rejects_invalid_status():
     """Unknown epistemic statuses should produce errors."""
     payload = {"epistemic_status": "omniscient"}
 
-    result = EpistemicValidator().validate(
-        payload, ValidationContext()
-    )
+    result = EpistemicValidator().validate(payload, ValidationContext())
 
     assert result.valid is False
     assert result.errors[0].code == "EPI-INVALID-STATUS"

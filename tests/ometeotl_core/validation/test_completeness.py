@@ -15,16 +15,11 @@ def test_completeness_validator_rejects_missing_required_fields():
 
     result = CompletenessValidator().validate(
         payload,
-        ValidationContext(
-            metadata={"completeness_level": LEVEL_MINIMAL}
-        ),
+        ValidationContext(metadata={"completeness_level": LEVEL_MINIMAL}),
     )
 
     assert result.valid is False
-    assert any(
-        issue.code == "COMP-MISSING-REQUIRED"
-        for issue in result.errors
-    )
+    assert any(issue.code == "COMP-MISSING-REQUIRED" for issue in result.errors)
 
 
 def test_completeness_validator_warns_missing_recommended_fields():
@@ -39,16 +34,11 @@ def test_completeness_validator_warns_missing_recommended_fields():
 
     result = CompletenessValidator().validate(
         payload,
-        ValidationContext(
-            metadata={"completeness_level": LEVEL_RECOMMENDED}
-        ),
+        ValidationContext(metadata={"completeness_level": LEVEL_RECOMMENDED}),
     )
 
     assert result.valid is True
-    assert any(
-        issue.code == "COMP-MISSING-RECOMMENDED"
-        for issue in result.warnings
-    )
+    assert any(issue.code == "COMP-MISSING-RECOMMENDED" for issue in result.warnings)
 
 
 def test_completeness_validator_full_level_promotes_recommended_to_error():
@@ -63,13 +53,8 @@ def test_completeness_validator_full_level_promotes_recommended_to_error():
 
     result = CompletenessValidator().validate(
         payload,
-        ValidationContext(
-            metadata={"completeness_level": LEVEL_FULL}
-        ),
+        ValidationContext(metadata={"completeness_level": LEVEL_FULL}),
     )
 
     assert result.valid is False
-    assert any(
-        issue.code == "COMP-MISSING-RECOMMENDED"
-        for issue in result.errors
-    )
+    assert any(issue.code == "COMP-MISSING-RECOMMENDED" for issue in result.errors)

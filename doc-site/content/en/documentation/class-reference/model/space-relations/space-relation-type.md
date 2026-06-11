@@ -24,5 +24,29 @@ Parameters and fields:
 Methods:
 - no custom methods
 
+Example:
+
+```python
+from ometeotl_core.model.space_relations import SpaceRelationType
+
+# Symmetric undirected relation (e.g. two adjacent zones)
+adjacent = SpaceRelationType(
+    name="adjacent",
+    is_symmetric=True,
+    is_antisymmetric=False,
+    is_transitive=False,
+    is_reflexive=False,
+)
+
+# Antisymmetric transitive containment relation
+contains = SpaceRelationType(
+    name="contains",
+    is_symmetric=False,
+    is_antisymmetric=True,
+    is_transitive=True,
+    is_reflexive=False,
+)
+```
+
 See also:
 - [Space](/ometeotl/documentation/class-reference/model/spaces/space/)

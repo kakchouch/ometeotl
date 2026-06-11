@@ -5,17 +5,8 @@ This module defines a minimal, serializable strategy tree.
 A strategy is represented as:
 - a root node;
 - a set of nodes referencing existing action IDs;
-- outcome branches from each node to the next node(s).
-
-This module intentionally contains only declarative model objects. Projection,
-execution, and utility ranking remain out of scope for this iteration.
-
-TODO:
-Support one-action-to-many-outcomes branching without changing the current
-single-successor node model yet. The preferred future direction is Option A:
-branch-specific projected outcomes should live on StrategyOutcomeBranch rather
-than on StrategyNode, so each branch can carry its own successor perceived
-state.
+- outcome branches from each node to the next node(s), each branch carrying
+  its own projected successor perceived state.
 """
 
 from __future__ import annotations
@@ -72,15 +63,16 @@ class StrategyBuildStep:
 
 @dataclass
 class StrategyOutcomeBranch:
-    """Represents one projected outcome branch from a strategy node."""
+    """Represents one projected outcome branch from a strategy node.
 
-    # TODO: Preferred future direction for multi-outcome projection (Option A):
-    # move branch-specific projected successor state onto this branch model so
-    # one action node can emit several alternative projected outcomes.
+    Each branch carries its own projected successor perceived state, enabling
+    one action to emit distinct outcomes across branches.
+    """
 
     branch_id: str
     label: str = "success"
     child_node_id: Optional[ObjectId] = None
+    projected_state: Optional[ProjectedPerceptionState] = None
     probability: Optional[float] = None
     condition: JsonMap = field(default_factory=dict)
     metadata: JsonMap = field(default_factory=dict)
@@ -102,6 +94,11 @@ class StrategyOutcomeBranch:
             "branch_id": self.branch_id,
             "label": self.label,
             "child_node_id": self.child_node_id,
+            "projected_state": (
+                self.projected_state.to_dict()
+                if self.projected_state is not None
+                else None
+            ),
             "probability": self.probability,
             "condition": _canonical_json_map(self.condition),
             "metadata": _canonical_json_map(self.metadata),
@@ -117,6 +114,11 @@ class StrategyOutcomeBranch:
             child_node_id=(
                 str(data["child_node_id"]) if data.get("child_node_id") else None
             ),
+            projected_state=(
+                ProjectedPerceptionState.from_dict(data["projected_state"])
+                if data.get("projected_state") is not None
+                else None
+            ),
             probability=(
                 float(probability_raw) if probability_raw is not None else None
             ),
@@ -127,18 +129,11 @@ class StrategyOutcomeBranch:
 
 @dataclass
 class StrategyNode:
-    """A strategy node binding one action to one or more projected outcomes."""
-
-    # Current architecture: one node stores one projected successor state for
-    # the action-perception pair it represents. Keep this model for now.
-    # TODO: If one action later supports many projected outcomes, keep the node
-    # as the action anchor and move alternative successor states to
-    # StrategyOutcomeBranch rather than duplicating them here.
+    """A strategy node anchoring one action. Projected outcomes live on branches."""
 
     node_id: ObjectId
     action_id: ObjectId
     source_perception_id: Optional[ObjectId] = None
-    projected_state: Optional[ProjectedPerceptionState] = None
     outcome_branches: List[StrategyOutcomeBranch] = field(default_factory=list)
     metadata: JsonMap = field(default_factory=dict)
 
@@ -150,24 +145,6 @@ class StrategyNode:
         )
         if self.source_perception_id is not None and not self.source_perception_id:
             raise ValueError("StrategyNode source_perception_id cannot be empty")
-        if self.projected_state is not None:
-            if self.projected_state.generating_action_id != self.action_id:
-                raise ValueError(
-                    "StrategyNode projected_state must match the node action_id"
-                )
-            if self.source_perception_id is None:
-                self.source_perception_id = self.projected_state.source_perception_id
-            elif self.source_perception_id != self.projected_state.source_perception_id:
-                raise ValueError(
-                    "StrategyNode source_perception_id must match the projected_state source"
-                )
-
-    @property
-    def successor_perception_id(self) -> Optional[ObjectId]:
-        """Return the successor perception ID produced by this node, if any."""
-        if self.projected_state is None:
-            return None
-        return self.projected_state.perception.id
 
     def to_dict(self) -> JsonMap:
         """Serialize the node in canonical form."""
@@ -175,11 +152,6 @@ class StrategyNode:
             "node_id": self.node_id,
             "action_id": self.action_id,
             "source_perception_id": self.source_perception_id,
-            "projected_state": (
-                self.projected_state.to_dict()
-                if self.projected_state is not None
-                else None
-            ),
             "outcome_branches": [
                 branch.to_dict()
                 for branch in sorted(
@@ -206,11 +178,6 @@ class StrategyNode:
             source_perception_id=(
                 str(data["source_perception_id"])
                 if data.get("source_perception_id")
-                else None
-            ),
-            projected_state=(
-                ProjectedPerceptionState.from_dict(data["projected_state"])
-                if data.get("projected_state") is not None
                 else None
             ),
             outcome_branches=[
@@ -278,23 +245,27 @@ class Strategy(ModelObject):
                     raise ValueError(
                         "Strategy branch child_node_id must reference an existing node"
                     )
+                if branch.projected_state is not None:
+                    if branch.projected_state.generating_action_id != node.action_id:
+                        raise ValueError(
+                            f"Branch '{branch.branch_id}' projected_state must be generated"
+                            f" by the parent node action '{node.action_id}'"
+                        )
                 if branch.child_node_id is None:
                     continue
 
                 child_node = node_index[branch.child_node_id]
-                if node.projected_state is None:
+                if branch.projected_state is None:
                     continue
 
-                expected_source_perception_id = node.successor_perception_id
-                if expected_source_perception_id is None:
-                    continue
+                expected = branch.projected_state.perception.id
                 if child_node.source_perception_id is None:
                     raise ValueError(
-                        "Strategy child node must declare the parent projected perception"
+                        "Strategy child node must declare the branch projected perception"
                     )
-                if child_node.source_perception_id != expected_source_perception_id:
+                if child_node.source_perception_id != expected:
                     raise ValueError(
-                        "Strategy child node must consume the parent projected perception"
+                        "Strategy child node must consume the branch projected perception"
                     )
 
     def to_dict(self) -> JsonMap:
@@ -338,6 +309,7 @@ class Strategy(ModelObject):
             ContextualGenerationPipeline,
             GenerationContext,
         )
+        from ometeotl_core.generation.context import _base_context_kwargs
         from ometeotl_core.validation import (
             StructuralValidator,
             ValidationException,
@@ -363,19 +335,8 @@ class Strategy(ModelObject):
         generation_context = GenerationContext(
             kind="strategy",
             id=strategy_id,
-            label=str(payload.get("label") or ""),
-            attributes=dict(payload.get("attributes") or {}),
-            relations={
-                str(name): [str(item) for item in values or []]
-                for name, values in dict(payload.get("relations") or {}).items()
-            },
-            state=dict(payload.get("state") or {}),
-            context=dict(payload.get("context") or {}),
-            provenance=dict(payload.get("provenance") or {}),
+            **_base_context_kwargs(payload),
             metadata=metadata,
-            validate=bool(payload.get("validate", True)),
-            validation_mode=str(payload.get("validation_mode") or "strict"),
-            stage_modes=dict(payload.get("stage_modes") or {}),
         )
 
         pipeline = ContextualGenerationPipeline(
@@ -460,9 +421,19 @@ def _build_branching_nodes_from_step(
                 branch_id=f"{node_id}:branch-{child_index:04d}",
                 label=child_step.branch_label,
                 child_node_id=child_node.node_id,
+                projected_state=projected_state,
                 probability=child_step.branch_probability,
                 condition=_canonical_json_map(child_step.branch_condition),
                 metadata=_canonical_json_map(child_step.branch_metadata),
+            )
+        )
+    if not outcome_branches:
+        outcome_branches.append(
+            StrategyOutcomeBranch(
+                branch_id=f"{node_id}:terminal",
+                label="terminal",
+                child_node_id=None,
+                projected_state=projected_state,
             )
         )
 
@@ -473,7 +444,6 @@ def _build_branching_nodes_from_step(
         node_id=node_id,
         action_id=step.action.id,
         source_perception_id=perception.id,
-        projected_state=projected_state,
         outcome_branches=outcome_branches,
         metadata=node_metadata,
     )
@@ -554,16 +524,26 @@ def build_linear_strategy(
         next_node_id = (
             planned_node_ids[index + 1] if index + 1 < len(planned_node_ids) else None
         )
-        outcome_branches = []
         if next_node_id is not None:
-            outcome_branches.append(
+            outcome_branches = [
                 StrategyOutcomeBranch(
                     branch_id=f"{planned_node_ids[index]}:success",
                     label="success",
                     child_node_id=next_node_id,
+                    projected_state=projected_state,
                     metadata={"projection_status": projection_status},
                 )
-            )
+            ]
+        else:
+            outcome_branches = [
+                StrategyOutcomeBranch(
+                    branch_id=f"{planned_node_ids[index]}:terminal",
+                    label="terminal",
+                    child_node_id=None,
+                    projected_state=projected_state,
+                    metadata={"projection_status": projection_status},
+                )
+            ]
 
         node_metadata = dict(projection_metadata)
         node_metadata["projection_status"] = projection_status
@@ -572,7 +552,6 @@ def build_linear_strategy(
                 node_id=planned_node_ids[index],
                 action_id=action.id,
                 source_perception_id=current_perception.id,
-                projected_state=projected_state,
                 outcome_branches=outcome_branches,
                 metadata=node_metadata,
             )

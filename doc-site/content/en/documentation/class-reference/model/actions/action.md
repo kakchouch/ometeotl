@@ -31,5 +31,29 @@ Methods:
 - `set_state_change(...)`
 - `to_dict(...)`, `from_dict(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.actions import Action, ResourceEffect, ActionPrerequisite
+
+action = Action(
+    id="action-1",
+    actor_id="actor-1",
+    world_id="world-1",
+    space_id="zone-1",
+    action_type="move",
+    outcome_description="Actor moves to target space",
+)
+action.add_resource_effect(ResourceEffect(
+    resource_id="fuel-1", effect_type="consume", quantity=1.0
+))
+action.add_prerequisite(ActionPrerequisite(
+    prerequisite_type="capability", field_name="mobility", required_value=True
+))
+action.set_state_change("location", "zone-2")
+
+data = action.to_dict()
+```
+
 See also:
 - [Resource](/ometeotl/documentation/class-reference/model/resources/resource/)

@@ -21,3 +21,27 @@ Key behavior:
 - error downgrading in `warn_only`
 - optional strict raising (`ValidationException`) when configured
 - metadata for executed validators and effective stage modes
+
+Example:
+
+```python
+from ometeotl_core.validation.pipeline import ValidationPipeline
+from ometeotl_core.validation.base import ValidationContext
+
+pipeline = ValidationPipeline(
+    validators=[syntactic_validator, structural_validator],
+    mode="strict",
+    stage_modes={"syntactic": "warn_only"},
+)
+ctx = ValidationContext(
+    stage="structure", policy_mode="strict",
+    actor_id="actor-1", world_id="world-1", metadata={}
+)
+result = pipeline.validate(world, ctx)
+
+if result.valid:
+    print("All checks passed")
+else:
+    for issue in result.errors:
+        print(issue.code, "-", issue.message)
+```

@@ -26,5 +26,23 @@ Methods:
 - `from_dict(...)`
 - `__deepcopy__(...)`
 
+Example:
+
+```python
+from ometeotl_core.model.spaces import SpaceObjectMembership
+
+membership = SpaceObjectMembership(
+    object_id="actor-1",
+    space_id="zone-1",
+    role="occupies",
+    validity={"from": 0},
+    metadata={"confirmed": True},
+)
+data = membership.to_dict()
+m2 = SpaceObjectMembership.from_dict(data)
+
+# Typically added through World.place_object or SpaceObjectGraph.add_object_membership
+```
+
 See also:
 - [Space](/ometeotl/documentation/class-reference/model/spaces/space/)

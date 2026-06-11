@@ -18,6 +18,12 @@ from __future__ import annotations
 from typing import Any, Mapping, Set, Optional
 from dataclasses import dataclass, field
 
+from ometeotl_core.model.perception import (
+    _sort_key_perceived_membership,
+    _sort_key_perceived_relation,
+    _sort_key_perceived_component_link,
+)
+
 
 @dataclass
 class LLMViewContext:
@@ -229,38 +235,28 @@ class LLMViewBuilder:
                 membership.to_dict()
                 for membership in sorted(
                     getattr(perception, "perceived_memberships", []),
-                    key=lambda x: (
-                        x.membership.space_id,
-                        x.membership.object_id,
-                        x.membership.role,
-                    ),
+                    key=_sort_key_perceived_membership,
                 )
             ],
             "perceived_relations": [
                 relation.to_dict()
                 for relation in sorted(
                     getattr(perception, "perceived_relations", []),
-                    key=lambda x: (
-                        x.relation.source_space_id,
-                        x.relation.target_space_id,
-                        x.relation.relation_type,
-                    ),
+                    key=_sort_key_perceived_relation,
                 )
             ],
             "perceived_component_links": [
                 link.to_dict()
                 for link in sorted(
                     getattr(perception, "perceived_component_links", []),
-                    key=lambda x: (
-                        x.composite_id,
-                        x.component_id,
-                        x.link_id,
-                    ),
+                    key=_sort_key_perceived_component_link,
                 )
             ],
         }
 
-    def _build_epistemic_status_groups(self, perception: Any) -> dict[str, list[dict[str, Any]]]:
+    def _build_epistemic_status_groups(
+        self, perception: Any
+    ) -> dict[str, list[dict[str, Any]]]:
         """Group perceived items by epistemic status for stable LLM output."""
         grouped: dict[str, list[dict[str, Any]]] = {}
 
@@ -273,11 +269,7 @@ class LLMViewBuilder:
 
         for membership in sorted(
             getattr(perception, "perceived_memberships", []),
-            key=lambda x: (
-                x.membership.space_id,
-                x.membership.object_id,
-                x.membership.role,
-            ),
+            key=_sort_key_perceived_membership,
         ):
             grouped.setdefault(membership.epistemic_status, []).append(
                 {
@@ -289,11 +281,7 @@ class LLMViewBuilder:
 
         for relation in sorted(
             getattr(perception, "perceived_relations", []),
-            key=lambda x: (
-                x.relation.source_space_id,
-                x.relation.target_space_id,
-                x.relation.relation_type,
-            ),
+            key=_sort_key_perceived_relation,
         ):
             grouped.setdefault(relation.epistemic_status, []).append(
                 {
@@ -305,11 +293,7 @@ class LLMViewBuilder:
 
         for link in sorted(
             getattr(perception, "perceived_component_links", []),
-            key=lambda x: (
-                x.composite_id,
-                x.component_id,
-                x.link_id,
-            ),
+            key=_sort_key_perceived_component_link,
         ):
             grouped.setdefault(link.epistemic_status, []).append(
                 {
@@ -319,10 +303,7 @@ class LLMViewBuilder:
                 }
             )
 
-        return {
-            status: grouped[status]
-            for status in sorted(grouped)
-        }
+        return {status: grouped[status] for status in sorted(grouped)}
 
     def world_view(
         self,
@@ -372,13 +353,8 @@ class LLMViewBuilder:
 
         if hasattr(world, "model_registry") and world.model_registry:
             registry = world.model_registry
-            registered_objects = [
-                registry.get(obj_id)
-                for obj_id in registry.all_ids()
-            ]
-            registered_objects = [
-                obj for obj in registered_objects if obj is not None
-            ]
+            registered_objects = [registry.get(obj_id) for obj_id in registry.all_ids()]
+            registered_objects = [obj for obj in registered_objects if obj is not None]
 
             members_summary["total_actors"] = sum(
                 1 for obj in registered_objects if obj.object_type == "actor"
@@ -528,6 +504,35 @@ class LLMViewBuilder:
                 "action": relations.get("action", []),
                 "outcome_branches": relations.get("outcome_branch", []),
                 "assumptions": relations.get("projection_assumption", []),
+            }
+
+        # Expose the strategy tree with branch-level projected states
+        raw_nodes = strategy_dict.get("nodes") or []
+        if raw_nodes:
+            view["tree"] = {
+                "root_node_id": strategy_dict.get("root_node_id"),
+                "nodes": [
+                    {
+                        "node_id": node["node_id"],
+                        "action_id": node["action_id"],
+                        "source_perception_id": node.get("source_perception_id"),
+                        "branches": [
+                            {
+                                "branch_id": branch["branch_id"],
+                                "label": branch.get("label"),
+                                "child_node_id": branch.get("child_node_id"),
+                                "probability": branch.get("probability"),
+                                "projected_perception_id": (
+                                    branch["projected_state"]["perception"]["id"]
+                                    if branch.get("projected_state")
+                                    else None
+                                ),
+                            }
+                            for branch in (node.get("outcome_branches") or [])
+                        ],
+                    }
+                    for node in raw_nodes
+                ],
             }
 
         return view
@@ -695,6 +700,7 @@ class LLMViewBuilder:
 
 
 # Convenience functions for common use cases
+
 
 def actor_to_llm_view(
     actor: Any,

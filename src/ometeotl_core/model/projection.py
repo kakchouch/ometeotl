@@ -533,7 +533,7 @@ def _build_projected_perception_state(
 
         context_updates = action.state_changes.get("context_updates")
         applied = isinstance(context_updates, Mapping)
-        if applied:
+        if applied and isinstance(context_updates, Mapping):
             projected_perception.context.update(dict(context_updates))
 
         changes.append(
