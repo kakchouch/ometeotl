@@ -168,18 +168,32 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
 	- `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
 	- Four runnable demo scenarios in `generation/examples.py`.
-12. Quality gate:
-	- Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
-	- Current baseline: `418` collected tests.
+12. **Spatial foundations layer** in `src/ometeotl_foundations/spatial/`:
+	- Coordinate value types: `Coordinate2D`, `Coordinate3D`, `GeoCoordinate` (with range validation), `GridCell`.
+	- Coordinate system vocabulary: `CoordinateKind` (str enum), `CoordinateSystem` with `to_dict`/`from_dict`, predefined singletons `CARTESIAN_2D`, `CARTESIAN_3D`, `WGS84`, `GRID`.
+	- Structural protocols (`runtime_checkable`): `Geometry`, `SpatialIndex`, `SpatialBackend`.
+	- `BoundingBox`: pure-Python frozen dataclass implementing `Geometry` with DE-9IM-correct `touches()`, `contains()`, `intersects()`, `distance()`, convenience methods (`expand`, `union`, `from_center`, `from_point`), and `to_dict`/`from_dict` round-trip.
+	- `GeometricSpace[G]`: frozen generic dataclass composing a core `Space` with a concrete geometry; proxy properties (`id`, `kind`, `is_abstract`, `dimensions`); injected-deserializer `from_dict`.
+	- `SpatialExtent[G]`: frozen generic dataclass recording an object's footprint/position within a named coordinate frame; injected-deserializer `from_dict`.
+	- `SpatialMap[G]`: mutable generic container (CRUD + O(n) spatial queries `ids_containing_point`, `ids_intersecting`); subclassable for index-backed overrides.
+	- `derive_space_relations()`: bridge function that derives a `SpaceRelationGraph` from geometry comparisons (containment → intersection → adjacency, with `skip_abstract`, `adjacency_tolerance`, and per-relation-type flags).
+13. Quality gate:
+	- Automated tests across `tests/ometeotl_core/` and `tests/ometeotl_foundations/spatial/`.
+	- Current baseline: `586` collected tests.
 
 ### Still incomplete or planned
 
 - `src/ometeotl_core/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
 - Generation integration testing: a full roundtrip test of the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
 - `examples/` further extended with additional end-to-end demo worlds (labs 2–10 and the strategy game demo are present; more are planned).
+- **Networks foundations layer** (`src/ometeotl_foundations/networks/`): first-order graph-theory specialization of `ometeotl_core` — stub only, not yet implemented.
+- **Shapely adapter** (`src/ometeotl_adapters/spatial_shapely/`): library-backed implementation of `SpatialBackend` and `SpatialIndex` using Shapely — stub only.
+- **NetworkX adapter** (`src/ometeotl_adapters/networks_networkx/`): library-backed graph implementation — stub only.
 
 ### Current TODO priorities
 
-1. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
-2. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
-3. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.
+1. Implement `ometeotl_foundations/networks/` (graph-theory specialization layer).
+2. Implement `ometeotl_adapters/spatial_shapely/` (Shapely-backed `SpatialBackend` + `SpatialIndex`).
+3. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
+4. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
+5. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.

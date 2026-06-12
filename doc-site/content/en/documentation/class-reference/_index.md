@@ -1,10 +1,10 @@
 ---
 title: "Class Reference"
-description: "One class per page reference for Ometeotl/ometeotl_core"
+description: "One class per page reference for Ometeotl/ometeotl_core and ometeotl_foundations"
 ---
 
 This section contains one page per implemented class.
-The filetree mirrors the repository architecture in `src/ometeotl_core/generic`, `src/ometeotl_core/model`, `src/ometeotl_core/game`, and `src/ometeotl_core/validation`.
+The filetree mirrors the repository architecture in `src/ometeotl_core/` and `src/ometeotl_foundations/`.
 
 Repository source:
 - [GitHub repository](https://github.com/kakchouch/ometeotl)
@@ -129,3 +129,20 @@ Repository source:
 - [LLMGenerationAdapter / LLMRefinementResult](/ometeotl/documentation/class-reference/generation/llm-integration/)
 - [ContextualGenerationPipeline / GenerationResult](/ometeotl/documentation/class-reference/generation/pipeline/)
 - [Generation examples](/ometeotl/documentation/class-reference/generation/examples/)
+
+---
+
+## Ometeotl Foundations
+
+### Foundations/Spatial — `ometeotl_foundations/spatial/`
+- [Spatial overview](/ometeotl/documentation/class-reference/foundations/spatial/)
+- [Coordinate2D / Coordinate3D / GeoCoordinate / GridCell](/ometeotl/documentation/class-reference/foundations/spatial/coordinates/)
+- [CoordinateKind / CoordinateSystem / predefined singletons](/ometeotl/documentation/class-reference/foundations/spatial/coordinate-system/)
+- [Geometry Protocol](/ometeotl/documentation/class-reference/foundations/spatial/geometry/)
+- [BoundingBox](/ometeotl/documentation/class-reference/foundations/spatial/bounding-box/)
+- [SpatialIndex Protocol](/ometeotl/documentation/class-reference/foundations/spatial/spatial-index/)
+- [SpatialBackend Protocol](/ometeotl/documentation/class-reference/foundations/spatial/spatial-backend/)
+- [GeometricSpace](/ometeotl/documentation/class-reference/foundations/spatial/geometric-space/)
+- [SpatialExtent](/ometeotl/documentation/class-reference/foundations/spatial/spatial-extent/)
+- [SpatialMap](/ometeotl/documentation/class-reference/foundations/spatial/spatial-map/)
+- [derive_space_relations](/ometeotl/documentation/class-reference/foundations/spatial/relation-derivation/)
