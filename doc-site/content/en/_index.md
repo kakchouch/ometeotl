@@ -64,8 +64,9 @@ As of June 2026, the repository includes:
 - Canonical IO layer in `src/ometeotl_core/io/` with JSON/YAML world export and import plus a dedicated LLM/SLM view exporter (`world_to_llm_view`, `actor_to_llm_view`, `perception_to_llm_view`, `ModelObject.to_llm_view()`) that explicitly separates reality, perception, belief, hypothesis, and projection.
 - Contextual generation pipeline in `src/ometeotl_core/generation/` with `GenerationContext`, class-based `ContextualBuilder` abstractions for all core kinds, pluggable `GenerationRule`/`GenerationRuleSet`/`RuleRegistry` rule engine with built-in constraint propagation (temporal, spatial, admissibility), `LLMGenerationAdapter`, and `ContextualGenerationPipeline` orchestrating rules → build → registration → validation → `GenerationResult`.
 - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`; four runnable demo scenarios in `generation/examples.py`.
-- Complete class-reference documentation with code examples for all 78 public classes.
-- Current automated baseline: `455` collected tests.
+- **Spatial foundations layer** in `src/ometeotl_foundations/spatial/` — pure-Python, adapter-agnostic first-order specialization including coordinate value types (`Coordinate2D`, `Coordinate3D`, `GeoCoordinate`, `GridCell`), a coordinate system vocabulary (`CoordinateSystem`, `CoordinateKind`, predefined singletons `CARTESIAN_2D`, `WGS84`, `GRID`), structural protocols (`Geometry`, `SpatialIndex`, `SpatialBackend`), a pure-Python geometry primitive (`BoundingBox` with DE-9IM-correct `touches()`), generic typed spatial containers (`GeometricSpace[G]`, `SpatialExtent[G]`, `SpatialMap[G]`), and `derive_space_relations()` — the bridge that derives a `SpaceRelationGraph` from geometry comparisons.
+- Complete class-reference documentation with code examples for all public classes across `ometeotl_core` and `ometeotl_foundations/spatial/`.
+- Current automated baseline: `586` collected tests.
 
 ## Near-Term TODOs
 
