@@ -1,5 +1,7 @@
 """Tests for SpatialExtent."""
 
+import copy
+
 import pytest
 
 from ometeotl_foundations.spatial.bounding_box import BoundingBox
@@ -63,3 +65,26 @@ class TestSerialisation:
                 },
                 BoundingBox.from_dict,
             )
+
+
+class TestDeepCopy:
+    def test_deepcopy_produces_equal_value(self):
+        e = SpatialExtent(
+            space_id="ref",
+            geometry=_BOX,
+            metadata={"tag": "original"},
+        )
+        cloned = copy.deepcopy(e)
+        assert cloned.space_id == e.space_id
+        assert cloned.geometry == e.geometry
+        assert cloned.metadata == e.metadata
+
+    def test_deepcopy_metadata_isolated(self):
+        e = SpatialExtent(
+            space_id="ref",
+            geometry=_BOX,
+            metadata={"tag": "original"},
+        )
+        cloned = copy.deepcopy(e)
+        cloned.metadata["tag"] = "mutated"
+        assert e.metadata["tag"] == "original"

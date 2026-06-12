@@ -158,6 +158,16 @@ class TestTouches:
         b = BoundingBox(6, 0, 10, 5)
         assert not a.touches(b)
 
+    def test_contained_sharing_edge_not_touching(self):
+        # A box fully inside another is NOT touching, even when it shares an edge.
+        outer = BoundingBox(0, 0, 10, 10)
+        inner = BoundingBox(
+            0, 0, 5, 10
+        )  # contained; shares outer's left/top/bottom edge
+        assert outer.contains(inner)
+        assert not outer.touches(inner)
+        assert not inner.touches(outer)
+
 
 # ---------------------------------------------------------------------------
 # distance

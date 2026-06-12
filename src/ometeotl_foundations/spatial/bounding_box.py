@@ -110,23 +110,26 @@ class BoundingBox:
     def touches(self, other: Geometry) -> bool:
         """Return True if the boxes share a boundary but not interior area.
 
-        Falls back to ``other.bounds`` for non-BoundingBox operands.
+        Uses DE-9IM semantics: at least one point in common, but open
+        interiors are disjoint.  Falls back to ``other.bounds`` for
+        non-BoundingBox operands.
         """
         b = other if isinstance(other, BoundingBox) else other.bounds
-        # They touch if they intersect (share at least one edge/corner)
-        # but do NOT have overlapping interiors.
-        share_boundary = (
-            b.min_x == self.max_x
-            or b.max_x == self.min_x
-            or b.min_y == self.max_y
-            or b.max_y == self.min_y
-        )
-        return share_boundary and not (
+        # Any common point (boundary or interior contact):
+        not_disjoint = not (
             b.min_x > self.max_x
             or b.max_x < self.min_x
             or b.min_y > self.max_y
             or b.max_y < self.min_y
         )
+        # Open interiors overlap (strict inequalities):
+        interior_overlap = (
+            b.min_x < self.max_x
+            and b.max_x > self.min_x
+            and b.min_y < self.max_y
+            and b.max_y > self.min_y
+        )
+        return not_disjoint and not interior_overlap
 
     def distance(self, other: Geometry) -> float:
         """Minimum Euclidean distance to *other*; 0.0 if they overlap.

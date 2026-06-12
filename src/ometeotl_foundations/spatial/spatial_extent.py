@@ -14,7 +14,6 @@ lightweight and avoids a hard dependency on the GeometricSpace collection.
 
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generic, Mapping, TypeVar
 
@@ -87,21 +86,3 @@ class SpatialExtent(Generic[G]):
             coordinate_system=CoordinateSystem.from_dict(data["coordinate_system"]),
             metadata=dict(raw_metadata),
         )
-
-    # ------------------------------------------------------------------
-    # Deep-copy support
-    # ------------------------------------------------------------------
-
-    def __deepcopy__(self, memo: dict) -> "SpatialExtent[G]":
-        cls = self.__class__
-        new_obj: SpatialExtent[G] = cls.__new__(cls)
-        memo[id(self)] = new_obj
-        object.__setattr__(new_obj, "space_id", self.space_id)
-        object.__setattr__(new_obj, "geometry", copy.deepcopy(self.geometry, memo))
-        object.__setattr__(
-            new_obj,
-            "coordinate_system",
-            copy.deepcopy(self.coordinate_system, memo),
-        )
-        object.__setattr__(new_obj, "metadata", copy.deepcopy(self.metadata, memo))
-        return new_obj

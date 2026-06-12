@@ -21,7 +21,6 @@ Design notes:
 
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generic, Mapping, TypeVar
 
@@ -129,21 +128,3 @@ class GeometricSpace(Generic[G]):
             coordinate_system=CoordinateSystem.from_dict(data["coordinate_system"]),
             metadata=dict(raw_metadata),
         )
-
-    # ------------------------------------------------------------------
-    # Deep-copy support (frozen dataclass with mutable metadata dict)
-    # ------------------------------------------------------------------
-
-    def __deepcopy__(self, memo: dict) -> "GeometricSpace[G]":
-        cls = self.__class__
-        new_obj: GeometricSpace[G] = cls.__new__(cls)
-        memo[id(self)] = new_obj
-        object.__setattr__(new_obj, "space", copy.deepcopy(self.space, memo))
-        object.__setattr__(new_obj, "geometry", copy.deepcopy(self.geometry, memo))
-        object.__setattr__(
-            new_obj,
-            "coordinate_system",
-            copy.deepcopy(self.coordinate_system, memo),
-        )
-        object.__setattr__(new_obj, "metadata", copy.deepcopy(self.metadata, memo))
-        return new_obj

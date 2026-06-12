@@ -1,5 +1,7 @@
 """Tests for GeometricSpace."""
 
+import copy
+
 import pytest
 
 from ometeotl_core.model.spaces import Space
@@ -106,3 +108,26 @@ class TestSerialisation:
         # Modifying the dict should not affect restored
         d["metadata"]["k"] = "mutated"
         assert restored.metadata.get("k") == "v"
+
+
+class TestDeepCopy:
+    def test_deepcopy_produces_equal_value(self):
+        gs = GeometricSpace(
+            space=_make_space("s1"),
+            geometry=_BOX,
+            metadata={"tag": "original"},
+        )
+        cloned = copy.deepcopy(gs)
+        assert cloned.id == gs.id
+        assert cloned.geometry == gs.geometry
+        assert cloned.metadata == gs.metadata
+
+    def test_deepcopy_metadata_isolated(self):
+        gs = GeometricSpace(
+            space=_make_space("s1"),
+            geometry=_BOX,
+            metadata={"tag": "original"},
+        )
+        cloned = copy.deepcopy(gs)
+        cloned.metadata["tag"] = "mutated"
+        assert gs.metadata["tag"] == "original"
