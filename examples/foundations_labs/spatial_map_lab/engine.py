@@ -268,7 +268,6 @@ def step(state: SimState) -> None:
 
 def _world_bounds(config: SimConfig) -> Tuple[float, float, float, float]:
     """Return (min_x, min_y, max_x, max_y) of the entire grid in world units."""
-    step = config.zone_size + config.zone_gap
     total_w = (
         config.grid_cols * config.zone_size + (config.grid_cols - 1) * config.zone_gap
     )
@@ -371,6 +370,8 @@ def serialize_state(state: SimState) -> dict:
             "zone_count": len(state.zones),
             "actor_count": len(state.actors),
             "adjacency_edge_count": len(adjacency_edges),
+            # all_ids() exercises SpatialMap.all_ids(); count must equal actor_count.
+            "spatial_map_registered": len(state.spatial_map.all_ids()),
             "actors_near_world_centre": actors_near_centre,
         },
     }

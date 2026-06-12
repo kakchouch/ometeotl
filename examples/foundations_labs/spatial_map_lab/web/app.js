@@ -169,6 +169,7 @@ function renderStats(state) {
   statsList.innerHTML = `
     <div class="stat-row"><span>Zones</span><span>${s.zone_count}</span></div>
     <div class="stat-row"><span>Actors</span><span>${s.actor_count}</span></div>
+    <div class="stat-row"><span>SpatialMap entries</span><span>${s.spatial_map_registered}</span></div>
     <div class="stat-row"><span>Adjacency edges</span><span>${s.adjacency_edge_count}</span></div>
     <div class="stat-row"><span>Actors near centre</span><span>${s.actors_near_world_centre.length}</span></div>
   `;
