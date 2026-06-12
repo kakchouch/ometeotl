@@ -148,6 +148,11 @@ class TestTouches:
         b = BoundingBox(3, 3, 8, 8)
         assert not a.touches(b)
 
+    def test_overlapping_sharing_boundary_not_touching(self):
+        a = BoundingBox(0, 0, 5, 5)
+        b = BoundingBox(2, 2, 4, 5)
+        assert not a.touches(b)
+
     def test_disjoint_not_touching(self):
         a = BoundingBox(0, 0, 5, 5)
         b = BoundingBox(6, 0, 10, 5)
