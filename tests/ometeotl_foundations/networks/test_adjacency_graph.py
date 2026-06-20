@@ -139,8 +139,14 @@ class TestDirectedGraph:
         self.g.add_edge("A", "B")
         assert self.g.has_edge("A", "B")
         assert not self.g.has_edge("B", "A")
+        assert not self.g.has_edge("B", "A")
 
-    def test_edges_sorted_directed(self):
+    def test_self_loop_directed(self):
+        self.g.add_edge("A", "A")
+        assert self.g.edge_count == 1
+        assert self.g.edges() == [("A", "A")]
+        assert self.g.has_edge("A", "A")
+        assert self.g.neighbors("A") == ["A"]
         self.g.add_edge("B", "A")
         self.g.add_edge("A", "C")
         assert self.g.edges() == [("A", "C"), ("B", "A")]
