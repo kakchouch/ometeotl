@@ -287,9 +287,16 @@ class AdjacencyNetworkSpace:
             ValueError: If required keys are absent or sub-objects
                 cannot be reconstructed.
         """
+        try:
+            space_data = data["space"]
+            graph_spec_data = data["graph_spec"]
+        except KeyError as exc:
+            raise ValueError(
+                f"AdjacencyNetworkSpace.from_dict: missing required key {exc}"
+            ) from exc
         ns = cls(
-            space=Space.from_dict(data["space"]),
-            graph_spec=GraphSpec.from_dict(data["graph_spec"]),
+            space=Space.from_dict(space_data),
+            graph_spec=GraphSpec.from_dict(graph_spec_data),
             metadata=dict(data.get("metadata") or {}),
         )
         for nid in data.get("node_ids") or []:

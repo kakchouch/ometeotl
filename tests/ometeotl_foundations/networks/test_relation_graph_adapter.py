@@ -150,3 +150,42 @@ class TestToDict:
         assert d["type"] == "relation_graph_adapter"
         assert "relation_type" in d
         assert "is_directed" in d
+
+
+class TestFromDict:
+    def test_round_trip_empty(self):
+        adapter = SpaceRelationGraphAdapter(SpaceRelationGraph())
+        restored = SpaceRelationGraphAdapter.from_dict(adapter.to_dict())
+        assert restored.edges() == []
+        assert restored.nodes() == []
+
+    def test_round_trip_with_edges(self):
+        rg = _make_rg(("A", "B"), ("B", "C"))
+        adapter = SpaceRelationGraphAdapter(rg)
+        restored = SpaceRelationGraphAdapter.from_dict(adapter.to_dict())
+        assert restored.edges() == adapter.edges()
+        assert restored.nodes() == adapter.nodes()
+        assert not restored.is_directed
+
+    def test_round_trip_directed(self):
+        rg = SpaceRelationGraph()
+        rg.add_relation(SpaceRelation("parent", "child", "contains_space"))
+        adapter = SpaceRelationGraphAdapter(rg, _relation_type="contains_space")
+        restored = SpaceRelationGraphAdapter.from_dict(adapter.to_dict())
+        assert restored.is_directed
+        assert restored.has_edge("parent", "child")
+        assert not restored.has_edge("child", "parent")
+
+    def test_round_trip_preserves_node_ids(self):
+        rg = _make_rg(("A", "B"))
+        adapter = SpaceRelationGraphAdapter(rg, _node_ids=frozenset({"isolated"}))
+        restored = SpaceRelationGraphAdapter.from_dict(adapter.to_dict())
+        assert "isolated" in restored.nodes()
+
+    def test_wrong_type_raises(self):
+        with pytest.raises(ValueError, match="relation_graph_adapter"):
+            SpaceRelationGraphAdapter.from_dict({"type": "other"})
+
+    def test_missing_relation_type_raises(self):
+        with pytest.raises(ValueError):
+            SpaceRelationGraphAdapter.from_dict({"type": "relation_graph_adapter"})

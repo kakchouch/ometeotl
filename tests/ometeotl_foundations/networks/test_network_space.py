@@ -82,3 +82,27 @@ class TestNetworkSpaceSerialization:
         }
         with pytest.raises(ValueError):
             NetworkSpace.from_dict(d, AdjacencyGraph.from_dict)
+
+    def test_from_dict_missing_space_raises_value_error(self):
+        d = {
+            "graph": AdjacencyGraph().to_dict(),
+            "graph_spec": UNDIRECTED_SIMPLE.to_dict(),
+        }
+        with pytest.raises(ValueError, match="space"):
+            NetworkSpace.from_dict(d, AdjacencyGraph.from_dict)
+
+    def test_from_dict_missing_graph_raises_value_error(self):
+        d = {
+            "space": _space().to_dict(),
+            "graph_spec": UNDIRECTED_SIMPLE.to_dict(),
+        }
+        with pytest.raises(ValueError, match="graph"):
+            NetworkSpace.from_dict(d, AdjacencyGraph.from_dict)
+
+    def test_from_dict_missing_graph_spec_raises_value_error(self):
+        d = {
+            "space": _space().to_dict(),
+            "graph": AdjacencyGraph().to_dict(),
+        }
+        with pytest.raises(ValueError, match="graph_spec"):
+            NetworkSpace.from_dict(d, AdjacencyGraph.from_dict)

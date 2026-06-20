@@ -268,3 +268,11 @@ class TestSerialization:
         d = net.to_dict()
         restored = AdjacencyNetworkSpace.from_dict(d)
         assert restored.metadata.get("label") == "city-net"
+
+    def test_from_dict_missing_space_raises_value_error(self):
+        with pytest.raises(ValueError, match="space"):
+            AdjacencyNetworkSpace.from_dict({"graph_spec": UNDIRECTED_SIMPLE.to_dict()})
+
+    def test_from_dict_missing_graph_spec_raises_value_error(self):
+        with pytest.raises(ValueError, match="graph_spec"):
+            AdjacencyNetworkSpace.from_dict({"space": _space().to_dict()})

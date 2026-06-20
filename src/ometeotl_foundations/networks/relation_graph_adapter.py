@@ -22,9 +22,13 @@ Design notes:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, FrozenSet, List, Tuple
+from typing import Any, Dict, FrozenSet, List, Mapping, Tuple
 
-from ometeotl_core.model.space_relations import SPACE_RELATION_TYPES, SpaceRelationGraph
+from ometeotl_core.model.space_relations import (
+    SPACE_RELATION_TYPES,
+    SpaceRelation,
+    SpaceRelationGraph,
+)
 
 from .graph import Graph, JsonMap, NodeId
 
@@ -97,8 +101,6 @@ class SpaceRelationGraphAdapter:
 
     def has_edge(self, source: NodeId, target: NodeId) -> bool:
         """O(1) via SpaceRelationGraph._relation_keys."""
-        from ometeotl_core.model.space_relations import SpaceRelation
-
         canonical = SpaceRelation(
             source_space_id=source,
             target_space_id=target,
@@ -142,6 +144,37 @@ class SpaceRelationGraphAdapter:
             "node_ids": sorted(self._node_ids),
             "edges": [list(e) for e in self.edges()],
         }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "SpaceRelationGraphAdapter":
+        """Reconstruct from a dict produced by :meth:`to_dict`.
+
+        Raises:
+            ValueError: If the ``"type"`` discriminator is wrong or
+                ``"relation_type"`` is missing.
+        """
+        if data.get("type") != "relation_graph_adapter":
+            raise ValueError(
+                f"SpaceRelationGraphAdapter.from_dict: expected type"
+                f" 'relation_graph_adapter', got {data.get('type')!r}"
+            )
+        try:
+            relation_type = data["relation_type"]
+        except KeyError as exc:
+            raise ValueError(
+                f"SpaceRelationGraphAdapter.from_dict: missing required key {exc}"
+            ) from exc
+        rg = SpaceRelationGraph()
+        for edge in data.get("edges") or []:
+            rg.add_relation(SpaceRelation(str(edge[0]), str(edge[1]), relation_type))
+        node_ids: FrozenSet[NodeId] = frozenset(
+            str(nid) for nid in data.get("node_ids") or []
+        )
+        return cls(
+            _relation_graph=rg,
+            _node_ids=node_ids,
+            _relation_type=relation_type,
+        )
 
 
 # Conformance assertion — fails at import time if the Protocol is broken.

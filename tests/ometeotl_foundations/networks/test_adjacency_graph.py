@@ -60,7 +60,8 @@ class TestUndirectedGraph:
         assert self.g.neighbors("A") == ["A"]
         self.g.add_edge("A", "B")
         self.g.add_edge("A", "C")
-        assert self.g.neighbors("A") == ["B", "C"]
+        # Self-loop is still present; A appears as its own neighbour.
+        assert self.g.neighbors("A") == ["A", "B", "C"]
         assert self.g.neighbors("B") == ["A"]
 
     def test_degree_undirected(self):
@@ -149,7 +150,8 @@ class TestDirectedGraph:
         assert self.g.neighbors("A") == ["A"]
         self.g.add_edge("B", "A")
         self.g.add_edge("A", "C")
-        assert self.g.edges() == [("A", "C"), ("B", "A")]
+        # Self-loop is still present in the edge list.
+        assert self.g.edges() == [("A", "A"), ("A", "C"), ("B", "A")]
 
     def test_edge_count_directed(self):
         self.g.add_edge("A", "B")

@@ -74,6 +74,10 @@ def build_proximity_network(
         A new ``AdjacencyNetworkSpace`` whose ``_relations`` is populated
         with connections for all pairs within *max_distance*.
     """
+    if max_distance < 0:
+        raise ValueError(
+            f"build_proximity_network: max_distance must be non-negative, got {max_distance}"
+        )
     spaces_list = [
         gs for gs in geometric_spaces if not (skip_abstract and gs.is_abstract)
     ]

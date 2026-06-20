@@ -141,3 +141,7 @@ class TestBuildProximityNetwork:
             max_distance=1.0,
         )
         assert net.id == "my-network"
+
+    def test_negative_max_distance_raises(self):
+        with pytest.raises(ValueError, match="max_distance"):
+            build_proximity_network([], network_space=_space("net"), max_distance=-1.0)

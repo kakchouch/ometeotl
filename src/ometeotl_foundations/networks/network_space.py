@@ -111,10 +111,18 @@ class NetworkSpace(Generic[G]):
             ValueError: If required keys are absent or sub-objects
                 cannot be reconstructed.
         """
+        try:
+            space_data = data["space"]
+            graph_data = data["graph"]
+            graph_spec_data = data["graph_spec"]
+        except KeyError as exc:
+            raise ValueError(
+                f"NetworkSpace.from_dict: missing required key {exc}"
+            ) from exc
         raw_metadata = data.get("metadata") or {}
         return cls(
-            space=Space.from_dict(data["space"]),
-            graph=graph_deserializer(data["graph"]),
-            graph_spec=GraphSpec.from_dict(data["graph_spec"]),
+            space=Space.from_dict(space_data),
+            graph=graph_deserializer(graph_data),
+            graph_spec=GraphSpec.from_dict(graph_spec_data),
             metadata=dict(raw_metadata),
         )
