@@ -177,23 +177,35 @@ The repository now contains a broader functional V1-incremental core spanning mo
 	- `SpatialExtent[G]`: frozen generic dataclass recording an object's footprint/position within a named coordinate frame; injected-deserializer `from_dict`.
 	- `SpatialMap[G]`: mutable generic container (CRUD + O(n) spatial queries `ids_containing_point`, `ids_intersecting`); subclassable for index-backed overrides.
 	- `derive_space_relations()`: bridge function that derives a `SpaceRelationGraph` from geometry comparisons (containment → intersection → adjacency, with `skip_abstract`, `adjacency_tolerance`, and per-relation-type flags).
-13. Quality gate:
-	- Automated tests across `tests/ometeotl_core/` and `tests/ometeotl_foundations/spatial/`.
-	- Current baseline: `586` collected tests.
+13. **Networks foundations layer** in `src/ometeotl_foundations/networks/`:
+	- `NodeId = str` type alias (matches `ObjectId`; nodes correspond to Space/Object IDs in `ometeotl_core`).
+	- Graph vocabulary: `GraphKind` (str enum), `GraphSpec` frozen dataclass with `to_dict`/`from_dict`, predefined singletons `UNDIRECTED_SIMPLE`, `DIRECTED_SIMPLE`, `UNDIRECTED_WEIGHTED`, `DIRECTED_WEIGHTED`.
+	- Structural protocols (`runtime_checkable`): `Graph` (10 members: `is_directed`, `node_count`, `edge_count`, `nodes`, `edges`, `has_node`, `has_edge`, `neighbors`, `degree`, `to_dict`) and `GraphBackend` (adapter factory: `make_graph`, `make_from_edges`, `make_from_adjacency`).
+	- `AdjacencyGraph`: standalone pure-Python mutable graph satisfying `Graph` Protocol; directed and undirected modes; canonical `u ≤ v` edge storage for undirected; full CRUD (`add_node`, `remove_node`, `add_edge`, `remove_edge`); serialisation round-trip.
+	- `SpaceRelationGraphAdapter`: read-only `Graph` Protocol view of a `SpaceRelationGraph` filtered to one relation type; `is_directed` derived from `SPACE_RELATION_TYPES` symmetry (symmetric → undirected, antisymmetric → directed); O(1) `has_edge`; `from_dict` classmethod.
+	- `NetworkSpace[G]`: frozen generic dataclass composing a core `Space` with a concrete graph; proxy properties (`id`, `kind`, `is_abstract`, `dimensions`); injected-deserializer `from_dict`; mirrors `GeometricSpace[G]`.
+	- `AdjacencyNetworkSpace`: mutable foundations-layer class whose `_relations: SpaceRelationGraph` IS the canonical topology — single source of truth; `add_node`, `remove_node`, `add_connection`, `remove_connection`; query methods (`nodes`, `has_node`, `has_connection`, `neighbors`, `connections_of`); `as_graph()` → `SpaceRelationGraphAdapter`; `to_network_space()` frozen snapshot; serialisation round-trip with `ValueError` on missing keys.
+	- `NetworkExtent`: frozen value object recording an object's position at a named node within a named network; `to_dict`/`from_dict`.
+	- `NetworkMap`: mutable container `ObjectId → NetworkExtent` (CRUD + O(n) positional queries `objects_at_node`, `objects_in_network`).
+	- `derive_space_relations_from_network()`: bridge from `NetworkSpace[G]` back to `SpaceRelationGraph`; pure `Graph` Protocol usage, no `isinstance` checks; mirrors `derive_space_relations()` in the spatial layer.
+	- `spatial_bridge.build_proximity_network()`: optional spatial-network coupling (not exported from `__init__.py`); builds an `AdjacencyNetworkSpace` from geometric proximity.
+14. Quality gate:
+	- Automated tests across `tests/ometeotl_core/`, `tests/ometeotl_foundations/spatial/`, and `tests/ometeotl_foundations/networks/`.
+	- Current baseline: `757` collected tests.
 
 ### Still incomplete or planned
 
 - `src/ometeotl_core/game/` for deeper solver-facing abstractions beyond current utility and ranking primitives.
 - Generation integration testing: a full roundtrip test of the complete chain (context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate), and a concrete 2-actor game scenario exercising goal-strategy linkage with utility ranking.
 - `examples/` further extended with additional end-to-end demo worlds (labs 2–10 and the strategy game demo are present; more are planned).
-- **Networks foundations layer** (`src/ometeotl_foundations/networks/`): first-order graph-theory specialization of `ometeotl_core` — stub only, not yet implemented.
 - **Shapely adapter** (`src/ometeotl_adapters/spatial_shapely/`): library-backed implementation of `SpatialBackend` and `SpatialIndex` using Shapely — stub only.
 - **NetworkX adapter** (`src/ometeotl_adapters/networks_networkx/`): library-backed graph implementation — stub only.
+- `src/ometeotl_foundations/agents/`, `inference/`, `perception/`, `rules/`, `stochastic/`, `temporal/` — scaffolded stub directories; not yet implemented.
 
 ### Current TODO priorities
 
-1. Implement `ometeotl_foundations/networks/` (graph-theory specialization layer).
-2. Implement `ometeotl_adapters/spatial_shapely/` (Shapely-backed `SpatialBackend` + `SpatialIndex`).
+1. Implement `ometeotl_adapters/spatial_shapely/` (Shapely-backed `SpatialBackend` + `SpatialIndex`).
+2. Implement `ometeotl_adapters/networks_networkx/` (NetworkX-backed `Graph` + `GraphBackend`).
 3. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate. Add a concrete 2-actor game scenario wiring goals, strategies, and utility ranking end to end.
 4. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
 5. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.

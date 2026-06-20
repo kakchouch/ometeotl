@@ -188,75 +188,121 @@ The project delivers a broad functional V1 core. All layers from model through v
     - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
     - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
     - Four runnable demo scenarios in `generation/examples.py`.
-15. Quality gate:
-    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, and `tests/ometeotl_core/generation/`.
-    - Current baseline: `453` collected tests.
+15. **Spatial foundations layer** in `src/ometeotl_foundations/spatial/`:
+    - Coordinate value types: `Coordinate2D`, `Coordinate3D`, `GeoCoordinate` (with range validation), `GridCell`.
+    - Coordinate system vocabulary: `CoordinateKind` (str enum), `CoordinateSystem` with `to_dict`/`from_dict`, predefined singletons `CARTESIAN_2D`, `CARTESIAN_3D`, `WGS84`, `GRID`.
+    - Structural protocols (`runtime_checkable`): `Geometry`, `SpatialIndex`, `SpatialBackend`.
+    - `BoundingBox`: pure-Python frozen dataclass implementing `Geometry` with DE-9IM-correct `touches()`, `contains()`, `intersects()`, `distance()`, convenience methods (`expand`, `union`, `from_center`, `from_point`), and `to_dict`/`from_dict` round-trip.
+    - `GeometricSpace[G]`: frozen generic dataclass composing a core `Space` with a concrete geometry; proxy properties (`id`, `kind`, `is_abstract`, `dimensions`); injected-deserializer `from_dict`.
+    - `SpatialExtent[G]`: frozen generic dataclass recording an object's footprint/position within a named coordinate frame; injected-deserializer `from_dict`.
+    - `SpatialMap[G]`: mutable generic container (CRUD + O(n) spatial queries `ids_containing_point`, `ids_intersecting`); subclassable for index-backed overrides.
+    - `derive_space_relations()`: bridge function that derives a `SpaceRelationGraph` from geometry comparisons (containment → intersection → adjacency, with `skip_abstract`, `adjacency_tolerance`, and per-relation-type flags).
+16. **Networks foundations layer** in `src/ometeotl_foundations/networks/`:
+    - `NodeId = str` type alias (matches `ObjectId`; nodes correspond to Space/Object IDs in `ometeotl_core`).
+    - Graph vocabulary: `GraphKind` (str enum), `GraphSpec` frozen dataclass with `to_dict`/`from_dict`, predefined singletons `UNDIRECTED_SIMPLE`, `DIRECTED_SIMPLE`, `UNDIRECTED_WEIGHTED`, `DIRECTED_WEIGHTED`.
+    - Structural protocols (`runtime_checkable`): `Graph` (10 members: `is_directed`, `node_count`, `edge_count`, `nodes`, `edges`, `has_node`, `has_edge`, `neighbors`, `degree`, `to_dict`) and `GraphBackend` (adapter factory: `make_graph`, `make_from_edges`, `make_from_adjacency`).
+    - `AdjacencyGraph`: standalone pure-Python mutable graph satisfying `Graph` Protocol; directed and undirected modes; canonical `u ≤ v` edge storage for undirected; full CRUD (`add_node`, `remove_node`, `add_edge`, `remove_edge`); serialisation round-trip.
+    - `SpaceRelationGraphAdapter`: read-only `Graph` Protocol view of a `SpaceRelationGraph` filtered to one relation type; `is_directed` derived from `SPACE_RELATION_TYPES` symmetry (symmetric → undirected, antisymmetric → directed); O(1) `has_edge`; `from_dict` classmethod.
+    - `NetworkSpace[G]`: frozen generic dataclass composing a core `Space` with a concrete graph; proxy properties (`id`, `kind`, `is_abstract`, `dimensions`); injected-deserializer `from_dict`; mirrors `GeometricSpace[G]`.
+    - `AdjacencyNetworkSpace`: mutable foundations-layer class whose `_relations: SpaceRelationGraph` IS the canonical topology — single source of truth; `add_node`, `remove_node`, `add_connection`, `remove_connection`; query methods (`nodes`, `has_node`, `has_connection`, `neighbors`, `connections_of`); `as_graph()` → `SpaceRelationGraphAdapter`; `to_network_space()` frozen snapshot; serialisation round-trip with `ValueError` on missing keys.
+    - `NetworkExtent`: frozen value object recording an object's position at a named node within a named network; `to_dict`/`from_dict`.
+    - `NetworkMap`: mutable container `ObjectId → NetworkExtent` (CRUD + O(n) positional queries `objects_at_node`, `objects_in_network`).
+    - `derive_space_relations_from_network()`: bridge from `NetworkSpace[G]` back to `SpaceRelationGraph`; pure `Graph` Protocol usage, no `isinstance` checks; mirrors `derive_space_relations()` in the spatial layer.
+    - `spatial_bridge.build_proximity_network()`: optional spatial-network coupling (not exported from `__init__.py`); builds an `AdjacencyNetworkSpace` from geometric proximity.
+17. Quality gate:
+    - Automated tests in `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, `tests/ometeotl_core/generation/`, `tests/ometeotl_foundations/spatial/`, and `tests/ometeotl_foundations/networks/`.
+    - Current baseline: `757` collected tests.
 
 ### Present but still incomplete or scaffolded
 
 The following layers remain incomplete relative to the target architecture and roadmap:
 
+- `src/ometeotl_foundations/agents/`, `inference/`, `perception/`, `rules/`, `stochastic/`, `temporal/` — scaffolded stub directories (`__init__.py` only); not yet implemented.
+- `ometeotl_adapters/spatial_shapely/` — library-backed implementation of `SpatialBackend` and `SpatialIndex` using Shapely; stub only.
+- `ometeotl_adapters/networks_networkx/` — library-backed graph implementation using NetworkX; stub only.
 - `examples/` further extended with additional end-to-end demo worlds (labs 2–15 and the strategy game demo are present; more are planned).
 
 ### Current source layout
 
-
-
 ```
 ometeotl/
 ├── src/
-│   └── ometeotl_core/
-│       ├── generic/
-│       │   ├── authority.py
-│       │   └── runtime.py
-│       ├── io/
-│       │   ├── exporters.py
-│       │   ├── importers.py
-│       │   └── llm_export.py
-│       ├── generation/
-│       │   ├── builders.py
-│       │   ├── context.py
-│       │   ├── context_builder.py
-│       │   ├── examples.py
-│       │   ├── llm_integration.py
-│       │   ├── pipeline.py
-│       │   ├── rule_engine.py
-│       │   └── rules.py        # backward-compat re-export
-│       ├── game/
-│       │   ├── utility.py
-│       │   ├── game_state.py
-│       │   ├── normal_form.py
-│       │   └── best_response.py
-│       ├── validation/
-│       │   ├── base.py
-│       │   ├── pipeline.py
-│       │   ├── policy.py
-│       │   ├── syntactic.py
-│       │   ├── structural.py
-│       │   ├── temporal.py
-│       │   ├── spatial.py
-│       │   ├── admissibility.py
-│       │   ├── epistemic.py
-│       │   ├── completeness.py
-│       │   └── diagnostic.py
-│       └── model/
-│           ├── actions.py
-│           ├── actors.py
-│           ├── base.py
-│           ├── goals.py
-│           ├── goal_tools.py
-│           ├── interfaces.py
-│           ├── objects.py
-│           ├── perception.py
-│           ├── projection.py
-│           ├── registry.py
-│           ├── resources.py
-│           ├── sensor.py
-│           ├── space_relations.py
-│           ├── spaces.py
-│           ├── strategies.py
-│           ├── utility.py
-│           └── world.py
+│   ├── ometeotl_core/
+│   │   ├── generic/
+│   │   │   ├── authority.py
+│   │   │   └── runtime.py
+│   │   ├── io/
+│   │   │   ├── exporters.py
+│   │   │   ├── importers.py
+│   │   │   └── llm_export.py
+│   │   ├── generation/
+│   │   │   ├── builders.py
+│   │   │   ├── context.py
+│   │   │   ├── context_builder.py
+│   │   │   ├── examples.py
+│   │   │   ├── llm_integration.py
+│   │   │   ├── pipeline.py
+│   │   │   ├── rule_engine.py
+│   │   │   └── rules.py        # backward-compat re-export
+│   │   ├── game/
+│   │   │   ├── utility.py
+│   │   │   ├── game_state.py
+│   │   │   ├── normal_form.py
+│   │   │   └── best_response.py
+│   │   ├── validation/
+│   │   │   ├── base.py
+│   │   │   ├── pipeline.py
+│   │   │   ├── policy.py
+│   │   │   ├── syntactic.py
+│   │   │   ├── structural.py
+│   │   │   ├── temporal.py
+│   │   │   ├── spatial.py
+│   │   │   ├── admissibility.py
+│   │   │   ├── epistemic.py
+│   │   │   ├── completeness.py
+│   │   │   └── diagnostic.py
+│   │   └── model/
+│   │       ├── actions.py
+│   │       ├── actors.py
+│   │       ├── base.py
+│   │       ├── goals.py
+│   │       ├── goal_tools.py
+│   │       ├── interfaces.py
+│   │       ├── objects.py
+│   │       ├── perception.py
+│   │       ├── projection.py
+│   │       ├── registry.py
+│   │       ├── resources.py
+│   │       ├── sensor.py
+│   │       ├── space_relations.py
+│   │       ├── spaces.py
+│   │       ├── strategies.py
+│   │       ├── utility.py
+│   │       └── world.py
+│   └── ometeotl_foundations/
+│       ├── spatial/
+│       │   ├── bounding_box.py
+│       │   ├── coordinate_system.py
+│       │   ├── coordinates.py
+│       │   ├── geometric_space.py
+│       │   ├── geometry.py
+│       │   ├── relation_derivation.py
+│       │   ├── spatial_backend.py
+│       │   ├── spatial_extent.py
+│       │   ├── spatial_index.py
+│       │   └── spatial_map.py
+│       └── networks/
+│           ├── adjacency_graph.py
+│           ├── adjacency_network_space.py
+│           ├── graph.py
+│           ├── graph_backend.py
+│           ├── graph_kind.py
+│           ├── network_extent.py
+│           ├── network_map.py
+│           ├── network_space.py
+│           ├── relation_derivation.py
+│           ├── relation_graph_adapter.py
+│           └── spatial_bridge.py
 ├── examples/
 │   ├── multi_agent_sim/
 │   ├── lab3_perception_sim/
@@ -268,22 +314,30 @@ ometeotl/
 │   ├── lab9_globalization_sim/
 │   ├── lab10_complex_behavior_sim/
 │   └── strategy_game/
-└── tests/ometeotl_core/
-    ├── generic/
-    ├── game/
-    ├── generation/
-    ├── io/
-    ├── model/
-    └── validation/
+└── tests/
+    ├── ometeotl_core/
+    │   ├── generic/
+    │   ├── game/
+    │   ├── generation/
+    │   ├── io/
+    │   ├── model/
+    │   └── validation/
+    └── ometeotl_foundations/
+        ├── spatial/
+        └── networks/
 ```
 
 ### Practical V1 interpretation
 
-V1 is validated on the full chain: ontology, perception, projection, strategy, teleology/utility, game ranking, multi-actor game structures (normal-form payoff matrix, best-response), authority/runtime, validation, IO (JSON/YAML + LLM export), and contextual generation with pluggable rule engine and LLM adapter.
+V1 is validated on the full chain: ontology, perception, projection, strategy, teleology/utility, game ranking, multi-actor game structures (normal-form payoff matrix, best-response), authority/runtime, validation, IO (JSON/YAML + LLM export), contextual generation with pluggable rule engine and LLM adapter, spatial foundations (coordinates, geometry, DE-9IM relations, spatial map), and networks foundations (graph protocols, adjacency graph, space-relation graph adapter, network space, relation derivation).
 
 ### Current TODO priorities
 
-1. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.
+1. Implement `ometeotl_adapters/spatial_shapely/` (Shapely-backed `SpatialBackend` + `SpatialIndex`).
+2. Implement `ometeotl_adapters/networks_networkx/` (NetworkX-backed `Graph` + `GraphBackend`).
+3. Add a full generation roundtrip integration test covering the complete chain: context → pipeline → generated objects → IO export → `to_llm_view()` → parse → validate.
+4. Extend the game layer beyond the current utility/ranking primitives with solver-facing structures.
+5. Extend `examples/` with additional end-to-end demo worlds beyond the existing lab series.
 
 
 ## Status

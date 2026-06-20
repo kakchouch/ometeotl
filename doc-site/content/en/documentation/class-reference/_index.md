@@ -146,3 +146,16 @@ Repository source:
 - [SpatialExtent](/ometeotl/documentation/class-reference/foundations/spatial/spatial-extent/)
 - [SpatialMap](/ometeotl/documentation/class-reference/foundations/spatial/spatial-map/)
 - [derive_space_relations](/ometeotl/documentation/class-reference/foundations/spatial/relation-derivation/)
+
+### Foundations/Networks — `ometeotl_foundations/networks/`
+- [Networks overview](/ometeotl/documentation/class-reference/foundations/networks/)
+- [GraphKind / GraphSpec / predefined singletons](/ometeotl/documentation/class-reference/foundations/networks/graph-kind/)
+- [Graph Protocol](/ometeotl/documentation/class-reference/foundations/networks/graph-protocol/)
+- [GraphBackend Protocol](/ometeotl/documentation/class-reference/foundations/networks/graph-backend-protocol/)
+- [AdjacencyGraph](/ometeotl/documentation/class-reference/foundations/networks/adjacency-graph/)
+- [SpaceRelationGraphAdapter](/ometeotl/documentation/class-reference/foundations/networks/relation-graph-adapter/)
+- [NetworkSpace](/ometeotl/documentation/class-reference/foundations/networks/network-space/)
+- [AdjacencyNetworkSpace](/ometeotl/documentation/class-reference/foundations/networks/adjacency-network-space/)
+- [NetworkExtent](/ometeotl/documentation/class-reference/foundations/networks/network-extent/)
+- [NetworkMap](/ometeotl/documentation/class-reference/foundations/networks/network-map/)
+- [derive_space_relations_from_network](/ometeotl/documentation/class-reference/foundations/networks/relation-derivation/)
