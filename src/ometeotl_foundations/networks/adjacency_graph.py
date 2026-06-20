@@ -82,7 +82,7 @@ class AdjacencyGraph:
         result: List[Tuple[NodeId, NodeId]] = []
         for u, nbrs in self._adj.items():
             for v in nbrs:
-                if self._directed or u < v:
+                if self._directed or u <= v:
                     result.append((u, v))
         return sorted(result)
 
