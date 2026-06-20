@@ -37,7 +37,7 @@ This project is **actively under development**. The current codebase implements 
     - ...
   - to add, lastly, an adapter layer `ometeotl_adapters`, which implements each specialization layer with a reputable library.
 
-As of May 2026, the repository includes:
+As of June 2026, the repository includes:
 
 - A full model core in `src/ometeotl_core/model/` with `ModelObject`, `GenericObject`, `Actor`, `Resource`, `Space`, `World`, and registry support.
 - Spatial topology with `SpaceObjectGraph`, `SpaceObjectMembership`, `SpaceRelation`, and `SpaceRelationGraph`.
@@ -60,7 +60,9 @@ As of May 2026, the repository includes:
   - `ContextualGenerationPipeline` orchestrating rules → build → optional registration → optional validation → `GenerationResult`.
   - `from_context()` classmethods on `World`, `Actor`, `Strategy`, and `Goal`.
   - Four runnable demo scenarios in `generation/examples.py`.
-- A test suite currently collecting `453` tests across `tests/ometeotl_core/model/`, `tests/ometeotl_core/generic/`, `tests/ometeotl_core/game/`, `tests/ometeotl_core/io/`, `tests/ometeotl_core/validation/`, `tests/ometeotl_core/generation/`, and `tests/ometeotl_core/integration/`.
+- **Spatial foundations layer** in `src/ometeotl_foundations/spatial/` — pure-Python, adapter-agnostic first-order specialization with coordinate types, geometry protocols, `BoundingBox`, `GeometricSpace[G]`, `SpatialExtent[G]`, `SpatialMap[G]`, and `derive_space_relations()`.
+- **Networks foundations layer** in `src/ometeotl_foundations/networks/` — pure-Python, adapter-agnostic first-order graph-theory specialization with `Graph`/`GraphBackend` protocols, `GraphKind`/`GraphSpec` vocabulary, `AdjacencyGraph`, `SpaceRelationGraphAdapter`, `NetworkSpace[G]`, `AdjacencyNetworkSpace`, `NetworkExtent`, `NetworkMap`, and `derive_space_relations_from_network()`.
+- A test suite currently collecting `757` tests across `tests/ometeotl_core/` and `tests/ometeotl_foundations/`.
 
 ## Current Architecture
 

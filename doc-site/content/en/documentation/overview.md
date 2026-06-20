@@ -119,6 +119,8 @@ The test suite follows the same layer separation as the source tree:
 - `tests/ometeotl_core/game/`: tests for `ometeotl_core.game.*`
 - `tests/ometeotl_core/io/`: tests for `ometeotl_core.io.*`
 - `tests/ometeotl_core/generation/`: tests for `ometeotl_core.generation.*`
+- `tests/ometeotl_foundations/spatial/`: tests for `ometeotl_foundations.spatial.*`
+- `tests/ometeotl_foundations/networks/`: tests for `ometeotl_foundations.networks.*`
 
 Within each layer folder, tests are split by module using one file per module (`test_<module>.py`).
 
