@@ -66,11 +66,11 @@ class AdjacencyGraph:
         if self._directed:
             return sum(len(nbrs) for nbrs in self._adj.values())
         # Each canonical undirected edge is stored once (u→v with u<v).
-        # Count from the node that is lexicographically smaller.
+        # Each canonical undirected edge is stored once (u→v with u<=v).
+        # Count from the node that is lexicographically smaller or equal.
         return sum(
-            sum(1 for v in nbrs if node_id < v) for node_id, nbrs in self._adj.items()
+            sum(1 for v in nbrs if node_id <= v) for node_id, nbrs in self._adj.items()
         )
-
     # ------------------------------------------------------------------
     # Graph Protocol — query methods
     # ------------------------------------------------------------------
